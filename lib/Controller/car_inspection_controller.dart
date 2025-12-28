@@ -1,23 +1,45 @@
-import 'dart:convert';
+// lib/Controller/car_inspection_controller.dart
 
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
-import 'package:intl/intl.dart';
 import 'package:otobix_inspection_app/models/car_model.dart';
 
 class CarInspectionStepperController extends GetxController {
   final RxInt currentStep = 0.obs;
 
-  // ✅ UI refresh tick: whenever carModel changes, call touch()
   final RxInt uiTick = 0.obs;
   void touch() => uiTick.value++;
 
-  // ✅ NEW: loading state for RC fetch button
   final RxBool rcFetchLoading = false.obs;
 
   late final CarModel carModel;
   late final List<GlobalKey<FormState>> formKeys;
+  final makes = <String>[
+    'Maruti',
+    'Hyundai',
+    'Tata',
+    'Mahindra',
+    'Honda',
+    'Toyota',
+    'Ford',
+    'Jeep',
+    'Renault',
+    'Nissan',
+  ];
+
+  final models = <String>[
+    'Cherokee',
+    'Compass',
+    'Grand Cherokee',
+    'Kaiser',
+    'Meridian',
+    'Willys',
+    'Wrangler',
+  ];
+
+  final variants = <String>['Limite 4x4', 'Limited Plus 4x4', 'Limited 4x4 S'];
 
   final List<Map<String, dynamic>> steps = const [
     {'title': 'Registration &\nDocuments', 'icon': Icons.description},
@@ -26,6 +48,7 @@ class CarInspectionStepperController extends GetxController {
     {'title': 'Exterior\nRear', 'icon': Icons.car_repair},
     {'title': 'Engine &\nMechanical', 'icon': Icons.settings},
     {'title': 'Interior &\nElectronics', 'icon': Icons.event_seat},
+    {'title': 'Mechanical &\nTest Drive', 'icon': Icons.drive_eta},
     {'title': 'Final\nDetails', 'icon': Icons.fact_check},
     {'title': 'Review &\nSubmit', 'icon': Icons.check_circle},
   ];
@@ -33,8 +56,8 @@ class CarInspectionStepperController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    formKeys = List.generate(8, (_) => GlobalKey<FormState>());
-    carModel = _createEmptyCarModel();
+    formKeys = List.generate(9, (_) => GlobalKey<FormState>());
+    carModel = CarModel();
   }
 
   void goPrev() {
@@ -46,18 +69,15 @@ class CarInspectionStepperController extends GetxController {
       submit();
       return;
     }
-
-    final isValid = validateCurrentStep();
-    if (!isValid) return;
-
+    final ok = validateCurrentStep();
+    if (!ok) return;
     currentStep.value++;
   }
 
   bool validateCurrentStep() {
     final idx = currentStep.value;
     if (idx < 0 || idx >= formKeys.length) return true;
-    final key = formKeys[idx];
-    return key.currentState?.validate() ?? true;
+    return formKeys[idx].currentState?.validate() ?? true;
   }
 
   void submit() {
@@ -76,7 +96,6 @@ class CarInspectionStepperController extends GetxController {
 
   Future<void> fetchRcAdvancedAndFill() async {
     final reg = carModel.registrationNumber.trim();
-
     if (reg.isEmpty) {
       Get.snackbar(
         'Missing',
@@ -87,33 +106,35 @@ class CarInspectionStepperController extends GetxController {
     }
 
     rcFetchLoading.value = true;
-
     try {
       final url = Uri.parse(
         'https://uat-hub.perfios.com/api/kyc/v3/rc-advanced',
       );
 
       final body = {
-        "registrationNumber": "JH01BP5530",
+        "registrationNumber": "MH04CY4545",
         "consent": "Y",
         "partialEngine": "Y",
         "version": 3.1,
       };
 
-      final headers = <String, String>{"x-auth-key": "0RurqWiFBAPCf8Na"};
+      final headers = <String, String>{
+        "x-auth-key": "0RurqWiFBAPCf8Na",
+        "Content-Type": "application/json",
+      };
 
       final res = await http.post(
         url,
         headers: headers,
         body: jsonEncode(body),
       );
+      print(res.body);
 
       if (res.statusCode < 200 || res.statusCode >= 300) {
         throw Exception('HTTP ${res.statusCode}: ${res.body}');
       }
 
       final decoded = jsonDecode(res.body) as Map<String, dynamic>;
-
       final result = decoded["result"];
       if (result == null || result is! Map<String, dynamic>) {
         throw Exception("Invalid response: result missing");
@@ -121,9 +142,7 @@ class CarInspectionStepperController extends GetxController {
 
       _applyPerfiosRcResultToCarModel(result);
 
-      // ✅ refresh UI
       touch();
-      print(res.body);
       Get.snackbar(
         'Success',
         'RC data fetched & filled',
@@ -143,104 +162,85 @@ class CarInspectionStepperController extends GetxController {
         margin: const EdgeInsets.all(12),
         borderRadius: 10,
       );
-      print("errror $e");
+      print(e);
     } finally {
       rcFetchLoading.value = false;
     }
   }
 
-  /// ✅ ONLY matched fields (CarModel names unchanged)
   void _applyPerfiosRcResultToCarModel(Map<String, dynamic> r) {
-    // registrationNumber -> CarModel.registrationNumber
     final regNo = (r["registrationNumber"] ?? "").toString().trim();
-    if (regNo.isNotEmpty) {
-      carModel.registrationNumber = regNo;
-    }
+    if (regNo.isNotEmpty) carModel.registrationNumber = regNo;
 
-    // registrationDate (dd-MM-yyyy)
     carModel.registrationDate =
         _parseApiDate(r["registrationDate"]) ?? carModel.registrationDate;
-
-    // fitnessUpto -> fitnessTill
     carModel.fitnessTill =
         _parseApiDate(r["fitnessUpto"]) ?? carModel.fitnessTill;
-
-    // insuranceUpto -> insuranceValidity
     carModel.insuranceValidity =
         _parseApiDate(r["insuranceUpto"]) ?? carModel.insuranceValidity;
-
-    // taxPaidUpto -> taxValidTill
     carModel.taxValidTill =
         _parseApiDate(r["taxPaidUpto"]) ?? carModel.taxValidTill;
 
-    // manufacturedMonthYear (MM-yyyy) -> yearMonthOfManufacture
     carModel.yearMonthOfManufacture =
         _parseApiDate(r["manufacturedMonthYear"]) ??
         carModel.yearMonthOfManufacture;
 
-    // chassisNumber, engineNumber
     final ch = (r["chassisNumber"] ?? "").toString().trim();
     if (ch.isNotEmpty) carModel.chassisNumber = ch;
 
     final en = (r["engineNumber"] ?? "").toString().trim();
     if (en.isNotEmpty) carModel.engineNumber = en;
 
-    // ownerSerialNumber
     carModel.ownerSerialNumber = _parseInt(
       r["ownerSerialNumber"],
       fallback: carModel.ownerSerialNumber,
     );
 
-    // cubicCapacity "2179.00" -> int
     carModel.cubicCapacity = _parseCc(
       r["cubicCapacity"],
       fallback: carModel.cubicCapacity,
     );
 
-    // ownerName -> registeredOwner
+    // ✅ NEW: Seating Capacity from API
+    carModel.seatingCapacity = _parseInt(
+      r["seatingCapacity"],
+      fallback: carModel.seatingCapacity,
+    );
+
+    // ✅ NEW: Color from API
+    final color = (r["color"] ?? "").toString().trim();
+    if (color.isNotEmpty) carModel.color = color;
+
     final owner = (r["ownerName"] ?? "").toString().trim();
     if (owner.isNotEmpty) carModel.registeredOwner = owner;
 
-    // permanentAddress / presentAddress -> registeredAddressAsPerRc
     final permAddr = (r["permanentAddress"] ?? "").toString().trim();
     final presAddr = (r["presentAddress"] ?? "").toString().trim();
-    if (permAddr.isNotEmpty) {
+    if (permAddr.isNotEmpty)
       carModel.registeredAddressAsPerRc = permAddr;
-    } else if (presAddr.isNotEmpty) {
+    else if (presAddr.isNotEmpty)
       carModel.registeredAddressAsPerRc = presAddr;
-    }
 
-    // registeredAt -> registeredRto
     final registeredAt = (r["registeredAt"] ?? "").toString().trim();
     if (registeredAt.isNotEmpty) {
       carModel.registeredRto = registeredAt;
 
-      // Optional: registrationState from registeredAt (e.g. "RANCHI, Jharkhand")
       if (carModel.registrationState.trim().isEmpty) {
         final parts = registeredAt.split(',');
-        if (parts.length >= 2) {
-          final st = parts.last.trim();
-          if (st.isNotEmpty) carModel.registrationState = st;
-        }
+        if (parts.length >= 2) carModel.registrationState = parts.last.trim();
       }
-
-      // Optional: city from registeredAt
-      if (carModel.city.trim().isEmpty) {
+      if (carModel.registrationCity.trim().isEmpty) {
         final parts = registeredAt.split(',');
-        final ct = parts.isNotEmpty ? parts.first.trim() : '';
-        if (ct.isNotEmpty) carModel.city = ct;
+        if (parts.isNotEmpty) carModel.registrationCity = parts.first.trim();
       }
     }
 
-    // fuelDescription -> fuelType
     final fuel = (r["fuelDescription"] ?? "").toString().trim();
     if (fuel.isNotEmpty) carModel.fuelType = fuel;
 
-    // makerDescription -> make
     final maker = (r["makerDescription"] ?? "").toString().trim();
     if (maker.isNotEmpty) carModel.make = maker;
 
-    // makerModel -> model + variant (simple)
     final makerModel = (r["makerModel"] ?? "").toString().trim();
     if (makerModel.isNotEmpty) {
       final parts = makerModel.split(RegExp(r'\s+'));
@@ -252,28 +252,8 @@ class CarInspectionStepperController extends GetxController {
       }
     }
 
-    // insurancePolicyNumber -> insurancePolicyNumber
     final pol = (r["insurancePolicyNumber"] ?? "").toString().trim();
     if (pol.isNotEmpty) carModel.insurancePolicyNumber = pol;
-
-    // insuranceCompany -> insurance dropdown value (Valid/Expired/Not Available)
-    final insCompany = (r["insuranceCompany"] ?? "").toString().trim();
-    if (insCompany.isNotEmpty) {
-      final dt = carModel.insuranceValidity;
-      if (dt == null) {
-        carModel.insurance = "Valid";
-      } else {
-        carModel.insurance = dt.isAfter(DateTime.now()) ? "Valid" : "Expired";
-      }
-    }
-
-    // financier -> hypothecationDetails
-    final fin = (r["financier"] ?? "").toString().trim();
-    if (fin.isNotEmpty) carModel.hypothecationDetails = fin;
-
-    // rcMobileNo -> contactNumber (optional)
-    final mobile = (r["rcMobileNo"] ?? "").toString().trim();
-    if (mobile.isNotEmpty) carModel.contactNumber = mobile;
   }
 
   DateTime? _parseApiDate(dynamic v) {
@@ -283,268 +263,39 @@ class CarInspectionStepperController extends GetxController {
     if (s.isEmpty) return null;
 
     try {
-      if (RegExp(r'^\d{2}-\d{4}$').hasMatch(s)) {
-        final dt = DateFormat('MM-yyyy').parseStrict(s);
-        return DateTime(dt.year, dt.month, 1);
+      if (RegExp(r'^\d{2}-\d{2}-\d{4}$').hasMatch(s)) {
+        final parts = s.split('-');
+        final dd = int.parse(parts[0]);
+        final mm = int.parse(parts[1]);
+        final yy = int.parse(parts[2]);
+        return DateTime(yy, mm, dd);
       }
-    } catch (_) {}
 
-    final patterns = <DateFormat>[
-      DateFormat('dd-MM-yyyy'),
-      DateFormat('dd/MM/yyyy'),
-      DateFormat('dd-MMM-yyyy'),
-      DateFormat('dd MMM yyyy'),
-      DateFormat('yyyy-MM-dd'),
-    ];
+      if (RegExp(r'^\d{2}-\d{4}$').hasMatch(s)) {
+        final parts = s.split('-');
+        final mm = int.parse(parts[0]);
+        final yy = int.parse(parts[1]);
+        return DateTime(yy, mm, 1);
+      }
 
-    for (final f in patterns) {
-      try {
-        return f.parseStrict(s);
-      } catch (_) {}
+      return DateTime.tryParse(s);
+    } catch (_) {
+      return null;
     }
-
-    return null;
   }
 
-  int _parseInt(dynamic v, {int fallback = 0}) {
+  int _parseInt(dynamic v, {required int fallback}) {
     if (v == null) return fallback;
     if (v is int) return v;
-    final s = v.toString().trim();
-    return int.tryParse(s) ?? fallback;
+    return int.tryParse(v.toString()) ?? fallback;
   }
 
-  int _parseCc(dynamic v, {int fallback = 0}) {
+  int _parseCc(dynamic v, {required int fallback}) {
     if (v == null) return fallback;
     if (v is int) return v;
-
     final s = v.toString().trim();
     final d = double.tryParse(s);
-    if (d != null) return d.toInt();
-
-    return int.tryParse(s) ?? fallback;
-  }
-
-  CarModel _createEmptyCarModel() {
-    return CarModel(
-      id: '',
-      timestamp: DateTime.now(),
-      emailAddress: '',
-      appointmentId: '',
-      city: '',
-      registrationType: '',
-      rcBookAvailability: '',
-      rcCondition: '',
-      registrationNumber: '',
-      registrationDate: null,
-      fitnessTill: null,
-      toBeScrapped: '',
-      registrationState: '',
-      registeredRto: '',
-      ownerSerialNumber: 0,
-      make: '',
-      model: '',
-      variant: '',
-      engineNumber: '',
-      chassisNumber: '',
-      registeredOwner: '',
-      registeredAddressAsPerRc: '',
-      yearMonthOfManufacture: null,
-      fuelType: '',
-      cubicCapacity: 0,
-      hypothecationDetails: '',
-      mismatchInRc: '',
-      roadTaxValidity: '',
-      taxValidTill: null,
-      insurance: '',
-      insurancePolicyNumber: '',
-      insuranceValidity: null,
-      noClaimBonus: '',
-      mismatchInInsurance: '',
-      duplicateKey: '',
-      rtoNoc: '',
-      rtoForm28: '',
-      partyPeshi: '',
-      additionalDetails: '',
-      rcTaxToken: [],
-      insuranceCopy: [],
-      bothKeys: [],
-      form26GdCopyIfRcIsLost: [],
-      bonnet: '',
-      frontWindshield: '',
-      roof: '',
-      frontBumper: '',
-      lhsHeadlamp: '',
-      lhsFoglamp: '',
-      rhsHeadlamp: '',
-      rhsFoglamp: '',
-      lhsFender: '',
-      lhsOrvm: '',
-      lhsAPillar: '',
-      lhsBPillar: '',
-      lhsCPillar: '',
-      lhsFrontAlloy: '',
-      lhsFrontTyre: '',
-      lhsRearAlloy: '',
-      lhsRearTyre: '',
-      lhsFrontDoor: '',
-      lhsRearDoor: '',
-      lhsRunningBorder: '',
-      lhsQuarterPanel: '',
-      rearBumper: '',
-      lhsTailLamp: '',
-      rhsTailLamp: '',
-      rearWindshield: '',
-      bootDoor: '',
-      spareTyre: '',
-      bootFloor: '',
-      rhsRearAlloy: '',
-      rhsRearTyre: '',
-      rhsFrontAlloy: '',
-      rhsFrontTyre: '',
-      rhsQuarterPanel: '',
-      rhsAPillar: '',
-      rhsBPillar: '',
-      rhsCPillar: '',
-      rhsRunningBorder: '',
-      rhsRearDoor: '',
-      rhsFrontDoor: '',
-      rhsOrvm: '',
-      rhsFender: '',
-      comments: '',
-      frontMain: [],
-      bonnetImages: [],
-      frontWindshieldImages: [],
-      roofImages: [],
-      frontBumperImages: [],
-      lhsHeadlampImages: [],
-      lhsFoglampImages: [],
-      rhsHeadlampImages: [],
-      rhsFoglampImages: [],
-      lhsFront45Degree: [],
-      lhsFenderImages: [],
-      lhsFrontAlloyImages: [],
-      lhsFrontTyreImages: [],
-      lhsRunningBorderImages: [],
-      lhsOrvmImages: [],
-      lhsAPillarImages: [],
-      lhsFrontDoorImages: [],
-      lhsBPillarImages: [],
-      lhsRearDoorImages: [],
-      lhsCPillarImages: [],
-      lhsRearTyreImages: [],
-      lhsRearAlloyImages: [],
-      lhsQuarterPanelImages: [],
-      rearMain: [],
-      rearWithBootDoorOpen: '',
-      rearBumperImages: [],
-      lhsTailLampImages: [],
-      rhsTailLampImages: [],
-      rearWindshieldImages: [],
-      spareTyreImages: [],
-      bootFloorImages: [],
-      rhsRear45Degree: [],
-      rhsQuarterPanelImages: [],
-      rhsRearAlloyImages: [],
-      rhsRearTyreImages: [],
-      rhsCPillarImages: [],
-      rhsRearDoorImages: [],
-      rhsBPillarImages: [],
-      rhsFrontDoorImages: [],
-      rhsAPillarImages: [],
-      rhsRunningBorderImages: [],
-      rhsFrontAlloyImages: [],
-      rhsFrontTyreImages: [],
-      rhsOrvmImages: [],
-      rhsFenderImages: [],
-      upperCrossMember: '',
-      radiatorSupport: '',
-      headlightSupport: '',
-      lowerCrossMember: '',
-      lhsApron: '',
-      rhsApron: '',
-      firewall: '',
-      cowlTop: '',
-      engine: '',
-      battery: '',
-      coolant: '',
-      engineOilLevelDipstick: '',
-      engineOil: '',
-      engineMount: '',
-      enginePermisableBlowBy: '',
-      exhaustSmoke: '',
-      clutch: '',
-      gearShift: '',
-      commentsOnEngine: '',
-      commentsOnEngineOil: '',
-      commentsOnTowing: '',
-      commentsOnTransmission: '',
-      commentsOnRadiator: '',
-      commentsOnOthers: '',
-      engineBay: [],
-      apronLhsRhs: [],
-      batteryImages: [],
-      additionalImages: [],
-      engineSound: [],
-      exhaustSmokeImages: [],
-      steering: '',
-      brakes: '',
-      suspension: '',
-      odometerReadingInKms: 0,
-      fuelLevel: '',
-      abs: '',
-      electricals: '',
-      rearWiperWasher: '',
-      rearDefogger: '',
-      musicSystem: '',
-      stereo: '',
-      inbuiltSpeaker: '',
-      externalSpeaker: '',
-      steeringMountedAudioControl: '',
-      noOfPowerWindows: '',
-      powerWindowConditionRhsFront: '',
-      powerWindowConditionLhsFront: '',
-      powerWindowConditionRhsRear: '',
-      powerWindowConditionLhsRear: '',
-      commentOnInterior: '',
-      noOfAirBags: 0,
-      airbagFeaturesDriverSide: '',
-      airbagFeaturesCoDriverSide: '',
-      airbagFeaturesLhsAPillarCurtain: '',
-      airbagFeaturesLhsBPillarCurtain: '',
-      airbagFeaturesLhsCPillarCurtain: '',
-      airbagFeaturesRhsAPillarCurtain: '',
-      airbagFeaturesRhsBPillarCurtain: '',
-      airbagFeaturesRhsCPillarCurtain: '',
-      sunroof: '',
-      leatherSeats: '',
-      fabricSeats: '',
-      commentsOnElectricals: '',
-      meterConsoleWithEngineOn: [],
-      airbags: [],
-      sunroofImages: [],
-      frontSeatsFromDriverSideDoorOpen: [],
-      rearSeatsFromRightSideDoorOpen: [],
-      dashboardFromRearSeat: [],
-      reverseCamera: '',
-      additionalImages2: [],
-      airConditioningManual: '',
-      airConditioningClimateControl: '',
-      commentsOnAc: '',
-      approvedBy: '',
-      approvalDate: null,
-      approvalTime: null,
-      approvalStatus: '',
-      contactNumber: '',
-      newArrivalMessage: null,
-      budgetCar: '',
-      status: '',
-      priceDiscovery: 0,
-      priceDiscoveryBy: '',
-      latlong: '',
-      retailAssociate: '',
-      kmRangeLevel: 0,
-      highestBidder: '',
-      v: 0,
-    );
+    if (d == null) return int.tryParse(s) ?? fallback;
+    return d.toInt();
   }
 }

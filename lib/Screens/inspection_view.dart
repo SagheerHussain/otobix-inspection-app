@@ -1,11 +1,101 @@
+// lib/screens/car_inspection_stepper_screen.dart
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dart:io';
-import 'package:otobix_inspection_app/Controller/car_inspection_controller.dart';
-import 'package:otobix_inspection_app/models/car_model.dart';
 
+// ✅ adjust this import according to your project structure
+import '../models/car_model.dart';
+
+/// =====================================================
+/// CONTROLLER (GetX) - included so screen is runnable
+/// =====================================================
+class CarInspectionStepperController extends GetxController {
+  final currentStep = 0.obs;
+  final uiTick = 0.obs;
+
+  final rcFetchLoading = false.obs;
+
+  final steps = const [
+    {'title': 'Registration', 'icon': Icons.description},
+    {'title': 'Basic Info', 'icon': Icons.info},
+    {'title': 'Exterior Front', 'icon': Icons.directions_car},
+    {'title': 'Exterior Rear', 'icon': Icons.car_repair},
+    {'title': 'Engine', 'icon': Icons.build},
+    {'title': 'Interior', 'icon': Icons.airline_seat_recline_normal},
+    {'title': 'Final', 'icon': Icons.checklist},
+    {'title': 'Review', 'icon': Icons.preview},
+  ];
+
+  late final List<GlobalKey<FormState>> formKeys = List.generate(
+    7,
+    (_) => GlobalKey<FormState>(),
+  );
+
+  final CarModel carModel = CarModel();
+
+  void touch() => uiTick.value++;
+
+  void goPrev() {
+    if (currentStep.value > 0) {
+      currentStep.value--;
+      touch();
+    }
+  }
+
+  void goNextOrSubmit() {
+    // last step = Review (no form)
+    if (currentStep.value == steps.length - 1) return;
+
+    // validate form steps only (0..6)
+    if (currentStep.value <= 6) {
+      final key = formKeys[currentStep.value];
+      final ok = key.currentState?.validate() ?? true;
+      if (!ok) {
+        Get.snackbar(
+          'Validation',
+          'Please fill required fields',
+          snackPosition: SnackPosition.BOTTOM,
+          margin: const EdgeInsets.all(16),
+        );
+        return;
+      }
+    }
+
+    if (currentStep.value < steps.length - 1) {
+      currentStep.value++;
+      touch();
+    }
+  }
+
+  /// Dummy fetch function (replace with your API)
+  Future<void> fetchRcAdvancedAndFill() async {
+    try {
+      rcFetchLoading.value = true;
+      await Future.delayed(const Duration(milliseconds: 800));
+
+      // Example autofill:
+      // carModel.make = 'Maruti';
+      // carModel.model = 'Swift';
+      // carModel.variant = 'VXI';
+      // carModel.registrationDate = DateTime(2021, 3, 10);
+
+      touch();
+      Get.snackbar(
+        'Fetched',
+        'RC data fetched (demo)',
+        snackPosition: SnackPosition.BOTTOM,
+        margin: const EdgeInsets.all(16),
+      );
+    } finally {
+      rcFetchLoading.value = false;
+    }
+  }
+}
+
+/// =====================================================
+/// SCREEN
+/// =====================================================
 class CarInspectionStepperScreen extends StatelessWidget {
   const CarInspectionStepperScreen({super.key});
 
@@ -14,7 +104,7 @@ class CarInspectionStepperScreen extends StatelessWidget {
     final controller = Get.put(CarInspectionStepperController());
 
     return Obx(() {
-      controller.uiTick.value;
+      controller.uiTick.value; // rebuild hook
 
       return Scaffold(
         backgroundColor: Colors.grey[50],
@@ -26,7 +116,7 @@ class CarInspectionStepperScreen extends StatelessWidget {
             style: TextStyle(
               color: Colors.black87,
               fontSize: 20,
-              fontWeight: FontWeight.w600,
+              fontWeight: FontWeight.w700,
             ),
           ),
           leading: IconButton(
@@ -38,46 +128,45 @@ class CarInspectionStepperScreen extends StatelessWidget {
           children: [
             Container(
               color: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
               child: _buildCustomStepper(controller),
             ),
             Expanded(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(18),
                 child: _buildCurrentStep(controller),
               ),
             ),
           ],
         ),
-        bottomNavigationBar: _buildBottomNavigationBar(controller),
+        bottomNavigationBar: _buildBottomBar(controller),
       );
     });
   }
 
   Widget _buildCustomStepper(CarInspectionStepperController c) {
     return SizedBox(
-      height: 100,
+      height: 92,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: c.steps.length,
         itemBuilder: (context, index) {
           final isActive = index == c.currentStep.value;
           final isCompleted = index < c.currentStep.value;
-
           return Row(
             children: [
               _StepItem(
                 index: index + 1,
-                title: c.steps[index]['title'],
-                icon: c.steps[index]['icon'],
+                title: c.steps[index]['title'] as String,
+                icon: c.steps[index]['icon'] as IconData,
                 isActive: isActive,
                 isCompleted: isCompleted,
               ),
               if (index < c.steps.length - 1)
                 Container(
-                  width: 40,
+                  width: 36,
                   height: 2,
-                  margin: const EdgeInsets.only(bottom: 50),
+                  margin: const EdgeInsets.only(bottom: 44),
                   color: isCompleted
                       ? const Color(0xFF4CAF50)
                       : Colors.grey[300],
@@ -90,48 +179,42 @@ class CarInspectionStepperScreen extends StatelessWidget {
   }
 
   Widget _buildCurrentStep(CarInspectionStepperController c) {
-    final carModel = c.carModel;
+    final m = c.carModel;
 
     switch (c.currentStep.value) {
       case 0:
-        return RegistrationDocumentsStep(
-          formKey: c.formKeys[0],
-          carModel: carModel,
-        );
+        return RegistrationDocumentsStep(formKey: c.formKeys[0], carModel: m);
       case 1:
-        return BasicInfoStep(formKey: c.formKeys[1], carModel: carModel);
+        return BasicInfoStep(formKey: c.formKeys[1], carModel: m);
       case 2:
-        return ExteriorFrontStep(formKey: c.formKeys[2], carModel: carModel);
+        return ExteriorFrontStep(formKey: c.formKeys[2], carModel: m);
       case 3:
-        return ExteriorRearStep(formKey: c.formKeys[3], carModel: carModel);
+        return ExteriorRearStep(formKey: c.formKeys[3], carModel: m);
       case 4:
-        return EngineMechanicalStep(formKey: c.formKeys[4], carModel: carModel);
+        return EngineMechanicalStep(formKey: c.formKeys[4], carModel: m);
       case 5:
-        return InteriorElectronicsStep(
-          formKey: c.formKeys[5],
-          carModel: carModel,
-        );
+        return InteriorElectronicsStep(formKey: c.formKeys[5], carModel: m);
       case 6:
-        return FinalDetailsStep(formKey: c.formKeys[6], carModel: carModel);
+        return FinalDetailsStep(formKey: c.formKeys[6], carModel: m);
       case 7:
-        return ReviewStep(carModel: carModel);
+        return ReviewStep(carModel: m);
       default:
         return const SizedBox();
     }
   }
 
-  Widget _buildBottomNavigationBar(CarInspectionStepperController c) {
+  Widget _buildBottomBar(CarInspectionStepperController c) {
     final step = c.currentStep.value;
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 10,
-            offset: const Offset(0, -5),
+            offset: const Offset(0, -6),
           ),
         ],
       ),
@@ -143,10 +226,10 @@ class CarInspectionStepperScreen extends StatelessWidget {
                 child: OutlinedButton(
                   onPressed: c.goPrev,
                   style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
                     side: const BorderSide(color: Color(0xFF2196F3), width: 2),
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
+                      borderRadius: BorderRadius.circular(14),
                     ),
                   ),
                   child: const Row(
@@ -156,37 +239,31 @@ class CarInspectionStepperScreen extends StatelessWidget {
                       SizedBox(width: 8),
                       Text(
                         'Previous',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: TextStyle(fontWeight: FontWeight.w700),
                       ),
                     ],
                   ),
                 ),
               ),
-            if (step > 0) const SizedBox(width: 12),
+            if (step > 0) const SizedBox(width: 10),
             Expanded(
               child: ElevatedButton(
                 onPressed: c.goNextOrSubmit,
                 style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                   backgroundColor: const Color(0xFF2196F3),
                   foregroundColor: Colors.white,
                   elevation: 2,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(14),
                   ),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Text(
-                      step == c.steps.length - 1 ? 'Submit' : 'Next',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
+                      step == c.steps.length - 1 ? 'Done' : 'Next',
+                      style: const TextStyle(fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(width: 8),
                     Icon(
@@ -206,9 +283,6 @@ class CarInspectionStepperScreen extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   STEP ITEM (TOP STEPPER)
-   ========================================================= */
 class _StepItem extends StatelessWidget {
   final int index;
   final String title;
@@ -226,25 +300,20 @@ class _StepItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color circleColor;
-    Color textColor;
-
-    if (isCompleted) {
-      circleColor = const Color(0xFF4CAF50);
-      textColor = Colors.grey[700]!;
-    } else if (isActive) {
-      circleColor = const Color(0xFF2196F3);
-      textColor = const Color(0xFF2196F3);
-    } else {
-      circleColor = Colors.grey[300]!;
-      textColor = Colors.grey[400]!;
-    }
+    final Color circleColor = isCompleted
+        ? const Color(0xFF4CAF50)
+        : isActive
+        ? const Color(0xFF2196F3)
+        : Colors.grey[300]!;
+    final Color textColor = isActive
+        ? const Color(0xFF2196F3)
+        : Colors.grey[600]!;
 
     return Column(
       children: [
         Container(
-          width: 56,
-          height: 56,
+          width: 54,
+          height: 54,
           decoration: BoxDecoration(
             color: isActive || isCompleted ? circleColor : Colors.white,
             shape: BoxShape.circle,
@@ -252,8 +321,8 @@ class _StepItem extends StatelessWidget {
             boxShadow: isActive
                 ? [
                     BoxShadow(
-                      color: circleColor.withOpacity(0.3),
-                      blurRadius: 8,
+                      color: circleColor.withOpacity(0.28),
+                      blurRadius: 10,
                       spreadRadius: 2,
                     ),
                   ]
@@ -262,20 +331,20 @@ class _StepItem extends StatelessWidget {
           child: Icon(
             isCompleted ? Icons.check : icon,
             color: isActive || isCompleted ? Colors.white : circleColor,
-            size: 28,
+            size: 26,
           ),
         ),
         const SizedBox(height: 8),
         SizedBox(
-          width: 80,
+          width: 84,
           child: Text(
             title,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 11,
               color: textColor,
-              fontWeight: isActive ? FontWeight.w600 : FontWeight.w500,
-              height: 1.2,
+              fontWeight: isActive ? FontWeight.w700 : FontWeight.w600,
+              height: 1.15,
             ),
           ),
         ),
@@ -284,31 +353,50 @@ class _StepItem extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   COMMON UI HELPERS (Reusable)
-   ========================================================= */
-
+/// =====================================================
+/// COMMON UI HELPERS
+/// =====================================================
 Widget buildSectionHeader(String title, IconData icon) {
   return Row(
     children: [
       Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: const Color(0xFF2196F3).withOpacity(0.1),
-          borderRadius: BorderRadius.circular(8),
+          color: const Color(0xFF2196F3).withOpacity(0.10),
+          borderRadius: BorderRadius.circular(10),
         ),
         child: Icon(icon, color: const Color(0xFF2196F3), size: 20),
       ),
-      const SizedBox(width: 12),
+      const SizedBox(width: 10),
       Text(
         title,
         style: const TextStyle(
           fontSize: 18,
-          fontWeight: FontWeight.w700,
+          fontWeight: FontWeight.w900,
           color: Colors.black87,
         ),
       ),
     ],
+  );
+}
+
+Widget buildModernCard({required Widget child}) {
+  return Container(
+    padding: const EdgeInsets.all(16),
+    margin: const EdgeInsets.only(bottom: 18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: Colors.grey[200]!),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withOpacity(0.04),
+          blurRadius: 10,
+          offset: const Offset(0, 6),
+        ),
+      ],
+    ),
+    child: child,
   );
 }
 
@@ -323,49 +411,41 @@ Widget buildModernTextField({
   Widget? suffix,
 }) {
   return Padding(
-    padding: const EdgeInsets.only(bottom: 20),
+    padding: const EdgeInsets.only(bottom: 14),
     child: TextFormField(
       key: ValueKey('$label-${initialValue ?? ""}'),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, color: const Color(0xFF2196F3), size: 22),
-        suffixIcon: suffix,
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 1.5),
-        ),
-        focusedErrorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Colors.red, width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-      ),
       initialValue: initialValue,
       keyboardType: keyboardType,
       onChanged: onChanged,
-      validator: (value) {
+      validator: (v) {
         if (!requiredField) return null;
-        if (value == null || value.isEmpty) return 'Please enter $label';
+        if (v == null || v.trim().isEmpty) return 'Please enter $label';
         return null;
       },
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: const Color(0xFF2196F3)),
+        suffixIcon: suffix,
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+        ),
+      ),
     ),
   );
 }
@@ -380,380 +460,753 @@ Widget buildModernDropdown({
   String? value,
   bool requiredField = true,
 }) {
-  // Ensure value is null if empty or not in items
   final validValue =
-      (value != null && value.isNotEmpty && items.contains(value))
+      (value != null && value.trim().isNotEmpty && items.contains(value))
       ? value
       : null;
 
   return Padding(
-    padding: const EdgeInsets.only(bottom: 20),
+    padding: const EdgeInsets.only(bottom: 14),
     child: DropdownButtonFormField<String>(
       key: ValueKey('$label-${validValue ?? "empty"}'),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, color: const Color(0xFF2196F3), size: 22),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-      ),
       value: validValue,
-      items: items.map((item) {
-        return DropdownMenuItem(value: item, child: Text(item));
-      }).toList(),
-      onChanged: onChanged,
       validator: (v) {
         if (!requiredField) return null;
         if (v == null || v.isEmpty) return 'Please select $label';
         return null;
       },
+      items: items
+          .map((e) => DropdownMenuItem<String>(value: e, child: Text(e)))
+          .toList(),
+      onChanged: onChanged,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        prefixIcon: Icon(icon, color: const Color(0xFF2196F3)),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 14,
+        ),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: Colors.grey[300]!),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
+        ),
+      ),
     ),
   );
 }
 
+/// ✅ Date formatter
+String _fmtDate(DateTime? d) {
+  if (d == null) return '';
+  final dd = d.day.toString().padLeft(2, '0');
+  final mm = d.month.toString().padLeft(2, '0');
+  final yyyy = d.year.toString();
+  return '$dd/$mm/$yyyy';
+}
+
+/// ✅ WORKING Date Picker (tap to select date)
 Widget buildModernDatePicker({
   required BuildContext context,
   required String label,
   required String hint,
   required IconData icon,
-  required Function(DateTime?) onDateSelected,
-  DateTime? initialDate,
+  required DateTime? value,
+  required void Function(DateTime?) onChanged,
+  bool requiredField = false,
   DateTime? firstDate,
   DateTime? lastDate,
-  String displayFormat = 'dd MMM yyyy',
-}) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 20),
-    child: InkWell(
-      onTap: () async {
-        final picked = await showDatePicker(
-          context: context,
-          initialDate: initialDate ?? DateTime.now(),
-          firstDate: firstDate ?? DateTime(2000),
-          lastDate: lastDate ?? DateTime(2100),
-          builder: (context, child) {
-            return Theme(
-              data: Theme.of(context).copyWith(
-                colorScheme: const ColorScheme.light(
-                  primary: Color(0xFF2196F3),
-                ),
-              ),
-              child: child!,
-            );
-          },
-        );
-        if (picked != null) {
-          onDateSelected(picked);
-          Get.find<CarInspectionStepperController>().touch();
-        }
-      },
-      child: InputDecorator(
-        decoration: InputDecoration(
-          labelText: label,
-          hintText: hint,
-          prefixIcon: Icon(icon, color: const Color(0xFF2196F3), size: 22),
-          suffixIcon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
-          filled: true,
-          fillColor: Colors.white,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[300]!),
-          ),
-          enabledBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: BorderSide(color: Colors.grey[300]!),
-          ),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(12),
-            borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 16,
-          ),
-        ),
-        child: Text(
-          initialDate != null
-              ? DateFormat(displayFormat).format(initialDate)
-              : hint,
-          style: TextStyle(
-            color: initialDate != null ? Colors.black87 : Colors.grey[600],
-            fontSize: 16,
-          ),
-        ),
-      ),
-    ),
-  );
-}
-
-Widget buildConditionSelector({
-  required String label,
-  required String value,
-  required List<String> options,
-  required void Function(String) onChanged,
 }) {
   final c = Get.find<CarInspectionStepperController>();
 
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w600,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Row(
-          children: options.map((opt) {
-            final selected = value == opt;
-            return Expanded(
-              child: GestureDetector(
-                onTap: () {
-                  onChanged(opt);
-                  c.touch();
-                },
-                child: Container(
-                  margin: EdgeInsets.only(right: opt == options.last ? 0 : 8),
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: selected
-                        ? const Color(0xFF2196F3)
-                        : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(
-                      color: selected
-                          ? const Color(0xFF2196F3)
-                          : Colors.grey[300]!,
-                    ),
-                  ),
-                  child: Center(
-                    child: Text(
-                      opt,
-                      style: TextStyle(
-                        color: selected ? Colors.white : Colors.black87,
-                        fontSize: 13,
-                        fontWeight: selected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                      ),
-                    ),
-                  ),
+  return FormField<DateTime?>(
+    initialValue: value,
+    validator: (_) {
+      if (!requiredField) return null;
+      if (value == null) return 'Please select $label';
+      return null;
+    },
+    builder: (state) {
+      final display = value == null ? hint : _fmtDate(value);
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: InkWell(
+          onTap: () async {
+            FocusScope.of(context).unfocus();
+            final now = DateTime.now();
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: value ?? now,
+              firstDate: firstDate ?? DateTime(1990),
+              lastDate: lastDate ?? DateTime(now.year + 30),
+              helpText: label,
+            );
+            if (picked != null) {
+              onChanged(picked);
+              state.didChange(picked);
+              c.touch();
+            }
+          },
+          child: InputDecorator(
+            decoration: InputDecoration(
+              labelText: label,
+              prefixIcon: Icon(icon, color: const Color(0xFF2196F3)),
+              suffixIcon: const Icon(
+                Icons.calendar_month,
+                color: Color(0xFF2196F3),
+              ),
+              errorText: state.hasError ? state.errorText : null,
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: Color(0xFF2196F3),
+                  width: 2,
                 ),
               ),
-            );
-          }).toList(),
+            ),
+            child: Text(
+              display,
+              style: TextStyle(
+                color: value == null ? Colors.grey[600] : Colors.black87,
+                fontWeight: value == null ? FontWeight.w500 : FontWeight.w800,
+              ),
+            ),
+          ),
         ),
-      ],
-    ),
+      );
+    },
   );
 }
 
-Widget buildCommentField({
+/// ✅ Multi Select bottom sheet
+Widget buildModernMultiSelect({
+  required BuildContext context,
   required String label,
   required String hint,
-  required Function(String) onChanged,
-  String? initialValue,
-  int maxLines = 3,
+  required IconData icon,
+  required List<String> options,
+  required List<String> selected,
+  required void Function(List<String>) onChanged,
+  bool requiredField = false,
 }) {
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 20),
-    child: TextFormField(
-      key: ValueKey('$label-${initialValue ?? ""}'),
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: const Icon(Icons.comment, color: Color(0xFF2196F3)),
-        filled: true,
-        fillColor: Colors.white,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
+  final c = Get.find<CarInspectionStepperController>();
+
+  return FormField<List<String>>(
+    initialValue: selected,
+    validator: (_) {
+      if (!requiredField) return null;
+      if (selected.isEmpty) return 'Please select $label';
+      return null;
+    },
+    builder: (state) {
+      final display = selected.isEmpty ? hint : selected.join(', ');
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: InkWell(
+          onTap: () async {
+            FocusScope.of(context).unfocus();
+            final res = await _openMultiSelectSheet(
+              context: context,
+              title: label,
+              options: options,
+              initial: selected,
+            );
+            if (res != null) {
+              onChanged(res);
+              state.didChange(res);
+              c.touch();
+            }
+          },
+          child: InputDecorator(
+            decoration: InputDecoration(
+              labelText: label,
+              prefixIcon: Icon(icon, color: const Color(0xFF2196F3)),
+              suffixIcon: const Icon(Icons.arrow_drop_down, color: Colors.grey),
+              errorText: state.hasError ? state.errorText : null,
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 14,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: BorderSide(color: Colors.grey[300]!),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(14),
+                borderSide: const BorderSide(
+                  color: Color(0xFF2196F3),
+                  width: 2,
+                ),
+              ),
+            ),
+            child: Text(
+              display,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: selected.isEmpty ? Colors.grey[600] : Colors.black87,
+                fontWeight: selected.isEmpty
+                    ? FontWeight.w500
+                    : FontWeight.w800,
+              ),
+            ),
+          ),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF2196F3), width: 2),
-        ),
-        contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 16,
-        ),
-      ),
-      initialValue: initialValue,
-      maxLines: maxLines,
-      onChanged: onChanged,
-    ),
+      );
+    },
   );
 }
 
-// ✅ NEW: Image Picker Widget with Horizontal Scroll
+Future<List<String>?> _openMultiSelectSheet({
+  required BuildContext context,
+  required String title,
+  required List<String> options,
+  required List<String> initial,
+}) async {
+  final temp = List<String>.from(initial);
+
+  return showModalBottomSheet<List<String>>(
+    context: context,
+    isScrollControlled: true,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+    ),
+    builder: (_) {
+      return StatefulBuilder(
+        builder: (ctx, setState) {
+          return SafeArea(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+              height: MediaQuery.of(context).size.height * 0.75,
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          title,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(ctx, temp),
+                        child: const Text('Done'),
+                      ),
+                    ],
+                  ),
+                  const Divider(height: 18),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: options.length,
+                      itemBuilder: (_, i) {
+                        final opt = options[i];
+                        final checked = temp.contains(opt);
+                        return CheckboxListTile(
+                          value: checked,
+                          title: Text(opt),
+                          onChanged: (v) {
+                            setState(() {
+                              if (v == true) {
+                                if (!temp.contains(opt)) temp.add(opt);
+                              } else {
+                                temp.remove(opt);
+                              }
+                            });
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+    },
+  );
+}
+
+/// ✅ Multi Images picker
 Widget buildImagePicker({
   required String label,
   required List<String> imagePaths,
-  required Function(List<String>) onImagesChanged,
+  required void Function(List<String>) onImagesChanged,
   int maxImages = 10,
 }) {
   final c = Get.find<CarInspectionStepperController>();
 
-  return Padding(
-    padding: const EdgeInsets.only(bottom: 20),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            const Icon(Icons.image, color: Color(0xFF2196F3), size: 20),
-            const SizedBox(width: 8),
-            Text(
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Row(
+        children: [
+          const Icon(Icons.image, color: Color(0xFF2196F3), size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
               label,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Colors.black87,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w900),
             ),
-            const Spacer(),
-            Text(
-              '${imagePaths.length}/$maxImages',
-              style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+          ),
+          Text(
+            '${imagePaths.length}/$maxImages',
+            style: TextStyle(
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w700,
             ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        SizedBox(
-          height: 100,
-          child: ListView.builder(
-            scrollDirection: Axis.horizontal,
-            itemCount: imagePaths.length + 1,
-            itemBuilder: (context, index) {
-              // Add button
-              if (index == imagePaths.length) {
-                if (imagePaths.length >= maxImages) return const SizedBox();
+          ),
+        ],
+      ),
+      const SizedBox(height: 10),
+      SizedBox(
+        height: 98,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: imagePaths.length + 1,
+          itemBuilder: (context, index) {
+            if (index == imagePaths.length) {
+              if (imagePaths.length >= maxImages) return const SizedBox();
 
-                return GestureDetector(
-                  onTap: () async {
-                    final picker = ImagePicker();
-                    final pickedFiles = await picker.pickMultiImage();
+              return GestureDetector(
+                onTap: () async {
+                  final picker = ImagePicker();
 
-                    if (pickedFiles.isNotEmpty) {
-                      final newPaths = pickedFiles.map((f) => f.path).toList();
-                      final remainingSlots = maxImages - imagePaths.length;
-                      final pathsToAdd = newPaths.take(remainingSlots).toList();
-
-                      onImagesChanged([...imagePaths, ...pathsToAdd]);
+                  if (maxImages == 1) {
+                    final picked = await picker.pickImage(
+                      source: ImageSource.gallery,
+                    );
+                    if (picked != null) {
+                      onImagesChanged([picked.path]);
                       c.touch();
                     }
-                  },
-                  child: Container(
-                    width: 100,
-                    margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[100],
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(
-                        color: const Color(0xFF2196F3),
-                        width: 2,
-                        style: BorderStyle.solid,
-                      ),
-                    ),
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Icon(
-                          Icons.add_photo_alternate,
-                          color: Color(0xFF2196F3),
-                          size: 32,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Add',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey[700],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              }
+                    return;
+                  }
 
-              // Image preview
-              return Stack(
-                children: [
-                  Container(
-                    width: 100,
-                    margin: const EdgeInsets.only(right: 12),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Colors.grey[300]!),
-                      image: DecorationImage(
-                        image: FileImage(File(imagePaths[index])),
-                        fit: BoxFit.cover,
+                  final pickedFiles = await picker.pickMultiImage();
+                  if (pickedFiles.isNotEmpty) {
+                    final newPaths = pickedFiles.map((f) => f.path).toList();
+                    final remaining = maxImages - imagePaths.length;
+                    final toAdd = newPaths.take(remaining).toList();
+                    onImagesChanged([...imagePaths, ...toAdd]);
+                    c.touch();
+                  }
+                },
+                child: Container(
+                  width: 98,
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    color: Colors.grey[100],
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(
+                      color: const Color(0xFF2196F3),
+                      width: 2,
+                    ),
+                  ),
+                  child: const Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_photo_alternate,
+                        color: Color(0xFF2196F3),
+                        size: 30,
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'Add',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+
+            return Stack(
+              children: [
+                Container(
+                  width: 98,
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: Colors.grey[300]!),
+                    image: DecorationImage(
+                      image: FileImage(File(imagePaths[index])),
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 6,
+                  right: 14,
+                  child: GestureDetector(
+                    onTap: () {
+                      final updated = List<String>.from(imagePaths)
+                        ..removeAt(index);
+                      onImagesChanged(updated);
+                      c.touch();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.red,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.close,
+                        size: 14,
+                        color: Colors.white,
                       ),
                     ),
                   ),
-                  Positioned(
-                    top: 4,
-                    right: 16,
-                    child: GestureDetector(
-                      onTap: () {
-                        final updated = List<String>.from(imagePaths)
-                          ..removeAt(index);
-                        onImagesChanged(updated);
+                ),
+              ],
+            );
+          },
+        ),
+      ),
+      const SizedBox(height: 14),
+    ],
+  );
+}
+
+/// ✅ Validated multi-images wrapper
+Widget buildValidatedMultiImagePicker({
+  required String label,
+  required List<String> imagePaths,
+  required void Function(List<String>) onImagesChanged,
+  required int minRequired,
+  required int maxImages,
+}) {
+  return FormField<List<String>>(
+    initialValue: imagePaths,
+    validator: (_) {
+      if (imagePaths.length < minRequired) {
+        return 'Please add at least $minRequired image(s) for $label';
+      }
+      if (imagePaths.length > maxImages) {
+        return 'Max $maxImages images allowed for $label';
+      }
+      return null;
+    },
+    builder: (state) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          buildImagePicker(
+            label: label,
+            imagePaths: imagePaths,
+            maxImages: maxImages,
+            onImagesChanged: (p) {
+              onImagesChanged(p);
+              state.didChange(p);
+            },
+          ),
+          if (state.hasError)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, bottom: 10),
+              child: Text(
+                state.errorText ?? '',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+/// ✅ Single image picker + validation
+Widget buildValidatedSingleImagePicker({
+  required String label,
+  required String imagePath,
+  required void Function(String) onChanged,
+  required bool mandatory,
+}) {
+  return FormField<String>(
+    initialValue: imagePath,
+    validator: (_) {
+      if (!mandatory) return null;
+      if (imagePath.trim().isEmpty) return 'Please add $label';
+      return null;
+    },
+    builder: (state) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _singleImageBox(
+            label: label,
+            imagePath: imagePath,
+            onChanged: (p) {
+              onChanged(p);
+              state.didChange(p);
+            },
+          ),
+          if (state.hasError)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, bottom: 10),
+              child: Text(
+                state.errorText ?? '',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+          const SizedBox(height: 6),
+        ],
+      );
+    },
+  );
+}
+
+Widget _singleImageBox({
+  required String label,
+  required String imagePath,
+  required void Function(String) onChanged,
+}) {
+  final c = Get.find<CarInspectionStepperController>();
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: const TextStyle(fontWeight: FontWeight.w900)),
+      const SizedBox(height: 10),
+      Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 110,
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: imagePath.isEmpty
+                  ? Center(
+                      child: Text(
+                        'No image selected',
+                        style: TextStyle(
+                          color: Colors.grey[600],
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    )
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(14),
+                      child: Image.file(File(imagePath), fit: BoxFit.cover),
+                    ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Column(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final picker = ImagePicker();
+                  final picked = await picker.pickImage(
+                    source: ImageSource.gallery,
+                  );
+                  if (picked != null) {
+                    onChanged(picked.path);
+                    c.touch();
+                  }
+                },
+                icon: const Icon(Icons.upload, size: 18),
+                label: const Text('Pick'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: imagePath.isEmpty
+                    ? null
+                    : () {
+                        onChanged('');
                         c.touch();
                       },
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          size: 16,
-                          color: Colors.white,
-                        ),
+                icon: const Icon(Icons.delete, size: 18),
+                label: const Text('Remove'),
+              ),
+            ],
+          ),
+        ],
+      ),
+      const SizedBox(height: 14),
+    ],
+  );
+}
+
+/// ✅ Single video picker + validation
+Widget buildValidatedSingleVideoPicker({
+  required String label,
+  required String videoPath,
+  required void Function(String) onChanged,
+  required bool mandatory,
+}) {
+  return FormField<String>(
+    initialValue: videoPath,
+    validator: (_) {
+      if (!mandatory) return null;
+      if (videoPath.trim().isEmpty) return 'Please add $label';
+      return null;
+    },
+    builder: (state) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _singleVideoBox(
+            label: label,
+            videoPath: videoPath,
+            onChanged: (p) {
+              onChanged(p);
+              state.didChange(p);
+            },
+          ),
+          if (state.hasError)
+            Padding(
+              padding: const EdgeInsets.only(top: 2, bottom: 10),
+              child: Text(
+                state.errorText ?? '',
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+        ],
+      );
+    },
+  );
+}
+
+Widget _singleVideoBox({
+  required String label,
+  required String videoPath,
+  required void Function(String) onChanged,
+}) {
+  final c = Get.find<CarInspectionStepperController>();
+  final fileName = videoPath.isEmpty ? '' : videoPath.split('/').last;
+
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(label, style: const TextStyle(fontWeight: FontWeight.w900)),
+      const SizedBox(height: 10),
+      Row(
+        children: [
+          Expanded(
+            child: Container(
+              height: 72,
+              padding: const EdgeInsets.symmetric(horizontal: 14),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.grey[300]!),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.videocam, color: Color(0xFF2196F3)),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      videoPath.isEmpty ? 'No video selected' : fileName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: videoPath.isEmpty
+                            ? Colors.grey[600]
+                            : Colors.black87,
+                        fontWeight: videoPath.isEmpty
+                            ? FontWeight.w700
+                            : FontWeight.w900,
                       ),
                     ),
                   ),
                 ],
-              );
-            },
+              ),
+            ),
           ),
-        ),
-      ],
-    ),
+          const SizedBox(width: 10),
+          Column(
+            children: [
+              ElevatedButton.icon(
+                onPressed: () async {
+                  final picker = ImagePicker();
+                  final picked = await picker.pickVideo(
+                    source: ImageSource.gallery,
+                  );
+                  if (picked != null) {
+                    onChanged(picked.path);
+                    c.touch();
+                  }
+                },
+                icon: const Icon(Icons.upload, size: 18),
+                label: const Text('Pick'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: videoPath.isEmpty
+                    ? null
+                    : () {
+                        onChanged('');
+                        c.touch();
+                      },
+                icon: const Icon(Icons.delete, size: 18),
+                label: const Text('Remove'),
+              ),
+            ],
+          ),
+        ],
+      ),
+      const SizedBox(height: 14),
+    ],
   );
 }
 
-/* =========================================================
-   STEP 1: REGISTRATION & DOCUMENTS
-   ========================================================= */
+/// =====================================================
+/// STEPS
+/// =====================================================
+
 class RegistrationDocumentsStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final CarModel carModel;
@@ -771,170 +1224,504 @@ class RegistrationDocumentsStep extends StatelessWidget {
     return Form(
       key: formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          buildSectionHeader('Registration Details', Icons.description),
-          const SizedBox(height: 20),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Registration / RC', Icons.description),
+                const SizedBox(height: 14),
 
-          buildModernTextField(
-            label: 'Registration Number',
-            hint: 'e.g., DL 01 AB 1234',
-            icon: Icons.format_list_numbered,
-            initialValue: carModel.registrationNumber,
-            onChanged: (v) => carModel.registrationNumber = v,
-            suffix: Obx(() {
-              if (c.rcFetchLoading.value) {
-                return const Padding(
-                  padding: EdgeInsets.all(14),
-                  child: SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  ),
-                );
-              }
-              return Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: TextButton(
-                  onPressed: () async {
-                    FocusScope.of(context).unfocus();
-                    await c.fetchRcAdvancedAndFill();
-                  },
-                  child: const Text('Fetch'),
+                buildModernTextField(
+                  label: 'Registration Number',
+                  hint: 'e.g. DL 01 AB 1234',
+                  icon: Icons.format_list_numbered,
+                  initialValue: carModel.registrationNumber,
+                  onChanged: (v) => carModel.registrationNumber = v,
+                  requiredField: true,
+                  suffix: Obx(() {
+                    if (c.rcFetchLoading.value) {
+                      return const Padding(
+                        padding: EdgeInsets.all(14),
+                        child: SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      );
+                    }
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: TextButton(
+                        onPressed: () async {
+                          await c.fetchRcAdvancedAndFill();
+                        },
+                        child: const Text('Fetch'),
+                      ),
+                    );
+                  }),
                 ),
-              );
-            }),
+
+                // ✅ Date pickers
+                buildModernDatePicker(
+                  context: context,
+                  label: 'Registration Date',
+                  hint: 'Select date',
+                  icon: Icons.event,
+                  value: carModel.registrationDate,
+                  onChanged: (d) => carModel.registrationDate = d,
+                  requiredField: false,
+                ),
+                buildModernDatePicker(
+                  context: context,
+                  label: 'Fitness Validity Till',
+                  hint: 'Select date',
+                  icon: Icons.verified,
+                  value: carModel.fitnessTill,
+                  onChanged: (d) => carModel.fitnessTill = d,
+                  requiredField: false,
+                ),
+
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'RC Availability',
+                  hint: 'Select',
+                  icon: Icons.library_books,
+                  options: const [
+                    'Original',
+                    'Photocopy',
+                    'Duplicate',
+                    'Lost',
+                    'Lost with Photocopy',
+                  ],
+                  selected: carModel.registrationCertificateAvailability,
+                  onChanged: (v) =>
+                      carModel.registrationCertificateAvailability = v,
+                ),
+
+                buildModernDropdown(
+                  context: context,
+                  label: 'RC Status',
+                  hint: 'Select',
+                  icon: Icons.verified,
+                  items: const ['Okay', 'Damaged', 'Faded', 'Not Applicable'],
+                  value: carModel.registrationCertificateStatus,
+                  onChanged: (v) =>
+                      carModel.registrationCertificateStatus = v ?? '',
+                  requiredField: false,
+                ),
+
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Mismatch In RC',
+                  hint: 'Select mismatches',
+                  icon: Icons.warning_amber,
+                  options: const [
+                    'No Mismatch',
+                    'Make',
+                    'Model',
+                    'Variant',
+                    'Owner Serial Number',
+                    'Fuel Type',
+                    'Color',
+                    'Seating Capacity',
+                    'Month & Year of Manufacture',
+                  ],
+                  selected: carModel.mismatchInRc,
+                  onChanged: (v) => carModel.mismatchInRc = v,
+                ),
+
+                // ✅ RC Images: min 2 max 3
+                buildValidatedMultiImagePicker(
+                  label: 'RC Images (2-3)',
+                  imagePaths: carModel.registrationCertificateImages,
+                  minRequired: 2,
+                  maxImages: 3,
+                  onImagesChanged: (paths) =>
+                      carModel.registrationCertificateImages = paths,
+                ),
+              ],
+            ),
           ),
 
-          buildModernDatePicker(
-            context: context,
-            label: 'Registration Date',
-            hint: 'Select registration date',
-            icon: Icons.date_range,
-            onDateSelected: (date) => carModel.registrationDate = date,
-            initialDate: carModel.registrationDate,
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Road Tax', Icons.receipt_long),
+                const SizedBox(height: 14),
+
+                buildModernDropdown(
+                  context: context,
+                  label: 'Road Tax Type',
+                  hint: 'Select',
+                  icon: Icons.category,
+                  items: const ['OTT', 'LTT'],
+                  value: carModel.roadTaxValidity,
+                  onChanged: (v) => carModel.roadTaxValidity = v ?? '',
+                  requiredField: false,
+                ),
+
+                // buildModernDatePicker(
+                //   context: context,
+                //   label: 'Road Tax Validity Till',
+                //   hint: 'Select date',
+                //   icon: Icons.date_range,
+                //   value: carModel.roadTaxValidTill,
+                //   onChanged: (d) => carModel.roadTaxValidTill = d,
+                //   requiredField: false,
+                // ),
+
+                FormField<List<String>>(
+                  initialValue: carModel.roadTaxImages,
+                  validator: (_) => carModel.roadTaxImages.length == 1
+                      ? null
+                      : 'Please add 1 Road Tax image',
+                  builder: (state) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildImagePicker(
+                          label: 'Road Tax Image (1)',
+                          imagePaths: carModel.roadTaxImages,
+                          maxImages: 1,
+                          onImagesChanged: (p) {
+                            carModel.roadTaxImages = p;
+                            state.didChange(p);
+                          },
+                        ),
+                        if (state.hasError)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              state.errorText ?? '',
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
 
-          buildModernTextField(
-            label: 'Registered Owner',
-            hint: 'Enter owner name',
-            icon: Icons.person,
-            onChanged: (v) => carModel.registeredOwner = v,
-            initialValue: carModel.registeredOwner,
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Hypothecation', Icons.account_balance),
+                const SizedBox(height: 14),
+
+                buildModernDropdown(
+                  context: context,
+                  label: 'Hypothecation Details',
+                  hint: 'Select',
+                  icon: Icons.account_balance_wallet,
+                  items: const [
+                    'Loan Active',
+                    'Vaild Bank NOC Available',
+                    'NOC Not Available, Loan Closed',
+                  ],
+                  value: carModel.hypothecationDetails,
+                  onChanged: (v) => carModel.hypothecationDetails = v ?? '',
+                  requiredField: false,
+                ),
+
+                buildModernTextField(
+                  label: 'Hypothecator Name',
+                  hint: 'Bank / Finance company',
+                  icon: Icons.account_balance,
+                  initialValue: carModel.hypothecatorName,
+                  onChanged: (v) => carModel.hypothecatorName = v,
+                  requiredField: false,
+                ),
+              ],
+            ),
           ),
 
-          const SizedBox(height: 32),
-          buildSectionHeader('RC Book Details', Icons.book),
-          const SizedBox(height: 20),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Insurance', Icons.security),
+                const SizedBox(height: 14),
 
-          buildModernDropdown(
-            context: context,
-            label: 'RC Book Availability',
-            hint: 'Select availability',
-            icon: Icons.check_circle,
-            items: const ['Available', 'Not Available', 'Applied', 'Lost'],
-            onChanged: (v) {
-              carModel.rcBookAvailability = v ?? '';
-              c.touch();
-            },
-            value: carModel.rcBookAvailability,
+                buildModernDropdown(
+                  context: context,
+                  label: 'Insurance Status',
+                  hint: 'Select',
+                  icon: Icons.policy,
+                  items: const ['Valid', 'Expired', 'Not Available'],
+                  value: carModel.insurance,
+                  onChanged: (v) => carModel.insurance = v ?? '',
+                  requiredField: false,
+                ),
+
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Insurance Details',
+                  hint: 'Select details',
+                  icon: Icons.fact_check,
+                  options: const [
+                    'Yes But Not Seen',
+                    'Expired',
+                    'Third Party',
+                    'Comprehensive',
+                    'Zero Depriciation',
+                  ],
+                  selected: carModel.insuranceDetails,
+                  onChanged: (v) => carModel.insuranceDetails = v,
+                  requiredField: false,
+                ),
+
+                buildModernTextField(
+                  label: 'Insurance Policy Number',
+                  hint: 'Enter',
+                  icon: Icons.numbers,
+                  initialValue: carModel.insurancePolicyNumber,
+                  onChanged: (v) => carModel.insurancePolicyNumber = v,
+                  requiredField: false,
+                ),
+
+                buildModernDatePicker(
+                  context: context,
+                  label: 'Insurance Validity Till',
+                  hint: 'Select date',
+                  icon: Icons.event_available,
+                  value: carModel.insuranceValidity,
+                  onChanged: (d) => carModel.insuranceValidity = d,
+                  requiredField: false,
+                ),
+
+                // exactly 2 insurance copy images
+                FormField<List<String>>(
+                  initialValue: carModel.insuranceCopy,
+                  validator: (_) => carModel.insuranceCopy.length == 2
+                      ? null
+                      : 'Please add exactly 2 Insurance Copy images',
+                  builder: (state) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildImagePicker(
+                          label: 'Insurance Copy Images (2)',
+                          imagePaths: carModel.insuranceCopy,
+                          maxImages: 2,
+                          onImagesChanged: (p) {
+                            carModel.insuranceCopy = p;
+                            state.didChange(p);
+                          },
+                        ),
+                        if (state.hasError)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              state.errorText ?? '',
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+
+                FormField<List<String>>(
+                  initialValue: carModel.bothKeys,
+                  validator: (_) => carModel.bothKeys.length == 2
+                      ? null
+                      : 'Please add exactly 2 Both Keys images',
+                  builder: (state) {
+                    return Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildImagePicker(
+                          label: 'Both Keys Images (2)',
+                          imagePaths: carModel.bothKeys,
+                          maxImages: 2,
+                          onImagesChanged: (p) {
+                            carModel.bothKeys = p;
+                            state.didChange(p);
+                          },
+                        ),
+                        if (state.hasError)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: Text(
+                              state.errorText ?? '',
+                              style: const TextStyle(
+                                color: Colors.red,
+                                fontWeight: FontWeight.w800,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ),
+                      ],
+                    );
+                  },
+                ),
+              ],
+            ),
           ),
 
-          buildModernDropdown(
-            context: context,
-            label: 'RC Condition',
-            hint: 'Select condition',
-            icon: Icons.assessment,
-            items: const ['Good', 'Damaged', 'Torn', 'Faded'],
-            onChanged: (v) {
-              carModel.rcCondition = v ?? '';
-              c.touch();
-            },
-            value: carModel.rcCondition,
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('RTO / Legal', Icons.gavel),
+                const SizedBox(height: 14),
+
+                buildModernDropdown(
+                  context: context,
+                  label: 'RTO NOC',
+                  hint: 'Select',
+                  icon: Icons.description_outlined,
+                  items: const [
+                    'Issued',
+                    'Expired (issued 90 days ago)',
+                    'Missing',
+                  ],
+                  value: carModel.rtoNoc,
+                  onChanged: (v) => carModel.rtoNoc = v ?? '',
+                  requiredField: false,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'RTO Form 28',
+                  hint: 'Select',
+                  icon: Icons.assignment,
+                  items: const [
+                    'Issued',
+                    'Expired (issued 90 days ago)',
+                    'Missing',
+                  ],
+                  value: carModel.rtoForm28,
+                  onChanged: (v) => carModel.rtoForm28 = v ?? '',
+                  requiredField: false,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Party Peshi',
+                  hint: 'Select',
+                  icon: Icons.people,
+                  items: const [
+                    'Seller will attend anywhere in West Bengal',
+                    'Seller will appear in Kolkata region only',
+                  ],
+                  value: carModel.partyPeshi,
+                  onChanged: (v) => carModel.partyPeshi = v ?? '',
+                  requiredField: false,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Duplicate Key',
+                  hint: 'Select',
+                  icon: Icons.vpn_key,
+                  items: const ['Available', 'Missing'],
+                  value: carModel.duplicateKey,
+                  onChanged: (v) => carModel.duplicateKey = v ?? '',
+                  requiredField: false,
+                ),
+              ],
+            ),
           ),
 
-          buildModernDatePicker(
-            context: context,
-            label: 'Fitness Valid Till',
-            hint: 'Select fitness expiry date',
-            icon: Icons.event_available,
-            onDateSelected: (date) => carModel.fitnessTill = date,
-            initialDate: carModel.fitnessTill,
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Chassis & VIN', Icons.confirmation_number),
+                const SizedBox(height: 14),
+
+                buildValidatedSingleImagePicker(
+                  label: 'Chassis Embossment Image',
+                  imagePath: carModel.chassisEmbossmentImage,
+                  mandatory: true,
+                  onChanged: (p) => carModel.chassisEmbossmentImage = p,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Chassis Details',
+                  hint: 'Select',
+                  icon: Icons.check_circle,
+                  items: const ['Okay', 'Not Okay'],
+                  value: carModel.chassisDetails,
+                  onChanged: (v) => carModel.chassisDetails = v ?? '',
+                  requiredField: false,
+                ),
+                buildValidatedSingleImagePicker(
+                  label: 'VIN Plate Image',
+                  imagePath: carModel.vinPlateImage,
+                  mandatory: true,
+                  onChanged: (p) => carModel.vinPlateImage = p,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'VIN Plate Details',
+                  hint: 'Select',
+                  icon: Icons.info,
+                  items: const ['Okay', 'VIN Plate Replaced', 'Not Available'],
+                  value: carModel.vinPlateDetails,
+                  onChanged: (v) => carModel.vinPlateDetails = v ?? '',
+                  requiredField: false,
+                ),
+              ],
+            ),
           ),
 
-          // ✅ RC & Tax Token Images
-          buildImagePicker(
-            label: 'RC & Tax Token Images',
-            imagePaths: carModel.rcTaxToken,
-            onImagesChanged: (paths) => carModel.rcTaxToken = paths,
-          ),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Pollution / Blacklist', Icons.eco),
+                const SizedBox(height: 14),
 
-          const SizedBox(height: 32),
-          buildSectionHeader('Insurance Details', Icons.security),
-          const SizedBox(height: 20),
+                buildValidatedSingleImagePicker(
+                  label: 'Pollution Certificate Image (optional)',
+                  imagePath: carModel.pollutionCertificateImage,
+                  mandatory: false,
+                  onChanged: (p) => carModel.pollutionCertificateImage = p,
+                ),
 
-          buildModernDropdown(
-            context: context,
-            label: 'Insurance',
-            hint: 'Select insurance status',
-            icon: Icons.policy,
-            items: const ['Valid', 'Expired', 'Not Available'],
-            onChanged: (v) {
-              carModel.insurance = v ?? '';
-              c.touch();
-            },
-            value: carModel.insurance,
-          ),
 
-          buildModernTextField(
-            label: 'Insurance Policy Number',
-            hint: 'Enter policy number',
-            icon: Icons.numbers,
-            onChanged: (v) => carModel.insurancePolicyNumber = v,
-            initialValue: carModel.insurancePolicyNumber,
-          ),
+                buildModernTextField(
+                  label: 'Pollution Certificate Number',
+                  hint: 'Enter',
+                  icon: Icons.numbers,
+                  initialValue: carModel.pollutionCertificateNumber,
+                  onChanged: (v) => carModel.pollutionCertificateNumber = v,
+                  requiredField: false,
+                ),
 
-          buildModernDatePicker(
-            context: context,
-            label: 'Insurance Validity',
-            hint: 'Select insurance expiry date',
-            icon: Icons.event_note,
-            onDateSelected: (date) => carModel.insuranceValidity = date,
-            initialDate: carModel.insuranceValidity,
-          ),
-
-          buildModernDropdown(
-            context: context,
-            label: 'No Claim Bonus',
-            hint: 'Select NCB status',
-            icon: Icons.attach_money,
-            items: const ['Available', 'Not Available', 'Transferred'],
-            onChanged: (v) {
-              carModel.noClaimBonus = v ?? '';
-              c.touch();
-            },
-            value: carModel.noClaimBonus,
-          ),
-
-          // ✅ Insurance Copy Images
-          buildImagePicker(
-            label: 'Insurance Copy Images',
-            imagePaths: carModel.insuranceCopy,
-            onImagesChanged: (paths) => carModel.insuranceCopy = paths,
-          ),
-
-          // ✅ Both Keys Images
-          buildImagePicker(
-            label: 'Both Keys Images',
-            imagePaths: carModel.bothKeys,
-            onImagesChanged: (paths) => carModel.bothKeys = paths,
-          ),
-
-          // ✅ Form 26 (if RC is lost)
-          buildImagePicker(
-            label: 'Form 26 / GD Copy (if RC is lost)',
-            imagePaths: carModel.form26GdCopyIfRcIsLost,
-            onImagesChanged: (paths) => carModel.form26GdCopyIfRcIsLost = paths,
+                buildModernDatePicker(
+                  context: context,
+                  label: 'Pollution Validity Till',
+                  hint: 'Select date',
+                  icon: Icons.event_note,
+                  value: carModel.pollutionCertificateValidity,
+                  onChanged: (d) => carModel.pollutionCertificateValidity = d,
+                  requiredField: false,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Blacklist Status',
+                  hint: 'Select',
+                  icon: Icons.warning,
+                  items: const ['No', 'Yes', 'Under Verification'],
+                  value: carModel.blacklistStatus,
+                  onChanged: (v) => carModel.blacklistStatus = v ?? '',
+                  requiredField: false,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -942,9 +1729,6 @@ class RegistrationDocumentsStep extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   STEP 2: BASIC INFO
-   ========================================================= */
 class BasicInfoStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final CarModel carModel;
@@ -957,93 +1741,167 @@ class BasicInfoStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<CarInspectionStepperController>();
-
     return Form(
       key: formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          buildSectionHeader('Vehicle Details', Icons.directions_car),
-          const SizedBox(height: 20),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Basic Vehicle Info', Icons.info),
+                const SizedBox(height: 14),
 
-          buildModernTextField(
-            label: 'Make',
-            hint: 'e.g., Toyota, Honda, BMW',
-            icon: Icons.business,
-            onChanged: (v) => carModel.make = v,
-            initialValue: carModel.make,
-          ),
-          buildModernTextField(
-            label: 'Model',
-            hint: 'e.g., Camry, Civic, X5',
-            icon: Icons.car_rental,
-            onChanged: (v) => carModel.model = v,
-            initialValue: carModel.model,
-          ),
-          buildModernTextField(
-            label: 'Variant',
-            hint: 'e.g., VXi, SV, M Sport',
-            icon: Icons.category,
-            onChanged: (v) => carModel.variant = v,
-            initialValue: carModel.variant,
-          ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Make',
+                  hint: 'Select',
+                  icon: Icons.factory,
+                  items: const [
+                    'Maruti',
+                    'Hyundai',
+                    'Honda',
+                    'Tata',
+                    'Mahindra',
+                    'Toyota',
+                    'Kia',
+                    'Other',
+                  ],
+                  value: carModel.make,
+                  onChanged: (v) => carModel.make = v ?? '',
+                  requiredField: false,
+                ),
 
-          const SizedBox(height: 32),
-          buildSectionHeader('Engine & Chassis', Icons.settings),
-          const SizedBox(height: 20),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Model',
+                  hint: 'Select',
+                  icon: Icons.directions_car,
+                  items: const [
+                    'Swift',
+                    'i20',
+                    'City',
+                    'Nexon',
+                    'Creta',
+                    'Other',
+                  ],
+                  value: carModel.model,
+                  onChanged: (v) => carModel.model = v ?? '',
+                  requiredField: false,
+                ),
 
-          buildModernTextField(
-            label: 'Engine Number',
-            hint: 'Enter engine number',
-            icon: Icons.engineering,
-            onChanged: (v) => carModel.engineNumber = v,
-            initialValue: carModel.engineNumber,
-          ),
-          buildModernTextField(
-            label: 'Chassis Number',
-            hint: 'Enter chassis number',
-            icon: Icons.numbers,
-            onChanged: (v) => carModel.chassisNumber = v,
-            initialValue: carModel.chassisNumber,
-          ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Variant',
+                  hint: 'Select',
+                  icon: Icons.layers,
+                  items: const ['Base', 'Mid', 'Top', 'Other'],
+                  value: carModel.variant,
+                  onChanged: (v) => carModel.variant = v ?? '',
+                  requiredField: false,
+                ),
 
-          const SizedBox(height: 32),
-          buildSectionHeader('Specifications', Icons.info_outline),
-          const SizedBox(height: 20),
+                buildModernTextField(
+                  label: 'Engine Number',
+                  hint: 'Enter engine number',
+                  icon: Icons.numbers,
+                  initialValue: carModel.engineNumber,
+                  onChanged: (v) => carModel.engineNumber = v,
+                  requiredField: false,
+                ),
+                buildModernTextField(
+                  label: 'Chassis Number',
+                  hint: 'Enter chassis number',
+                  icon: Icons.confirmation_number,
+                  initialValue: carModel.chassisNumber,
+                  onChanged: (v) => carModel.chassisNumber = v,
+                  requiredField: false,
+                ),
 
-          buildModernDropdown(
-            context: context,
-            label: 'Fuel Type',
-            hint: 'Select fuel type',
-            icon: Icons.local_gas_station,
-            items: const ['Petrol', 'Diesel', 'CNG', 'Electric', 'Hybrid'],
-            onChanged: (v) {
-              carModel.fuelType = v ?? '';
-              c.touch();
-            },
-            value: carModel.fuelType,
-          ),
+                buildModernTextField(
+                  label: 'Seating Capacity',
+                  hint: 'e.g. 5',
+                  icon: Icons.event_seat,
+                  keyboardType: TextInputType.number,
+                  initialValue: carModel.seatingCapacity == 0
+                      ? ''
+                      : '${carModel.seatingCapacity}',
+                  onChanged: (v) =>
+                      carModel.seatingCapacity = int.tryParse(v) ?? 0,
+                  requiredField: false,
+                ),
+                buildModernTextField(
+                  label: 'Color',
+                  hint: 'e.g. White',
+                  icon: Icons.color_lens,
+                  initialValue: carModel.color,
+                  onChanged: (v) => carModel.color = v,
+                  requiredField: false,
+                ),
+                buildModernTextField(
+                  label: 'No. of Cylinders',
+                  hint: 'e.g. 4',
+                  icon: Icons.settings,
+                  keyboardType: TextInputType.number,
+                  initialValue: carModel.numberOfCylinders == 0
+                      ? ''
+                      : '${carModel.numberOfCylinders}',
+                  onChanged: (v) =>
+                      carModel.numberOfCylinders = int.tryParse(v) ?? 0,
+                  requiredField: false,
+                ),
 
-          buildModernTextField(
-            label: 'Cubic Capacity (cc)',
-            hint: 'e.g., 1500, 2000',
-            icon: Icons.speed,
-            keyboardType: TextInputType.number,
-            onChanged: (v) => carModel.cubicCapacity = int.tryParse(v) ?? 0,
-            initialValue: carModel.cubicCapacity > 0
-                ? carModel.cubicCapacity.toString()
-                : '',
-          ),
+                buildModernTextField(
+                  label: 'Body Type',
+                  hint: 'e.g. Hatchback',
+                  icon: Icons.directions_car_filled,
+                  initialValue: carModel.bodyType,
+                  onChanged: (v) => carModel.bodyType = v,
+                  requiredField: false,
+                ),
+                buildModernTextField(
+                  label: 'Norms',
+                  hint: 'e.g. BS6',
+                  icon: Icons.rule,
+                  initialValue: carModel.norms,
+                  onChanged: (v) => carModel.norms = v,
+                  requiredField: false,
+                ),
+                buildModernTextField(
+                  label: 'Vehicle Category',
+                  hint: 'e.g. Private',
+                  icon: Icons.category,
+                  initialValue: carModel.vehicleCategory,
+                  onChanged: (v) => carModel.vehicleCategory = v,
+                  requiredField: false,
+                ),
 
-          buildModernDatePicker(
-            context: context,
-            label: 'Year/Month of Manufacture',
-            hint: 'Select manufacturing date',
-            icon: Icons.calendar_today,
-            onDateSelected: (date) => carModel.yearMonthOfManufacture = date,
-            initialDate: carModel.yearMonthOfManufacture,
-            displayFormat: 'MMM yyyy',
+                buildModernTextField(
+                  label: 'Wheel Base',
+                  hint: 'Enter',
+                  icon: Icons.straighten,
+                  initialValue: carModel.wheelBase,
+                  onChanged: (v) => carModel.wheelBase = v,
+                  requiredField: false,
+                ),
+                buildModernTextField(
+                  label: 'Gross Vehicle Weight',
+                  hint: 'Enter',
+                  icon: Icons.scale,
+                  initialValue: carModel.grossVehicleWeight,
+                  onChanged: (v) => carModel.grossVehicleWeight = v,
+                  requiredField: false,
+                ),
+                buildModernTextField(
+                  label: 'Unladen Weight',
+                  hint: 'Enter',
+                  icon: Icons.monitor_weight,
+                  initialValue: carModel.unladenWeight,
+                  onChanged: (v) => carModel.unladenWeight = v,
+                  requiredField: false,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1051,9 +1909,6 @@ class BasicInfoStep extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   STEP 3: EXTERIOR FRONT & SIDES
-   ========================================================= */
 class ExteriorFrontStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final CarModel carModel;
@@ -1069,259 +1924,299 @@ class ExteriorFrontStep extends StatelessWidget {
     return Form(
       key: formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          buildSectionHeader('Front Exterior', Icons.car_repair),
-          const SizedBox(height: 20),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Exterior - Front', Icons.directions_car),
+                const SizedBox(height: 14),
 
-          // ✅ Front Main Images
-          buildImagePicker(
-            label: 'Front Main View Images',
-            imagePaths: carModel.frontMain,
-            onImagesChanged: (paths) => carModel.frontMain = paths,
-          ),
+                buildValidatedSingleImagePicker(
+                  label: 'Front Main Image',
+                  imagePath: carModel.frontMainImage,
+                  mandatory: true,
+                  onChanged: (p) => carModel.frontMainImage = p,
+                ),
 
-          buildConditionSelector(
-            label: 'Bonnet',
-            value: carModel.bonnet,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.bonnet = v,
-          ),
-          buildImagePicker(
-            label: 'Bonnet Images',
-            imagePaths: carModel.bonnetImages,
-            onImagesChanged: (paths) => carModel.bonnetImages = paths,
-          ),
+                // Bonnet
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Bonnet',
+                  hint: 'Select',
+                  icon: Icons.car_repair,
+                  options: const [
+                    'Original',
+                    'Minor Scratch',
+                    'Major Dent',
+                    'Repainted',
+                    'Replaced',
+                  ],
+                  selected: carModel.bonnet,
+                  onChanged: (v) => carModel.bonnet = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'Bonnet Images',
+                  imagePaths: carModel.bonnetImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.bonnetImages = p,
+                ),
 
-          buildConditionSelector(
-            label: 'Front Windshield',
-            value: carModel.frontWindshield,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.frontWindshield = v,
-          ),
-          buildImagePicker(
-            label: 'Front Windshield Images',
-            imagePaths: carModel.frontWindshieldImages,
-            onImagesChanged: (paths) => carModel.frontWindshieldImages = paths,
-          ),
+                // Front Windshield
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Front Windshield',
+                  hint: 'Select',
+                  icon: Icons.wind_power,
+                  options: const ['Okay', 'Crack', 'Replaced', 'Not Available'],
+                  selected: carModel.frontWindshield,
+                  onChanged: (v) => carModel.frontWindshield = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'Front Windshield Images',
+                  imagePaths: carModel.frontWindshieldImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.frontWindshieldImages = p,
+                ),
 
-          buildConditionSelector(
-            label: 'Front Bumper',
-            value: carModel.frontBumper,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.frontBumper = v,
-          ),
-          buildImagePicker(
-            label: 'Front Bumper Images',
-            imagePaths: carModel.frontBumperImages,
-            onImagesChanged: (paths) => carModel.frontBumperImages = paths,
-          ),
+                // Wiper/Washer
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Front Wiper/Washer',
+                  hint: 'Select',
+                  icon: Icons.wash,
+                  options: const ['Working', 'Not Working', 'Missing'],
+                  selected: carModel.frontWiperWasher,
+                  onChanged: (v) => carModel.frontWiperWasher = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'Front Wiper/Washer Images',
+                  imagePaths: carModel.frontWiperWasherImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.frontWiperWasherImages = p,
+                ),
 
-          const SizedBox(height: 32),
-          buildSectionHeader('Left Side', Icons.directions_car_filled),
-          const SizedBox(height: 20),
+                // Roof
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Roof',
+                  hint: 'Select',
+                  icon: Icons.roofing,
+                  options: const [
+                    'Original',
+                    'Scratch',
+                    'Dent',
+                    'Repainted',
+                    'Replaced',
+                  ],
+                  selected: carModel.roof,
+                  onChanged: (v) => carModel.roof = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'Roof Images',
+                  imagePaths: carModel.roofImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.roofImages = p,
+                ),
 
-          // ✅ LHS 45 Degree
-          buildImagePicker(
-            label: 'LHS Front 45° Images',
-            imagePaths: carModel.lhsFront45Degree,
-            onImagesChanged: (paths) => carModel.lhsFront45Degree = paths,
-          ),
+                // Front Bumper
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Front Bumper',
+                  hint: 'Select',
+                  icon: Icons.car_crash,
+                  options: const [
+                    'Original',
+                    'Scratch',
+                    'Dent',
+                    'Repainted',
+                    'Replaced',
+                  ],
+                  selected: carModel.frontBumper,
+                  onChanged: (v) => carModel.frontBumper = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'Front Bumper Images',
+                  imagePaths: carModel.frontBumperImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.frontBumperImages = p,
+                ),
 
-          buildConditionSelector(
-            label: 'LHS Headlamp',
-            value: carModel.lhsHeadlamp,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.lhsHeadlamp = v,
-          ),
-          buildImagePicker(
-            label: 'LHS Headlamp Images',
-            imagePaths: carModel.lhsHeadlampImages,
-            onImagesChanged: (paths) => carModel.lhsHeadlampImages = paths,
-          ),
+                const SizedBox(height: 6),
+                buildSectionHeader('LHS Front', Icons.turn_left),
+                const SizedBox(height: 14),
 
-          buildConditionSelector(
-            label: 'LHS Foglamp',
-            value: carModel.lhsFoglamp,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.lhsFoglamp = v,
-          ),
-          buildImagePicker(
-            label: 'LHS Foglamp Images',
-            imagePaths: carModel.lhsFoglampImages,
-            onImagesChanged: (paths) => carModel.lhsFoglampImages = paths,
-          ),
+                // LHS Headlamp
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'LHS Headlamp',
+                  hint: 'Select',
+                  icon: Icons.light,
+                  options: const ['Okay', 'Cracked', 'Not Working', 'Replaced'],
+                  selected: carModel.lhsHeadlamp,
+                  onChanged: (v) => carModel.lhsHeadlamp = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'LHS Headlamp Images',
+                  imagePaths: carModel.lhsHeadlampImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.lhsHeadlampImages = p,
+                ),
 
-          buildConditionSelector(
-            label: 'LHS Fender',
-            value: carModel.lhsFender,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.lhsFender = v,
-          ),
-          buildImagePicker(
-            label: 'LHS Fender Images',
-            imagePaths: carModel.lhsFenderImages,
-            onImagesChanged: (paths) => carModel.lhsFenderImages = paths,
-          ),
+                // LHS Foglamp
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'LHS Foglamp',
+                  hint: 'Select',
+                  icon: Icons.highlight,
+                  options: const [
+                    'Okay',
+                    'Cracked',
+                    'Not Working',
+                    'Replaced',
+                    'Not Available',
+                  ],
+                  selected: carModel.lhsFoglamp,
+                  onChanged: (v) => carModel.lhsFoglamp = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'LHS Foglamp Images',
+                  imagePaths: carModel.lhsFoglampImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.lhsFoglampImages = p,
+                ),
 
-          buildConditionSelector(
-            label: 'LHS Front Door',
-            value: carModel.lhsFrontDoor,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.lhsFrontDoor = v,
-          ),
-          buildImagePicker(
-            label: 'LHS Front Door Images',
-            imagePaths: carModel.lhsFrontDoorImages,
-            onImagesChanged: (paths) => carModel.lhsFrontDoorImages = paths,
-          ),
+                // LHS Fender
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'LHS Fender',
+                  hint: 'Select',
+                  icon: Icons.car_crash,
+                  options: const [
+                    'Original',
+                    'Scratch',
+                    'Dent',
+                    'Repainted',
+                    'Replaced',
+                  ],
+                  selected: carModel.lhsFender,
+                  onChanged: (v) => carModel.lhsFender = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'LHS Fender Images',
+                  imagePaths: carModel.lhsFenderImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.lhsFenderImages = p,
+                ),
 
-          buildConditionSelector(
-            label: 'LHS Front Tyre',
-            value: carModel.lhsFrontTyre,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.lhsFrontTyre = v,
-          ),
-          buildImagePicker(
-            label: 'LHS Front Tyre Images',
-            imagePaths: carModel.lhsFrontTyreImages,
-            onImagesChanged: (paths) => carModel.lhsFrontTyreImages = paths,
-          ),
+                // LHS Wheel/Tyre/ORVM
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'LHS Front Wheel',
+                  hint: 'Select',
+                  icon: Icons.circle,
+                  options: const ['Okay', 'Scratched', 'Bent', 'Replaced'],
+                  selected: carModel.lhsFrontWheel,
+                  onChanged: (v) => carModel.lhsFrontWheel = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'LHS Front Wheel Images',
+                  imagePaths: carModel.lhsFrontWheelImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.lhsFrontWheelImages = p,
+                ),
 
-          buildImagePicker(
-            label: 'LHS Front Alloy Images',
-            imagePaths: carModel.lhsFrontAlloyImages,
-            onImagesChanged: (paths) => carModel.lhsFrontAlloyImages = paths,
-          ),
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'LHS Front Tyre',
+                  hint: 'Select',
+                  icon: Icons.tire_repair,
+                  options: const ['Good', 'Average', 'Bad', 'Replace Soon'],
+                  selected: carModel.lhsFrontTyre,
+                  onChanged: (v) => carModel.lhsFrontTyre = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'LHS Front Tyre Images',
+                  imagePaths: carModel.lhsFrontTyreImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.lhsFrontTyreImages = p,
+                ),
 
-          buildImagePicker(
-            label: 'LHS ORVM Images',
-            imagePaths: carModel.lhsOrvmImages,
-            onImagesChanged: (paths) => carModel.lhsOrvmImages = paths,
-          ),
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'LHS ORVM',
+                  hint: 'Select',
+                  icon: Icons.remove_red_eye,
+                  options: const ['Okay', 'Broken', 'Missing', 'Replaced'],
+                  selected: carModel.lhsOrvm,
+                  onChanged: (v) => carModel.lhsOrvm = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'LHS ORVM Images',
+                  imagePaths: carModel.lhsOrvmImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.lhsOrvmImages = p,
+                ),
 
-          buildImagePicker(
-            label: 'LHS A-Pillar Images',
-            imagePaths: carModel.lhsAPillarImages,
-            onImagesChanged: (paths) => carModel.lhsAPillarImages = paths,
-          ),
+                // Running boards
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'LHS Running Board',
+                  hint: 'Select',
+                  icon: Icons.linear_scale,
+                  options: const [
+                    'Okay',
+                    'Dent',
+                    'Scratch',
+                    'Repaired',
+                    'Replaced',
+                  ],
+                  selected: carModel.lhsRunningBoard,
+                  onChanged: (v) => carModel.lhsRunningBoard = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'LHS Running Board Images',
+                  imagePaths: carModel.lhsRunningBoardImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.lhsRunningBoardImages = p,
+                ),
 
-          buildImagePicker(
-            label: 'LHS B-Pillar Images',
-            imagePaths: carModel.lhsBPillarImages,
-            onImagesChanged: (paths) => carModel.lhsBPillarImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'LHS Running Border Images',
-            imagePaths: carModel.lhsRunningBorderImages,
-            onImagesChanged: (paths) => carModel.lhsRunningBorderImages = paths,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Right Side', Icons.directions_car_filled),
-          const SizedBox(height: 20),
-
-          buildConditionSelector(
-            label: 'RHS Headlamp',
-            value: carModel.rhsHeadlamp,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.rhsHeadlamp = v,
-          ),
-          buildImagePicker(
-            label: 'RHS Headlamp Images',
-            imagePaths: carModel.rhsHeadlampImages,
-            onImagesChanged: (paths) => carModel.rhsHeadlampImages = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'RHS Foglamp',
-            value: carModel.rhsFoglamp,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.rhsFoglamp = v,
-          ),
-          buildImagePicker(
-            label: 'RHS Foglamp Images',
-            imagePaths: carModel.rhsFoglampImages,
-            onImagesChanged: (paths) => carModel.rhsFoglampImages = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'RHS Fender',
-            value: carModel.rhsFender,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.rhsFender = v,
-          ),
-          buildImagePicker(
-            label: 'RHS Fender Images',
-            imagePaths: carModel.rhsFenderImages,
-            onImagesChanged: (paths) => carModel.rhsFenderImages = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'RHS Front Door',
-            value: carModel.rhsFrontDoor,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.rhsFrontDoor = v,
-          ),
-          buildImagePicker(
-            label: 'RHS Front Door Images',
-            imagePaths: carModel.rhsFrontDoorImages,
-            onImagesChanged: (paths) => carModel.rhsFrontDoorImages = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'RHS Front Tyre',
-            value: carModel.rhsFrontTyre,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.rhsFrontTyre = v,
-          ),
-          buildImagePicker(
-            label: 'RHS Front Tyre Images',
-            imagePaths: carModel.rhsFrontTyreImages,
-            onImagesChanged: (paths) => carModel.rhsFrontTyreImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'RHS Front Alloy Images',
-            imagePaths: carModel.rhsFrontAlloyImages,
-            onImagesChanged: (paths) => carModel.rhsFrontAlloyImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'RHS ORVM Images',
-            imagePaths: carModel.rhsOrvmImages,
-            onImagesChanged: (paths) => carModel.rhsOrvmImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'RHS A-Pillar Images',
-            imagePaths: carModel.rhsAPillarImages,
-            onImagesChanged: (paths) => carModel.rhsAPillarImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'RHS B-Pillar Images',
-            imagePaths: carModel.rhsBPillarImages,
-            onImagesChanged: (paths) => carModel.rhsBPillarImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'RHS Running Border Images',
-            imagePaths: carModel.rhsRunningBorderImages,
-            onImagesChanged: (paths) => carModel.rhsRunningBorderImages = paths,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('General Comments', Icons.comment),
-          const SizedBox(height: 20),
-
-          buildCommentField(
-            label: 'Exterior Comments',
-            hint: 'Add any additional comments about exterior condition',
-            onChanged: (v) => carModel.comments = v,
-            initialValue: carModel.comments,
-            maxLines: 4,
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'RHS Running Board',
+                  hint: 'Select',
+                  icon: Icons.linear_scale,
+                  options: const [
+                    'Okay',
+                    'Dent',
+                    'Scratch',
+                    'Repaired',
+                    'Replaced',
+                  ],
+                  selected: carModel.rhsRunningBoard,
+                  onChanged: (v) => carModel.rhsRunningBoard = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'RHS Running Board Images',
+                  imagePaths: carModel.rhsRunningBoardImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.rhsRunningBoardImages = p,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1329,9 +2224,6 @@ class ExteriorFrontStep extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   STEP 4: EXTERIOR REAR
-   ========================================================= */
 class ExteriorRearStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final CarModel carModel;
@@ -1344,211 +2236,158 @@ class ExteriorRearStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // bootDoorOpenImage in model is String, you can store as "|||"
+    List<String> bootOpenImgs = carModel.bootDoorOpenImage.trim().isEmpty
+        ? <String>[]
+        : carModel.bootDoorOpenImage
+              .split('|||')
+              .where((e) => e.isNotEmpty)
+              .toList();
+
+    void setBootOpenImgs(List<String> imgs) {
+      carModel.bootDoorOpenImage = imgs.join('|||');
+    }
+
     return Form(
       key: formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          buildSectionHeader('Rear Exterior', Icons.car_repair),
-          const SizedBox(height: 20),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Exterior - Rear', Icons.car_repair),
+                const SizedBox(height: 14),
 
-          // ✅ Rear Main Images
-          buildImagePicker(
-            label: 'Rear Main View Images',
-            imagePaths: carModel.rearMain,
-            onImagesChanged: (paths) => carModel.rearMain = paths,
-          ),
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Rear Bumper',
+                  hint: 'Select',
+                  icon: Icons.car_repair,
+                  options: const [
+                    'Original',
+                    'Scratch',
+                    'Dent',
+                    'Repainted',
+                    'Replaced',
+                  ],
+                  selected: carModel.rearBumper,
+                  onChanged: (v) => carModel.rearBumper = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'Rear Bumper Images',
+                  imagePaths: carModel.rearBumperImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.rearBumperImages = p,
+                ),
 
-          buildConditionSelector(
-            label: 'Rear Bumper',
-            value: carModel.rearBumper,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.rearBumper = v,
-          ),
-          buildImagePicker(
-            label: 'Rear Bumper Images',
-            imagePaths: carModel.rearBumperImages,
-            onImagesChanged: (paths) => carModel.rearBumperImages = paths,
-          ),
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Rear Windshield',
+                  hint: 'Select',
+                  icon: Icons.wind_power,
+                  options: const ['Okay', 'Crack', 'Replaced', 'Not Available'],
+                  selected: carModel.rearWindshield,
+                  onChanged: (v) => carModel.rearWindshield = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'Rear Windshield Images',
+                  imagePaths: carModel.rearWindshieldImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.rearWindshieldImages = p,
+                ),
 
-          buildConditionSelector(
-            label: 'Rear Windshield',
-            value: carModel.rearWindshield,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.rearWindshield = v,
-          ),
-          buildImagePicker(
-            label: 'Rear Windshield Images',
-            imagePaths: carModel.rearWindshieldImages,
-            onImagesChanged: (paths) => carModel.rearWindshieldImages = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'Boot Door',
-            value: carModel.bootDoor,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.bootDoor = v,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Lights & Indicators', Icons.lightbulb),
-          const SizedBox(height: 20),
-
-          buildConditionSelector(
-            label: 'LHS Tail Lamp',
-            value: carModel.lhsTailLamp,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.lhsTailLamp = v,
-          ),
-          buildImagePicker(
-            label: 'LHS Tail Lamp Images',
-            imagePaths: carModel.lhsTailLampImages,
-            onImagesChanged: (paths) => carModel.lhsTailLampImages = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'RHS Tail Lamp',
-            value: carModel.rhsTailLamp,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.rhsTailLamp = v,
-          ),
-          buildImagePicker(
-            label: 'RHS Tail Lamp Images',
-            imagePaths: carModel.rhsTailLampImages,
-            onImagesChanged: (paths) => carModel.rhsTailLampImages = paths,
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Rear Wiper/Washer',
+                  hint: 'Select',
+                  icon: Icons.wash,
+                  options: const ['Working', 'Not Working', 'Missing'],
+                  selected: carModel.rearWiperWasher,
+                  onChanged: (v) => carModel.rearWiperWasher = v,
+                ),
+                buildValidatedMultiImagePicker(
+                  label: 'Rear Wiper/Washer Images',
+                  imagePaths: carModel.rearWiperWasherImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.rearWiperWasherImages = p,
+                ),
+              ],
+            ),
           ),
 
-          const SizedBox(height: 32),
-          buildSectionHeader('Boot Area', Icons.inventory),
-          const SizedBox(height: 20),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Boot / Spare', Icons.luggage),
+                const SizedBox(height: 14),
 
-          buildConditionSelector(
-            label: 'Spare Tyre',
-            value: carModel.spareTyre,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.spareTyre = v,
-          ),
-          buildImagePicker(
-            label: 'Spare Tyre Images',
-            imagePaths: carModel.spareTyreImages,
-            onImagesChanged: (paths) => carModel.spareTyreImages = paths,
-          ),
+                // boot door open images (stored in String)
+                FormField<List<String>>(
+                  initialValue: bootOpenImgs,
+                  validator: (_) => null,
+                  builder: (state) {
+                    return buildImagePicker(
+                      label: 'Boot Door Open Images',
+                      imagePaths: bootOpenImgs,
+                      maxImages: 6,
+                      onImagesChanged: (p) {
+                        bootOpenImgs = p;
+                        setBootOpenImgs(p);
+                        state.didChange(p);
+                      },
+                    );
+                  },
+                ),
 
-          buildConditionSelector(
-            label: 'Boot Floor',
-            value: carModel.bootFloor,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.bootFloor = v,
-          ),
-          buildImagePicker(
-            label: 'Boot Floor Images',
-            imagePaths: carModel.bootFloorImages,
-            onImagesChanged: (paths) => carModel.bootFloorImages = paths,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Left Rear Side', Icons.directions_car_filled),
-          const SizedBox(height: 20),
-
-          buildConditionSelector(
-            label: 'LHS Rear Alloy',
-            value: carModel.lhsRearAlloy,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.lhsRearAlloy = v,
-          ),
-          buildImagePicker(
-            label: 'LHS Rear Alloy Images',
-            imagePaths: carModel.lhsRearAlloyImages,
-            onImagesChanged: (paths) => carModel.lhsRearAlloyImages = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'LHS Rear Tyre',
-            value: carModel.lhsRearTyre,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.lhsRearTyre = v,
-          ),
-          buildImagePicker(
-            label: 'LHS Rear Tyre Images',
-            imagePaths: carModel.lhsRearTyreImages,
-            onImagesChanged: (paths) => carModel.lhsRearTyreImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'LHS Rear Door Images',
-            imagePaths: carModel.lhsRearDoorImages,
-            onImagesChanged: (paths) => carModel.lhsRearDoorImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'LHS C-Pillar Images',
-            imagePaths: carModel.lhsCPillarImages,
-            onImagesChanged: (paths) => carModel.lhsCPillarImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'LHS Quarter Panel Images',
-            imagePaths: carModel.lhsQuarterPanelImages,
-            onImagesChanged: (paths) => carModel.lhsQuarterPanelImages = paths,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Right Rear Side', Icons.directions_car_filled),
-          const SizedBox(height: 20),
-
-          // ✅ RHS Rear 45 Degree
-          buildImagePicker(
-            label: 'RHS Rear 45° Images',
-            imagePaths: carModel.rhsRear45Degree,
-            onImagesChanged: (paths) => carModel.rhsRear45Degree = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'RHS Rear Alloy',
-            value: carModel.rhsRearAlloy,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.rhsRearAlloy = v,
-          ),
-          buildImagePicker(
-            label: 'RHS Rear Alloy Images',
-            imagePaths: carModel.rhsRearAlloyImages,
-            onImagesChanged: (paths) => carModel.rhsRearAlloyImages = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'RHS Rear Tyre',
-            value: carModel.rhsRearTyre,
-            options: const ['Good', 'Minor', 'Major', 'Broken'],
-            onChanged: (v) => carModel.rhsRearTyre = v,
-          ),
-          buildImagePicker(
-            label: 'RHS Rear Tyre Images',
-            imagePaths: carModel.rhsRearTyreImages,
-            onImagesChanged: (paths) => carModel.rhsRearTyreImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'RHS Rear Door Images',
-            imagePaths: carModel.rhsRearDoorImages,
-            onImagesChanged: (paths) => carModel.rhsRearDoorImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'RHS C-Pillar Images',
-            imagePaths: carModel.rhsCPillarImages,
-            onImagesChanged: (paths) => carModel.rhsCPillarImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'RHS Quarter Panel Images',
-            imagePaths: carModel.rhsQuarterPanelImages,
-            onImagesChanged: (paths) => carModel.rhsQuarterPanelImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'Roof Images',
-            imagePaths: carModel.roofImages,
-            onImagesChanged: (paths) => carModel.roofImages = paths,
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Boot Door',
+                  hint: 'Select',
+                  icon: Icons.door_sliding,
+                  options: const [
+                    'Okay',
+                    'Scratch',
+                    'Dent',
+                    'Repainted',
+                    'Replaced',
+                  ],
+                  selected: carModel.bootDoor,
+                  onChanged: (v) => carModel.bootDoor = v,
+                ),
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Spare Wheel',
+                  hint: 'Select',
+                  icon: Icons.circle,
+                  options: const ['Available', 'Not Available', 'Damaged'],
+                  selected: carModel.spareWheel,
+                  onChanged: (v) => carModel.spareWheel = v,
+                ),
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Spare Tyre',
+                  hint: 'Select',
+                  icon: Icons.tire_repair,
+                  options: const ['Good', 'Average', 'Bad', 'Not Available'],
+                  selected: carModel.spareTyre,
+                  onChanged: (v) => carModel.spareTyre = v,
+                ),
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Boot Floor',
+                  hint: 'Select',
+                  icon: Icons.grid_4x4,
+                  options: const ['Okay', 'Rust', 'Wet', 'Damaged'],
+                  selected: carModel.bootFloor,
+                  onChanged: (v) => carModel.bootFloor = v,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1556,9 +2395,6 @@ class ExteriorRearStep extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   STEP 5: ENGINE & MECHANICAL
-   ========================================================= */
 class EngineMechanicalStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final CarModel carModel;
@@ -1571,170 +2407,208 @@ class EngineMechanicalStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<CarInspectionStepperController>();
-
     return Form(
       key: formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          buildSectionHeader('Engine Condition', Icons.engineering),
-          const SizedBox(height: 20),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Engine Bay', Icons.build),
+                const SizedBox(height: 14),
 
-          // ✅ Engine Bay Images
-          buildImagePicker(
-            label: 'Engine Bay Images',
-            imagePaths: carModel.engineBay,
-            onImagesChanged: (paths) => carModel.engineBay = paths,
+                buildValidatedMultiImagePicker(
+                  label: 'Engine Bay Images',
+                  imagePaths: carModel.engineBayImages,
+                  minRequired: 0,
+                  maxImages: 10,
+                  onImagesChanged: (p) => carModel.engineBayImages = p,
+                ),
+
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Engine Condition',
+                  hint: 'Select',
+                  icon: Icons.engineering,
+                  options: const ['Okay', 'Oil Leak', 'Noise', 'Repair Needed'],
+                  selected: carModel.engine,
+                  onChanged: (v) => carModel.engine = v,
+                ),
+
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Comments on Engine',
+                  hint: 'Select',
+                  icon: Icons.comment,
+                  options: const [
+                    'Smooth',
+                    'Vibration',
+                    'Knocking',
+                    'Overheating',
+                  ],
+                  selected: carModel.commentsOnEngine,
+                  onChanged: (v) => carModel.commentsOnEngine = v,
+                  requiredField: false,
+                ),
+
+                buildModernDropdown(
+                  context: context,
+                  label: 'ABS',
+                  hint: 'Select',
+                  icon: Icons.safety_check,
+                  items: const ['Present', 'Not Present', 'Not Working'],
+                  value: carModel.abs,
+                  onChanged: (v) => carModel.abs = v ?? '',
+                  requiredField: false,
+                ),
+
+                buildValidatedSingleVideoPicker(
+                  label: 'Engine Sound Video',
+                  videoPath: carModel.engineSoundVideo,
+                  mandatory: false,
+                  onChanged: (p) => carModel.engineSoundVideo = p,
+                ),
+                buildValidatedSingleVideoPicker(
+                  label: 'Exhaust Smoke Video',
+                  videoPath: carModel.exhaustSmokeVideo,
+                  mandatory: false,
+                  onChanged: (p) => carModel.exhaustSmokeVideo = p,
+                ),
+
+                buildValidatedSingleImagePicker(
+                  label: 'Cluster Meter With Engine Image',
+                  imagePath: carModel.clusterMeterWithEngineImage,
+                  mandatory: false,
+                  onChanged: (p) => carModel.clusterMeterWithEngineImage = p,
+                ),
+
+                buildModernTextField(
+                  label: 'Odometer Reading (KMs)',
+                  hint: 'Enter',
+                  icon: Icons.speed,
+                  keyboardType: TextInputType.number,
+                  initialValue: carModel.odometerReadingInKms,
+                  onChanged: (v) => carModel.odometerReadingInKms = v,
+                  requiredField: false,
+                ),
+
+                buildModernDropdown(
+                  context: context,
+                  label: 'Fuel Level',
+                  hint: 'Select',
+                  icon: Icons.local_gas_station,
+                  items: const ['Empty', '1/4', '1/2', '3/4', 'Full'],
+                  value: carModel.fuelLevel,
+                  onChanged: (v) => carModel.fuelLevel = v ?? '',
+                  requiredField: false,
+                ),
+              ],
+            ),
           ),
 
-          buildConditionSelector(
-            label: 'Engine',
-            value: carModel.engine,
-            options: const ['Good', 'Fair', 'Poor', 'Faulty'],
-            onChanged: (v) => carModel.engine = v,
-          ),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Test Drive / Mechanical', Icons.settings),
+                const SizedBox(height: 14),
 
-          buildConditionSelector(
-            label: 'Battery',
-            value: carModel.battery,
-            options: const ['Good', 'Fair', 'Poor', 'Faulty'],
-            onChanged: (v) => carModel.battery = v,
-          ),
-          buildImagePicker(
-            label: 'Battery Images',
-            imagePaths: carModel.batteryImages,
-            onImagesChanged: (paths) => carModel.batteryImages = paths,
-          ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Steering',
+                  hint: 'Select',
+                  icon: Icons.sports_motorsports,
+                  items: const ['Okay', 'Hard', 'Noise', 'Repair Needed'],
+                  value: carModel.steering,
+                  onChanged: (v) => carModel.steering = v ?? '',
+                  requiredField: false,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Clutch',
+                  hint: 'Select',
+                  icon: Icons.settings_suggest,
+                  items: const ['Okay', 'Hard', 'Slipping', 'Repair Needed'],
+                  value: carModel.clutch,
+                  onChanged: (v) => carModel.clutch = v ?? '',
+                  requiredField: false,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Gear Shift',
+                  hint: 'Select',
+                  icon: Icons.swap_horiz,
+                  items: const ['Smooth', 'Hard', 'Noise', 'Repair Needed'],
+                  value: carModel.gearShift,
+                  onChanged: (v) => carModel.gearShift = v ?? '',
+                  requiredField: false,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Transmission Type',
+                  hint: 'Select',
+                  icon: Icons.auto_mode,
+                  items: const ['Manual', 'Automatic', 'AMT', 'CVT', 'DCT'],
+                  value: carModel.transmissionType,
+                  onChanged: (v) => carModel.transmissionType = v ?? '',
+                  requiredField: false,
+                ),
+                buildModernTextField(
+                  label: 'Comments on Transmission',
+                  hint: 'Enter',
+                  icon: Icons.comment,
+                  initialValue: carModel.commentsOnTransmission,
+                  onChanged: (v) => carModel.commentsOnTransmission = v,
+                  requiredField: false,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Drive Train',
+                  hint: 'Select',
+                  icon: Icons.settings,
+                  items: const ['FWD', 'RWD', 'AWD', '4WD'],
+                  value: carModel.driveTrain,
+                  onChanged: (v) => carModel.driveTrain = v ?? '',
+                  requiredField: false,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Brakes',
+                  hint: 'Select',
+                  icon: Icons.car_crash,
+                  items: const ['Okay', 'Noise', 'Weak', 'Repair Needed'],
+                  value: carModel.brakes,
+                  onChanged: (v) => carModel.brakes = v ?? '',
+                  requiredField: false,
+                ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Suspension',
+                  hint: 'Select',
+                  icon: Icons.blur_circular,
+                  items: const ['Okay', 'Noise', 'Weak', 'Repair Needed'],
+                  value: carModel.suspension,
+                  onChanged: (v) => carModel.suspension = v ?? '',
+                  requiredField: false,
+                ),
 
-          buildConditionSelector(
-            label: 'Coolant',
-            value: carModel.coolant,
-            options: const ['Good', 'Fair', 'Poor', 'Faulty'],
-            onChanged: (v) => carModel.coolant = v,
-          ),
-
-          buildConditionSelector(
-            label: 'Engine Oil',
-            value: carModel.engineOil,
-            options: const ['Good', 'Fair', 'Poor', 'Faulty'],
-            onChanged: (v) => carModel.engineOil = v,
-          ),
-
-          buildImagePicker(
-            label: 'Apron LHS/RHS Images',
-            imagePaths: carModel.apronLhsRhs,
-            onImagesChanged: (paths) => carModel.apronLhsRhs = paths,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Transmission', Icons.settings),
-          const SizedBox(height: 20),
-
-          buildConditionSelector(
-            label: 'Clutch',
-            value: carModel.clutch,
-            options: const ['Good', 'Fair', 'Poor', 'Faulty'],
-            onChanged: (v) => carModel.clutch = v,
-          ),
-
-          buildConditionSelector(
-            label: 'Gear Shift',
-            value: carModel.gearShift,
-            options: const ['Good', 'Fair', 'Poor', 'Faulty'],
-            onChanged: (v) => carModel.gearShift = v,
-          ),
-
-          buildConditionSelector(
-            label: 'Exhaust Smoke',
-            value: carModel.exhaustSmoke,
-            options: const ['Good', 'Fair', 'Poor', 'Faulty'],
-            onChanged: (v) => carModel.exhaustSmoke = v,
-          ),
-          buildImagePicker(
-            label: 'Exhaust Smoke Images',
-            imagePaths: carModel.exhaustSmokeImages,
-            onImagesChanged: (paths) => carModel.exhaustSmokeImages = paths,
-          ),
-
-          buildImagePicker(
-            label: 'Engine Sound (Video/Audio)',
-            imagePaths: carModel.engineSound,
-            onImagesChanged: (paths) => carModel.engineSound = paths,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Suspension & Steering', Icons.directions_car),
-          const SizedBox(height: 20),
-
-          buildConditionSelector(
-            label: 'Steering',
-            value: carModel.steering,
-            options: const ['Good', 'Fair', 'Poor', 'Faulty'],
-            onChanged: (v) => carModel.steering = v,
-          ),
-
-          buildConditionSelector(
-            label: 'Brakes',
-            value: carModel.brakes,
-            options: const ['Good', 'Fair', 'Poor', 'Faulty'],
-            onChanged: (v) => carModel.brakes = v,
-          ),
-
-          buildConditionSelector(
-            label: 'Suspension',
-            value: carModel.suspension,
-            options: const ['Good', 'Fair', 'Poor', 'Faulty'],
-            onChanged: (v) => carModel.suspension = v,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Additional Details', Icons.add_circle),
-          const SizedBox(height: 20),
-
-          buildModernTextField(
-            label: 'Odometer Reading (kms)',
-            hint: 'Enter current odometer reading',
-            icon: Icons.speed,
-            keyboardType: TextInputType.number,
-            onChanged: (v) =>
-                carModel.odometerReadingInKms = int.tryParse(v) ?? 0,
-            initialValue: carModel.odometerReadingInKms > 0
-                ? carModel.odometerReadingInKms.toString()
-                : '',
-          ),
-
-          buildModernDropdown(
-            context: context,
-            label: 'Fuel Level',
-            hint: 'Select fuel level',
-            icon: Icons.local_gas_station,
-            items: const ['Full', '3/4', '1/2', '1/4', 'Empty'],
-            onChanged: (v) {
-              carModel.fuelLevel = v ?? '';
-              c.touch();
-            },
-            value: carModel.fuelLevel,
-          ),
-
-          buildImagePicker(
-            label: 'Additional Engine Images',
-            imagePaths: carModel.additionalImages,
-            onImagesChanged: (paths) => carModel.additionalImages = paths,
-          ),
-
-          buildCommentField(
-            label: 'Comments on Engine',
-            hint: 'Add comments about engine condition',
-            onChanged: (v) => carModel.commentsOnEngine = v,
-            initialValue: carModel.commentsOnEngine,
-          ),
-
-          buildCommentField(
-            label: 'Comments on Transmission',
-            hint: 'Add comments about transmission',
-            onChanged: (v) => carModel.commentsOnTransmission = v,
-            initialValue: carModel.commentsOnTransmission,
+                buildValidatedSingleImagePicker(
+                  label: 'Test Drive Odometer Image',
+                  imagePath: carModel.testDriveOdometerImage,
+                  mandatory: false,
+                  onChanged: (p) => carModel.testDriveOdometerImage = p,
+                ),
+                buildModernTextField(
+                  label: 'Test Drive Odometer Reading',
+                  hint: 'Enter',
+                  icon: Icons.speed,
+                  initialValue: carModel.testDriveOdometerReading,
+                  onChanged: (v) => carModel.testDriveOdometerReading = v,
+                  requiredField: false,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1742,9 +2616,6 @@ class EngineMechanicalStep extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   STEP 6: INTERIOR & ELECTRONICS
-   ========================================================= */
 class InteriorElectronicsStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final CarModel carModel;
@@ -1760,178 +2631,244 @@ class InteriorElectronicsStep extends StatelessWidget {
     return Form(
       key: formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          buildSectionHeader('Interior Condition', Icons.event_seat),
-          const SizedBox(height: 20),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader(
+                  'Interior',
+                  Icons.airline_seat_recline_normal,
+                ),
+                const SizedBox(height: 14),
 
-          buildImagePicker(
-            label: 'Front Seats (Driver Side Door Open)',
-            imagePaths: carModel.frontSeatsFromDriverSideDoorOpen,
-            onImagesChanged: (paths) =>
-                carModel.frontSeatsFromDriverSideDoorOpen = paths,
+                buildModernDropdown(
+                  context: context,
+                  label: 'IRVM',
+                  hint: 'Select',
+                  icon: Icons.remove_red_eye,
+                  items: const ['Okay', 'Broken', 'Missing'],
+                  value: carModel.irvm,
+                  onChanged: (v) => carModel.irvm = v ?? '',
+                  requiredField: false,
+                ),
+
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Dashboard',
+                  hint: 'Select',
+                  icon: Icons.dashboard,
+                  options: const ['Okay', 'Scratch', 'Crack', 'Repaired'],
+                  selected: carModel.dashboard,
+                  onChanged: (v) => carModel.dashboard = v,
+                ),
+
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'Infotainment System',
+                  hint: 'Select',
+                  icon: Icons.screen_share,
+                  options: const [
+                    'Working',
+                    'Not Working',
+                    'Missing',
+                    'Aftermarket',
+                  ],
+                  selected: carModel.infotainmentSystem,
+                  onChanged: (v) => carModel.infotainmentSystem = v,
+                ),
+
+                buildModernDropdown(
+                  context: context,
+                  label: 'Inbuilt Speaker',
+                  hint: 'Select',
+                  icon: Icons.speaker,
+                  items: const ['Working', 'Not Working', 'Missing'],
+                  value: carModel.inbuiltSpeaker,
+                  onChanged: (v) => carModel.inbuiltSpeaker = v ?? '',
+                  requiredField: false,
+                ),
+
+                buildModernDropdown(
+                  context: context,
+                  label: 'External Speaker',
+                  hint: 'Select',
+                  icon: Icons.speaker_group,
+                  items: const ['Working', 'Not Working', 'Not Installed'],
+                  value: carModel.externalSpeaker,
+                  onChanged: (v) => carModel.externalSpeaker = v ?? '',
+                  requiredField: false,
+                ),
+
+                buildModernDropdown(
+                  context: context,
+                  label: 'Steering Mounted Media Controls',
+                  hint: 'Select',
+                  icon: Icons.settings_remote,
+                  items: const ['Working', 'Not Working', 'Not Available'],
+                  value: carModel.steeringMountedMediaControls,
+                  onChanged: (v) =>
+                      carModel.steeringMountedMediaControls = v ?? '',
+                  requiredField: false,
+                ),
+
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'AC Type',
+                  hint: 'Select',
+                  icon: Icons.ac_unit,
+                  options: const ['Manual', 'Automatic', 'Dual Zone'],
+                  selected: carModel.acType,
+                  onChanged: (v) => carModel.acType = v,
+                ),
+
+                buildModernMultiSelect(
+                  context: context,
+                  label: 'AC Cool',
+                  hint: 'Select',
+                  icon: Icons.thermostat,
+                  options: const ['Good', 'Average', 'Not Cooling'],
+                  selected: carModel.acCool,
+                  onChanged: (v) => carModel.acCool = v,
+                ),
+
+                buildModernTextField(
+                  label: 'Comments on AC',
+                  hint: 'Enter',
+                  icon: Icons.comment,
+                  initialValue: carModel.commentsOnAc,
+                  onChanged: (v) => carModel.commentsOnAc = v,
+                  requiredField: false,
+                ),
+
+                buildModernTextField(
+                  label: 'No. of Power Windows',
+                  hint: 'e.g. 4',
+                  icon: Icons.window,
+                  keyboardType: TextInputType.number,
+                  initialValue: carModel.noOfPowerWindows,
+                  onChanged: (v) => carModel.noOfPowerWindows = v,
+                  requiredField: false,
+                ),
+              ],
+            ),
           ),
 
-          buildImagePicker(
-            label: 'Rear Seats (Right Side Door Open)',
-            imagePaths: carModel.rearSeatsFromRightSideDoorOpen,
-            onImagesChanged: (paths) =>
-                carModel.rearSeatsFromRightSideDoorOpen = paths,
-          ),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader(
+                  'Airbags / Seats',
+                  Icons.airline_seat_recline_extra,
+                ),
+                const SizedBox(height: 14),
 
-          buildImagePicker(
-            label: 'Dashboard from Rear Seat',
-            imagePaths: carModel.dashboardFromRearSeat,
-            onImagesChanged: (paths) => carModel.dashboardFromRearSeat = paths,
-          ),
+                buildModernTextField(
+                  label: 'Number of Airbags',
+                  hint: 'e.g. 2',
+                  icon: Icons.safety_divider,
+                  keyboardType: TextInputType.number,
+                  initialValue: carModel.numberOfAirbags == 0
+                      ? ''
+                      : '${carModel.numberOfAirbags}',
+                  onChanged: (v) =>
+                      carModel.numberOfAirbags = int.tryParse(v) ?? 0,
+                  requiredField: false,
+                ),
 
-          buildConditionSelector(
-            label: 'Leather Seats',
-            value: carModel.leatherSeats,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.leatherSeats = v,
-          ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Driver Side Airbag',
+                  hint: 'Select',
+                  icon: Icons.air,
+                  items: const ['Present', 'Not Present', 'Deployed'],
+                  value: carModel.driverSideAirbag,
+                  onChanged: (v) => carModel.driverSideAirbag = v ?? '',
+                  requiredField: false,
+                ),
 
-          buildConditionSelector(
-            label: 'Fabric Seats',
-            value: carModel.fabricSeats,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.fabricSeats = v,
-          ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Co-Driver Side Airbag',
+                  hint: 'Select',
+                  icon: Icons.air,
+                  items: const ['Present', 'Not Present', 'Deployed'],
+                  value: carModel.coDriverSideAirbag,
+                  onChanged: (v) => carModel.coDriverSideAirbag = v ?? '',
+                  requiredField: false,
+                ),
 
-          const SizedBox(height: 32),
-          buildSectionHeader('Electronics', Icons.electrical_services),
-          const SizedBox(height: 20),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Seats Upholstery',
+                  hint: 'Select',
+                  icon: Icons.event_seat,
+                  items: const [
+                    'Fabric',
+                    'Leather',
+                    'Leatherette',
+                    'Torn',
+                    'Dirty',
+                  ],
+                  value: carModel.seatsUpholstery,
+                  onChanged: (v) => carModel.seatsUpholstery = v ?? '',
+                  requiredField: false,
+                ),
 
-          buildImagePicker(
-            label: 'Meter Console (Engine On)',
-            imagePaths: carModel.meterConsoleWithEngineOn,
-            onImagesChanged: (paths) =>
-                carModel.meterConsoleWithEngineOn = paths,
-          ),
+                buildModernTextField(
+                  label: 'Interior Seating Capacity',
+                  hint: 'e.g. 5',
+                  icon: Icons.event_seat,
+                  keyboardType: TextInputType.number,
+                  initialValue: carModel.interiorSeatingCapacity == 0
+                      ? ''
+                      : '${carModel.interiorSeatingCapacity}',
+                  onChanged: (v) =>
+                      carModel.interiorSeatingCapacity = int.tryParse(v) ?? 0,
+                  requiredField: false,
+                ),
 
-          buildConditionSelector(
-            label: 'Music System',
-            value: carModel.musicSystem,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.musicSystem = v,
-          ),
+                buildValidatedSingleImagePicker(
+                  label: 'Front Seats Driver Side Image',
+                  imagePath: carModel.frontSeatsDriverSideImage,
+                  mandatory: false,
+                  onChanged: (p) => carModel.frontSeatsDriverSideImage = p,
+                ),
+                buildValidatedSingleImagePicker(
+                  label: 'Rear Seats Right Side Image',
+                  imagePath: carModel.rearSeatsRightSideImage,
+                  mandatory: false,
+                  onChanged: (p) => carModel.rearSeatsRightSideImage = p,
+                ),
+                buildValidatedSingleImagePicker(
+                  label: 'Dashboard From Rear Seat Image',
+                  imagePath: carModel.dashboardFromRearSeatImage,
+                  mandatory: false,
+                  onChanged: (p) => carModel.dashboardFromRearSeatImage = p,
+                ),
 
-          buildConditionSelector(
-            label: 'Stereo',
-            value: carModel.stereo,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.stereo = v,
-          ),
+                buildModernDropdown(
+                  context: context,
+                  label: 'Reverse Camera',
+                  hint: 'Select',
+                  icon: Icons.camera_rear,
+                  items: const ['Working', 'Not Working', 'Not Available'],
+                  value: carModel.reverseCamera,
+                  onChanged: (v) => carModel.reverseCamera = v ?? '',
+                  requiredField: false,
+                ),
 
-          buildConditionSelector(
-            label: 'Power Windows',
-            value: carModel.noOfPowerWindows,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.noOfPowerWindows = v,
-          ),
-
-          buildConditionSelector(
-            label: 'ABS',
-            value: carModel.abs,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.abs = v,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Air Conditioning', Icons.ac_unit),
-          const SizedBox(height: 20),
-
-          buildConditionSelector(
-            label: 'AC Manual',
-            value: carModel.airConditioningManual,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.airConditioningManual = v,
-          ),
-
-          buildConditionSelector(
-            label: 'AC Climate Control',
-            value: carModel.airConditioningClimateControl,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.airConditioningClimateControl = v,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Safety Features', Icons.safety_check),
-          const SizedBox(height: 20),
-
-          buildModernTextField(
-            label: 'Number of Airbags',
-            hint: 'Enter number of airbags',
-            icon: Icons.airline_seat_recline_extra,
-            keyboardType: TextInputType.number,
-            onChanged: (v) => carModel.noOfAirBags = int.tryParse(v) ?? 0,
-            initialValue: carModel.noOfAirBags > 0
-                ? carModel.noOfAirBags.toString()
-                : '',
-          ),
-
-          buildImagePicker(
-            label: 'Airbag Images',
-            imagePaths: carModel.airbags,
-            onImagesChanged: (paths) => carModel.airbags = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'Reverse Camera',
-            value: carModel.reverseCamera,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.reverseCamera = v,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Additional Features', Icons.add),
-          const SizedBox(height: 20),
-
-          buildConditionSelector(
-            label: 'Sunroof',
-            value: carModel.sunroof,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.sunroof = v,
-          ),
-          buildImagePicker(
-            label: 'Sunroof Images',
-            imagePaths: carModel.sunroofImages,
-            onImagesChanged: (paths) => carModel.sunroofImages = paths,
-          ),
-
-          buildConditionSelector(
-            label: 'Rear Wiper/Washer',
-            value: carModel.rearWiperWasher,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.rearWiperWasher = v,
-          ),
-
-          buildConditionSelector(
-            label: 'Rear Defogger',
-            value: carModel.rearDefogger,
-            options: const ['Good', 'Fair', 'Poor', 'Not Working'],
-            onChanged: (v) => carModel.rearDefogger = v,
-          ),
-
-          buildImagePicker(
-            label: 'Additional Interior Images',
-            imagePaths: carModel.additionalImages2,
-            onImagesChanged: (paths) => carModel.additionalImages2 = paths,
-          ),
-
-          buildCommentField(
-            label: 'Comments on Electricals',
-            hint: 'Add comments about electrical systems',
-            onChanged: (v) => carModel.commentsOnElectricals = v,
-            initialValue: carModel.commentsOnElectricals,
-          ),
-
-          buildCommentField(
-            label: 'Comments on AC',
-            hint: 'Add comments about air conditioning',
-            onChanged: (v) => carModel.commentsOnAc = v,
-            initialValue: carModel.commentsOnAc,
+                buildModernTextField(
+                  label: 'Comment on Interior',
+                  hint: 'Enter',
+                  icon: Icons.comment,
+                  initialValue: carModel.commentOnInterior,
+                  onChanged: (v) => carModel.commentOnInterior = v,
+                  requiredField: false,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1939,9 +2876,6 @@ class InteriorElectronicsStep extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   STEP 7: FINAL DETAILS
-   ========================================================= */
 class FinalDetailsStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final CarModel carModel;
@@ -1954,102 +2888,37 @@ class FinalDetailsStep extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final c = Get.find<CarInspectionStepperController>();
-
     return Form(
       key: formKey,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          buildSectionHeader('Contact Information', Icons.contact_page),
-          const SizedBox(height: 20),
+          buildModernCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                buildSectionHeader('Final Details', Icons.checklist),
+                const SizedBox(height: 14),
 
-          buildModernTextField(
-            label: 'Contact Number',
-            hint: 'Enter contact number',
-            icon: Icons.phone,
-            keyboardType: TextInputType.phone,
-            onChanged: (v) => carModel.contactNumber = v,
-            initialValue: carModel.contactNumber,
-          ),
-          buildModernTextField(
-            label: 'Email Address',
-            hint: 'Enter email address',
-            icon: Icons.email,
-            keyboardType: TextInputType.emailAddress,
-            onChanged: (v) => carModel.emailAddress = v,
-            initialValue: carModel.emailAddress,
-          ),
+                buildModernTextField(
+                  label: 'Contact Number',
+                  hint: 'Enter',
+                  icon: Icons.phone,
+                  keyboardType: TextInputType.phone,
+                  initialValue: carModel.contactNumber,
+                  onChanged: (v) => carModel.contactNumber = v,
+                  requiredField: false,
+                ),
 
-          const SizedBox(height: 32),
-          buildSectionHeader('Inspection Details', Icons.assessment),
-          const SizedBox(height: 20),
-
-          buildModernTextField(
-            label: 'City',
-            hint: 'Enter city name',
-            icon: Icons.location_city,
-            onChanged: (v) => carModel.city = v,
-            initialValue: carModel.city,
-          ),
-          buildModernTextField(
-            label: 'Appointment ID',
-            hint: 'Enter appointment ID',
-            icon: Icons.confirmation_number,
-            onChanged: (v) => carModel.appointmentId = v,
-            initialValue: carModel.appointmentId,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Pricing & Status', Icons.monetization_on),
-          const SizedBox(height: 20),
-
-          buildModernTextField(
-            label: 'Price Discovery',
-            hint: 'Enter estimated price',
-            icon: Icons.attach_money,
-            keyboardType: TextInputType.number,
-            onChanged: (v) => carModel.priceDiscovery = int.tryParse(v) ?? 0,
-            initialValue: carModel.priceDiscovery > 0
-                ? carModel.priceDiscovery.toString()
-                : '',
-          ),
-          buildModernTextField(
-            label: 'Price Discovery By',
-            hint: 'Enter appraiser name',
-            icon: Icons.person,
-            onChanged: (v) => carModel.priceDiscoveryBy = v,
-            initialValue: carModel.priceDiscoveryBy,
-          ),
-
-          buildModernDropdown(
-            context: context,
-            label: 'Status',
-            hint: 'Select inspection status',
-            icon: Icons.stairs,
-            items: const [
-              'Pending',
-              'In Progress',
-              'Completed',
-              'Approved',
-              'Rejected',
-            ],
-            onChanged: (v) {
-              carModel.status = v ?? '';
-              c.touch();
-            },
-            value: carModel.status,
-          ),
-
-          const SizedBox(height: 32),
-          buildSectionHeader('Additional Information', Icons.note_add),
-          const SizedBox(height: 20),
-
-          buildCommentField(
-            label: 'Additional Details',
-            hint: 'Add any additional information or notes',
-            onChanged: (v) => carModel.additionalDetails = v,
-            initialValue: carModel.additionalDetails,
+                buildModernTextField(
+                  label: 'Additional Details',
+                  hint: 'Write notes',
+                  icon: Icons.notes,
+                  initialValue: carModel.additionalDetails,
+                  onChanged: (v) => carModel.additionalDetails = v,
+                  requiredField: false,
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -2057,244 +2926,64 @@ class FinalDetailsStep extends StatelessWidget {
   }
 }
 
-/* =========================================================
-   STEP 8: REVIEW
-   ========================================================= */
 class ReviewStep extends StatelessWidget {
   final CarModel carModel;
 
   const ReviewStep({super.key, required this.carModel});
 
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        buildSectionHeader('Review & Submit', Icons.check_circle),
-        const SizedBox(height: 20),
-
-        _ReviewCard(
-          icon: Icons.directions_car,
-          title: 'Vehicle Details',
-          items: [
-            'Make: ${carModel.make.isNotEmpty ? carModel.make : "Not provided"}',
-            'Model: ${carModel.model.isNotEmpty ? carModel.model : "Not provided"}',
-            'Variant: ${carModel.variant.isNotEmpty ? carModel.variant : "Not provided"}',
-            'Fuel Type: ${carModel.fuelType.isNotEmpty ? carModel.fuelType : "Not provided"}',
-          ],
-        ),
-
-        const SizedBox(height: 16),
-        _ReviewCard(
-          icon: Icons.description,
-          title: 'Registration Details',
-          items: [
-            'Registration No: ${carModel.registrationNumber.isNotEmpty ? carModel.registrationNumber : "Not provided"}',
-            'RC Status: ${carModel.rcBookAvailability.isNotEmpty ? carModel.rcBookAvailability : "Not provided"}',
-            'Insurance: ${carModel.insurance.isNotEmpty ? carModel.insurance : "Not provided"}',
-          ],
-        ),
-
-        const SizedBox(height: 16),
-        _ReviewCard(
-          icon: Icons.image,
-          title: 'Images Summary',
-          items: [
-            'RC & Tax Token: ${carModel.rcTaxToken.length} images',
-            'Insurance Copy: ${carModel.insuranceCopy.length} images',
-            'Exterior Images: ${carModel.frontMain.length + carModel.bonnetImages.length + carModel.rearMain.length} images',
-            'Interior Images: ${carModel.frontSeatsFromDriverSideDoorOpen.length + carModel.dashboardFromRearSeat.length} images',
-            'Engine Bay: ${carModel.engineBay.length} images',
-            'Total Images: ${_getTotalImagesCount(carModel)} images',
-          ],
-        ),
-
-        const SizedBox(height: 16),
-        _ReviewCard(
-          icon: Icons.car_repair,
-          title: 'Exterior Condition',
-          items: [
-            'Bonnet: ${carModel.bonnet.isNotEmpty ? carModel.bonnet : "Not assessed"}',
-            'Front Bumper: ${carModel.frontBumper.isNotEmpty ? carModel.frontBumper : "Not assessed"}',
-            'Rear Bumper: ${carModel.rearBumper.isNotEmpty ? carModel.rearBumper : "Not assessed"}',
-          ],
-        ),
-
-        const SizedBox(height: 16),
-        _ReviewCard(
-          icon: Icons.engineering,
-          title: 'Engine & Mechanical',
-          items: [
-            'Engine: ${carModel.engine.isNotEmpty ? carModel.engine : "Not assessed"}',
-            'Odometer: ${carModel.odometerReadingInKms > 0 ? "${carModel.odometerReadingInKms} kms" : "Not recorded"}',
-            'Brakes: ${carModel.brakes.isNotEmpty ? carModel.brakes : "Not assessed"}',
-          ],
-        ),
-
-        const SizedBox(height: 16),
-        _ReviewCard(
-          icon: Icons.event_seat,
-          title: 'Interior & Electronics',
-          items: [
-            'AC: ${carModel.airConditioningManual.isNotEmpty ? carModel.airConditioningManual : "Not assessed"}',
-            'Music System: ${carModel.musicSystem.isNotEmpty ? carModel.musicSystem : "Not assessed"}',
-            'Airbags: ${carModel.noOfAirBags > 0 ? carModel.noOfAirBags.toString() : "Not specified"}',
-          ],
-        ),
-
-        const SizedBox(height: 16),
-        _ReviewCard(
-          icon: Icons.assessment,
-          title: 'Final Details',
-          items: [
-            'Contact: ${carModel.contactNumber.isNotEmpty ? carModel.contactNumber : "Not provided"}',
-            'City: ${carModel.city.isNotEmpty ? carModel.city : "Not provided"}',
-            'Status: ${carModel.status.isNotEmpty ? carModel.status : "Not set"}',
-          ],
-        ),
-
-        const SizedBox(height: 32),
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(color: Colors.blue[100]!),
-          ),
-          child: const Row(
-            children: [
-              Icon(Icons.info, color: Color(0xFF2196F3)),
-              SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Please review all information carefully before submitting. Once submitted, the inspection will be sent for approval.',
-                  style: TextStyle(fontSize: 14, color: Colors.black87),
-                ),
+  Widget _kv(String k, String v) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 160,
+            child: Text(
+              k,
+              style: TextStyle(
+                color: Colors.grey[700],
+                fontWeight: FontWeight.w800,
               ),
-            ],
+            ),
           ),
-        ),
-      ],
+          Expanded(
+            child: Text(
+              v.isEmpty ? '-' : v,
+              style: const TextStyle(fontWeight: FontWeight.w800),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  int _getTotalImagesCount(CarModel model) {
-    return model.rcTaxToken.length +
-        model.insuranceCopy.length +
-        model.bothKeys.length +
-        model.form26GdCopyIfRcIsLost.length +
-        model.frontMain.length +
-        model.bonnetImages.length +
-        model.frontWindshieldImages.length +
-        model.roofImages.length +
-        model.frontBumperImages.length +
-        model.lhsHeadlampImages.length +
-        model.lhsFoglampImages.length +
-        model.rhsHeadlampImages.length +
-        model.rhsFoglampImages.length +
-        model.lhsFront45Degree.length +
-        model.lhsFenderImages.length +
-        model.lhsFrontAlloyImages.length +
-        model.lhsFrontTyreImages.length +
-        model.lhsRunningBorderImages.length +
-        model.lhsOrvmImages.length +
-        model.lhsAPillarImages.length +
-        model.lhsFrontDoorImages.length +
-        model.lhsBPillarImages.length +
-        model.lhsRearDoorImages.length +
-        model.lhsCPillarImages.length +
-        model.lhsRearTyreImages.length +
-        model.lhsRearAlloyImages.length +
-        model.lhsQuarterPanelImages.length +
-        model.rearMain.length +
-        model.rearBumperImages.length +
-        model.lhsTailLampImages.length +
-        model.rhsTailLampImages.length +
-        model.rearWindshieldImages.length +
-        model.spareTyreImages.length +
-        model.bootFloorImages.length +
-        model.rhsRear45Degree.length +
-        model.rhsQuarterPanelImages.length +
-        model.rhsRearAlloyImages.length +
-        model.rhsRearTyreImages.length +
-        model.rhsCPillarImages.length +
-        model.rhsRearDoorImages.length +
-        model.rhsBPillarImages.length +
-        model.rhsFrontDoorImages.length +
-        model.rhsAPillarImages.length +
-        model.rhsRunningBorderImages.length +
-        model.rhsFrontAlloyImages.length +
-        model.rhsFrontTyreImages.length +
-        model.rhsOrvmImages.length +
-        model.rhsFenderImages.length +
-        model.engineBay.length +
-        model.apronLhsRhs.length +
-        model.batteryImages.length +
-        model.additionalImages.length +
-        model.engineSound.length +
-        model.exhaustSmokeImages.length +
-        model.meterConsoleWithEngineOn.length +
-        model.airbags.length +
-        model.sunroofImages.length +
-        model.frontSeatsFromDriverSideDoorOpen.length +
-        model.rearSeatsFromRightSideDoorOpen.length +
-        model.dashboardFromRearSeat.length +
-        model.additionalImages2.length;
-  }
-}
-
-class _ReviewCard extends StatelessWidget {
-  final IconData icon;
-  final String title;
-  final List<String> items;
-
-  const _ReviewCard({
-    required this.icon,
-    required this.title,
-    required this.items,
-  });
-
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
-        border: Border.all(color: Colors.grey[200]!),
-      ),
+    return buildModernCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Icon(icon, color: const Color(0xFF2196F3), size: 20),
-              const SizedBox(width: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.black87,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          ...items.map(
-            (item) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Text(
-                item,
-                style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-              ),
+          buildSectionHeader('Review', Icons.preview),
+          const SizedBox(height: 14),
+
+          _kv('Registration Number', carModel.registrationNumber),
+          _kv('Registration Date', _fmtDate(carModel.registrationDate)),
+          _kv('Fitness Validity Till', _fmtDate(carModel.fitnessTill)),
+
+          _kv('Make', carModel.make),
+          _kv('Model', carModel.model),
+          _kv('Variant', carModel.variant),
+
+          _kv('Insurance Status', carModel.insurance),
+          _kv('Insurance Validity Till', _fmtDate(carModel.insuranceValidity)),
+
+          const SizedBox(height: 10),
+          Text(
+            'Tip: Submit action aap apne API call se connect kar sakte ho.',
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontWeight: FontWeight.w700,
             ),
           ),
         ],
