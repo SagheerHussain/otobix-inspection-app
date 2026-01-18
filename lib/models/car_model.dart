@@ -1,990 +1,1678 @@
+// CarModel with Dropdown Type Comments
+// This model contains both old fields (for backward compatibility) and new fields
+// Old fields are kept to avoid breaking changes with existing app
+// New fields ending with "DropdownList" are the updated versions
 
 class CarModel {
-  String id;
-  DateTime? timestamp;
-  String emailAddress;
-  String appointmentId;
-  String city;
+  // ============================================================================
+  // OLD FIELDS - Kept for backward compatibility
+  // ============================================================================
 
-  String inspectionEngineerName;
+  final String emailAddress; // renamed to ieName - MANDATORY (AUTO FETCH)
+  final String
+  city; // renamed to inspectionCity - SINGLE SELECT - MANDATORY ENTRY
+  final String registrationType; // removed - DELETED
+  final String
+  rcBookAvailability; // changed to rcBookAvailabilityDropdownList - MULTIPLE - MANDATORY ENTRY
 
-  String registrationType;
-  String rcBookAvailability;
-  String rcCondition;
+  final DateTime? fitnessTill; // renamed to fitnessValidity - AUTO FETCH
 
-  String registrationNumber;
-  DateTime? registrationDate;
-  DateTime? fitnessTill;
+  final DateTime?
+  yearMonthOfManufacture; // renamed to yearAndMonthOfManufacture - AUTO FETCH
 
-  String toBeScrapped;
-  String chassisEmbossmentImage;
-  String chassisDetails;
-  String vinPlateImage;
-  String vinPlateDetails;
+  final String
+  mismatchInRc; // changed to mismatchInRcDropdownList - MULTIPLE - MANDATORY ENTRY
 
-  String registrationState;
-  String registrationCity;
-  String registeredRto;
-  int ownerSerialNumber;
+  final String
+  insurance; // changed to insuranceDropdownList - SINGLE - MANDATORY ENTRY
+  final String insurancePolicyNumber; // renamed to policyNumber - AUTO FETCH
+  final String noClaimBonus; // removed - DELETED
+  final String
+  mismatchInInsurance; // changed to mismatchInInsuranceDropdownList - MANDATORY ENTRY IF "INSURANCE" IS "THIRD PARTY || COMPREHENSIVE || ZERO DEPRECIATION"
 
-  String make;
-  String model;
-  String variant;
+  final String
+  additionalDetails; // changed to additionalDetailsDropdownList - MULTIPLE - OPTIONAL ENTRY
+  final List<String> rcTaxToken; // renamed to rcTokenImages - MANDATORY IMAGE
+  final List<String>
+  insuranceCopy; // renamed to insuranceImages - MANDATORY IMAGE
+  final List<String>
+  bothKeys; // renamed to duplicateKeyImages - MANDATORY ENTRY IF "DUPLICATE KEY" IS MARKED "AVAILABLE"
+  final List<String>
+  form26GdCopyIfRcIsLost; // renamed to form26AndGdCopyIfRcIsLostImages - MANDATORY IMAGE
+  final String
+  bonnet; // changed to bonnetDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  frontWindshield; // changed to frontWindshieldDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String roof; // changed to roofDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  frontBumper; // changed to frontBumperDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsHeadlamp; // changed to lhsHeadlampDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsFoglamp; // changed to lhsFoglampDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsHeadlamp; // changed to rhsHeadlampDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsFoglamp; // changed to rhsFoglampDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsFender; // changed to lhsFenderDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsOrvm; // changed to lhsOrvmDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsAPillar; // changed to lhsAPillarDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsBPillar; // changed to lhsBPillarDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsCPillar; // changed to lhsCPillarDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsFrontAlloy; // renamed to lhsFrontWheelDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsFrontTyre; // changed to lhsFrontTyreDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsRearAlloy; // renamed to lhsRearWheelDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsRearTyre; // changed to lhsRearTyreDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsFrontDoor; // changed to lhsFrontDoorDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsRearDoor; // changed to lhsRearDoorDropdownList - Note: Excel shows "LHS Rront Door" as MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsRunningBorder; // changed to lhsRunningBorderDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsQuarterPanel; // changed to lhsQuarterPanelDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rearBumper; // changed to rearBumperDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsTailLamp; // changed to lhsTailLampDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsTailLamp; // changed to rhsTailLampDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rearWindshield; // changed to rearWindshieldDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  bootDoor; // changed to bootDoorDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  spareTyre; // changed to spareTyreDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  bootFloor; // changed to bootFloorDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsRearAlloy; // renamed to rhsRearWheelDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsRearTyre; // changed to rhsRearTyreDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsFrontAlloy; // renamed to rhsFrontWheelDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsFrontTyre; // changed to rhsFrontTyreDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsQuarterPanel; // changed to rhsQuarterPanelDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsAPillar; // changed to rhsAPillarDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsBPillar; // changed to rhsBPillarDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsCPillar; // changed to rhsCPillarDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsRunningBorder; // changed to rhsRunningBorderDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsRearDoor; // changed to rhsRearDoorDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsFrontDoor; // changed to rhsFrontDoorDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsOrvm; // changed to rhsOrvmDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsFender; // changed to rhsFenderDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  comments; // renamed to commentsOnExteriorDropdownList - MULTIPLE - OPTIONAL ENTRY
+  final List<String> frontMain; // changed to frontMainImages - MANDATORY IMAGE
+  final List<String>
+  bonnetImages; // divided into bonnetClosedImages, bonnetOpenImages and bonnetImages - MANDATORY IMAGE
 
-  String engineNumber;
-  String chassisNumber;
+  final List<String>
+  frontBumperImages; // divided into frontBumperLhs45DegreeImages, frontBumperRhs45DegreeImages and frontBumperImages - MANDATORY IMAGE
 
-  String registeredOwner;
-  String registeredAddressAsPerRc;
+  final List<String>
+  lhsFront45Degree; // renamed to lhsFullViewImages - MANDATORY IMAGE
+  final List<String>
+  lhsFrontAlloyImages; // renamed to lhsFrontWheelImages - MANDATORY IMAGE
 
-  DateTime? yearMonthOfManufacture;
-  String fuelType;
-  int cubicCapacity;
-  int seatingCapacity;
-  String color;
-  int numberOfCylinders;
-  String bodyType;
-  String norms;
-  String vehicleCategory;
-  String wheelBase;
-  String grossVehicleWeight;
-  String unladenWeight;
-  String hypothecationDetails;
-  String hypothecatorName;
-  List<String> mismatchInRc;
-  String roadTaxValidity;
-  String roadTaxType;
-  DateTime? taxValidTill;
+  final List<String>
+  lhsRearAlloyImages; // renamed to lhsRearWheelImages - MANDATORY IMAGE
+  final List<String>
+  lhsQuarterPanelImages; // divided into lhsQuarterPanelWithRearDoorOpenImages and lhsQuarterPanelImages - MANDATORY IMAGE
+  final List<String> rearMain; // renamed to rearMainImages - MANDATORY IMAGE
+  final String
+  rearWithBootDoorOpen; // renamed to rearWithBootDoorOpenImages - MANDATORY IMAGE
+  final List<String>
+  rearBumperImages; // divided into rearBumperLhs45DegreeImages, rearBumperRhs45DegreeImages and rearBumperImages - MANDATORY IMAGE
 
-  String insurance;
-  String insurancePolicyNumber;
-  DateTime? insuranceValidity;
+  final List<String>
+  rhsRear45Degree; // renamed to rhsFullViewImages - MANDATORY IMAGE
+  final List<String>
+  rhsQuarterPanelImages; // divided into rhsQuarterPanelWithRearDoorOpenImages and rhsQuarterPanelImages - MANDATORY IMAGE
+  final List<String>
+  rhsRearAlloyImages; // renamed to rhsRearWheelImages - MANDATORY IMAGE
 
-  String noClaimBonus;
-  String mismatchInInsurance;
-  String pollutionCertificateImage;
-  DateTime? pollutionCertificateValidity;
-  String pollutionCertificateNumber;
-  String blacklistStatus;
-  String duplicateKey;
-  String rtoNoc;
-  String rtoForm28;
-  String partyPeshi;
-  List<String> optionalDetails;
-  List<String> registrationCertificateAvailability;
-  String registrationCertificateStatus;
-  List<String> rcTaxToken;
-  List<String> insuranceCopy;
-  List<String> bothKeys;
-  List<String> form26GdCopyIfRcIsLost;
-  List<String> insuranceDetails;
-  List<String> roadTaxImages;
-  List<String> registrationCertificateImages;
-  List<String> registrationCertificateImages;
-  String frontMainImage;
-  String lhsFullViewImage;
-  String rearMainImage;
-  List<String> bonnet;
-  List<String> frontWindshield;
-  List<String> frontWiperWasher;
-  List<String> roof;
-  List<String> frontBumper;
-  List<String> lhsHeadlamp;
-  List<String> lhsFoglamp;
-  List<String> rhsHeadlamp;
-  List<String> rhsFoglamp;
+  final List<String>
+  rhsFrontAlloyImages; // renamed to rhsFrontWheelImages - MANDATORY IMAGE
+  final String
+  upperCrossMember; // changed to upperCrossMemberDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  radiatorSupport; // changed to radiatorSupportDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  headlightSupport; // changed to headlightSupportDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lowerCrossMember; // changed to lowerCrossMemberDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  lhsApron; // changed to lhsApronDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rhsApron; // changed to rhsApronDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  firewall; // changed to firewallDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  cowlTop; // changed to cowlTopDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  engine; // changed to engineDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  battery; // changed to batteryDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  coolant; // changed to coolantDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  engineOilLevelDipstick; // changed to engineOilLevelDipstickDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  engineOil; // changed to engineOilDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  engineMount; // changed to engineMountDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  enginePermisableBlowBy; // changed to enginePermisableBlowByDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  exhaustSmoke; // changed to exhaustSmokeDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  clutch; // changed to clutchDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  gearShift; // changed to gearShiftDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  commentsOnEngine; // changed to commentsOnEngineDropdownList - MULTIPLE - OPTIONAL ENTRY
+  final String
+  commentsOnEngineOil; // changed to commentsOnEngineOilDropdownList - MULTIPLE - OPTIONAL ENTRY
+  final String
+  commentsOnTowing; // changed to commentsOnTowingDropdownList - MULTIPLE - OPTIONAL ENTRY
+  final String
+  commentsOnTransmission; // changed to commentsOnTransmissionDropdownList - MULTIPLE - OPTIONAL ENTRY
+  final String
+  commentsOnRadiator; // changed to commentsOnRadiatorDropdownList - MULTIPLE - OPTIONAL ENTRY
+  final String
+  commentsOnOthers; // changed to commentsOnOthersDropdownList - MULTIPLE - OPTIONAL ENTRY
+  final List<String> engineBay; // renamed to engineBayImages - MANDATORY IMAGE
+  final List<String>
+  apronLhsRhs; // removed apronLhsRhs and divided into lhsApronImages and rhsApronImages - MANDATORY IMAGE
+  final List<String>
+  additionalImages; // renamed to additionalEngineImages - OPTIONAL IMAGE
+  final List<String> engineSound; // renamed to engineVideo - MANDATORY VIDEO
+  final List<String>
+  exhaustSmokeImages; // renamed to exhaustSmokeVideo - MANDATORY VIDEO
+  final String steering; // changed to steeringDropdownList - MANDATORY ENTRY
+  final String brakes; // changed to brakesDropdownList - MANDATORY ENTRY
+  final String
+  suspension; // changed to suspensionDropdownList - MANDATORY ENTRY
+  final int
+  odometerReadingInKms; // renamed to odometerReadingBeforeTestDrive - MANDATORY ENTRY
 
-  List<String> lhsFender;
-  List<String> lhsFrontTyre;
-  List<String> lhsOrvm;
-  List<String> lhsAPillar;
-  List<String> lhsBPillar;
-  List<String> lhsFrontDoor;
-  List<String> lhsRearDoor;
-  List<String> lhsCPillar;
-  List<String> lhsRunningBoard;
-  List<String> lhsRunningBoardImages;
+  final String electricals; // removed - DELETED
+  final String
+  rearWiperWasher; // changed to rearWiperWasherDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  rearDefogger; // changed to rearDefoggerDropdownList - MULTIPLE - MANDATORY ENTRY
+  final String
+  musicSystem; // removed and merged into infotainmentSystemDropdownList - MANDATORY ENTRY
+  final String
+  stereo; // removed and merged into infotainmentSystemDropdownList - MANDATORY ENTRY
 
-  List<String> lhsRearTyre;
-  List<String> lhsQuarterPanel;
+  final String
+  steeringMountedAudioControl; // removed and divided into steeringMountedMediaControls and steeringMountedSystemControls - SINGLE - MANDATORY ENTRY
+  final String
+  powerWindowConditionRhsFront; // renamed to rhsFrontDoorFeaturesDropdownList - MANDATORY ENTRY
+  final String
+  powerWindowConditionLhsFront; // renamed to lhsFrontDoorFeaturesDropdownList - MANDATORY ENTRY
+  final String
+  powerWindowConditionRhsRear; // renamed to rhsRearDoorFeaturesDropdownList - MANDATORY ENTRY
+  final String
+  powerWindowConditionLhsRear; // renamed to lhsRearDoorFeaturesDropdownList - MANDATORY ENTRY
+  final String
+  commentOnInterior; // changed to commentOnInteriorDropdownList - OPTIONAL ENTRY
+  final String
+  airbagFeaturesDriverSide; // renamed to driverAirbag - SINGLE - OPTIONAL ENTRY
+  final String
+  airbagFeaturesCoDriverSide; // renamed to coDriverAirbag - SINGLE - OPTIONAL ENTRY
+  final String
+  airbagFeaturesLhsAPillarCurtain; // renamed to coDriverSeatAirbag - SINGLE - OPTIONAL ENTRY
+  final String
+  airbagFeaturesLhsBPillarCurtain; // renamed to lhsCurtainAirbag - SINGLE - OPTIONAL ENTRY
+  final String
+  airbagFeaturesLhsCPillarCurtain; // renamed to lhsRearSideAirbag - SINGLE - OPTIONAL ENTRY
+  final String
+  airbagFeaturesRhsAPillarCurtain; // renamed to driverSeatAirbag - SINGLE - OPTIONAL ENTRY
+  final String
+  airbagFeaturesRhsBPillarCurtain; // renamed to rhsCurtainAirbag - SINGLE - OPTIONAL ENTRY
+  final String
+  airbagFeaturesRhsCPillarCurtain; // renamed to rhsRearSideAirbag - SINGLE - OPTIONAL ENTRY
+  final String sunroof; // changed to sunroofDropdownList - MANDATORY ENTRY
+  final String
+  leatherSeats; // removed and merged to seatsUpholstery - MANDATORY ENTRY
+  final String
+  fabricSeats; // removed and merged to seatsUpholstery - MANDATORY ENTRY
+  final String commentsOnElectricals; // removed - DELETED
+  final List<String>
+  meterConsoleWithEngineOn; // renamed to meterConsoleWithEngineOnImages - MANDATORY IMAGE
+  final List<String>
+  airbags; // renamed to airbagImages - MANDATORY IMAGE - IF "NUMBER OF POWER WINDOW IS "1 AND ABOVE"
+  final List<String>
+  frontSeatsFromDriverSideDoorOpen; // renamed to frontSeatsFromDriverSideImages - MANDATORY IMAGE
+  final List<String>
+  rearSeatsFromRightSideDoorOpen; // renamed to rearSeatsFromRightSideImages - MANDATORY IMAGE
+  final List<String>
+  dashboardFromRearSeat; // renamed to dashboardImages - MANDATORY IMAGE
+  final String
+  reverseCamera; // changed to reverseCameraDropdownList - MANDATORY ENTRY
+  final List<String>
+  additionalImages2; // renamed to additionalInteriorImages - OPTIONAL IMAGE
+  final String
+  airConditioningManual; // renamed to acTypeDropdownList - MANDATORY ENTRY
+  final String
+  airConditioningClimateControl; // renamed to acCoolingDropdownList - MANDATORY ENTRY
 
-  List<String> rearBumper;
-  List<String> lhsTailLamp;
-  List<String> lhsRearFogLamp;
-  List<String> rhsTailLamp;
-  List<String> rhsRearFogLamp;
+  // new named and new feilds
+  final List<String> lhsFenderImages; // MANDATORY IMAGE
+  final List<String> batteryImages; // MANDATORY IMAGE
 
-  List<String> rearWindshield;
-  List<String> rearWiperWasher;
+  final List<String> sunroofImages; // MANDATORY IMAGE
 
-  String bootDoorOpenImage;
-  String bootDoorClosedImage;
+  final String fuelLevel; // single select dropdown - SINGLE - MANDATORY ENTRY
+  final String abs; // single select dropdown - SINGLE - MANDATORY ENTRY
+  final String
+  roadTaxValidity; // single select dropdown - SINGLE - MANDATORY ENTRY
+  final DateTime?
+  taxValidTill; // AUTO FETCH - TO SHOW ONLY IF "LIMITED PERIOD" IS SELECTED IN ROAD TAX VALIDITY
+  final DateTime? insuranceValidity; // AUTO FETCH
+  final String appointmentId; // AUTO GENERATED
 
-  List<String> bootDoor;
-  List<String> spareWheel;
-  List<String> spareTyre;
-  List<String> bootFloor;
-  List<String> rhsFender;
-  List<String> rhsFrontTyre;
-  List<String> rhsOrvm;
-  List<String> rhsAPillar;
-  List<String> rhsBPillar;
-  List<String> rhsFrontDoor;
-  List<String> rhsRearDoor;
-  List<String> rhsCPillar;
-  List<String> rhsRunningBoard;
-  List<String> rhsRunningBoardImages;
+  final String id; // AUTO
+  final DateTime? timestamp; // AUTO
 
-  List<String> rhsRearTyre;
-  List<String> rhsQuarterPanel;
+  final String fuelType; // SINGLE SELECT DROPDOWN - AUTO FETCH
+  final int cubicCapacity; // AUTO FETCH
+  final String hypothecationDetails; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String> frontWindshieldImages; // MANDATORY IMAGE
+  final List<String> roofImages; // MANDATORY IMAGE
+  final String
+  rcCondition; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY IF RC AVAILABILITY IS MARKED "ORIGINAL/DUPLICATE"
+  final String registrationNumber; // MANDATORY ENTRY
+  final DateTime? registrationDate; // AUTO FETCH
+  final String toBeScrapped; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final String registrationState; // AUTO FETCH
+  final String registeredRto; // AUTO FETCH
+  final int ownerSerialNumber; // AUTO FETCH
+  final String make; // SINGLE SELECT DROPDOWN - AUTO FETCH
+  final String model; // SINGLE SELECT DROPDOWN - AUTO FETCH
+  final String variant; // SINGLE SELECT DROPDOWN - AUTO FETCH
+  final String engineNumber; // AUTO FETCH
+  final String chassisNumber; // AUTO FETCH
+  final String registeredOwner; // AUTO FETCH
+  final String registeredAddressAsPerRc; // AUTO FETCH
+  final String duplicateKey; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final String rtoNoc; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final String
+  rtoForm28; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY IF "RTO NOC" IS MENTIONED ANYTHING EXCEPT "NOT APPLICABLE"
+  final String partyPeshi; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String> lhsHeadlampImages; // MANDATORY IMAGE
+  final List<String> lhsFoglampImages; // MANDATORY IMAGE
+  final List<String> rhsHeadlampImages; // MANDATORY IMAGE
+  final List<String> rhsFoglampImages; // MANDATORY IMAGE
+  final List<String> lhsFrontTyreImages; // MANDATORY IMAGE
+  final List<String> lhsRunningBorderImages; // MANDATORY IMAGE
+  final List<String> lhsOrvmImages; // MANDATORY IMAGE
+  final List<String> lhsAPillarImages; // MANDATORY IMAGE
+  final List<String> lhsFrontDoorImages; // MANDATORY IMAGE
+  final List<String> lhsBPillarImages; // MANDATORY IMAGE
+  final List<String> lhsRearDoorImages; // MANDATORY IMAGE
+  final List<String> lhsCPillarImages; // MANDATORY IMAGE
+  final List<String> lhsRearTyreImages; // MANDATORY IMAGE
+  final List<String> lhsTailLampImages; // MANDATORY IMAGE
+  final List<String> rhsTailLampImages; // MANDATORY IMAGE
+  final List<String> rearWindshieldImages; // MANDATORY IMAGE
+  final List<String> spareTyreImages; // MANDATORY IMAGE
+  final List<String> bootFloorImages; // MANDATORY IMAGE
+  final String noOfPowerWindows; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String> rhsRearTyreImages; // MANDATORY IMAGE
+  final List<String> rhsCPillarImages; // MANDATORY IMAGE
+  final List<String> rhsRearDoorImages; // MANDATORY IMAGE
+  final List<String> rhsBPillarImages; // MANDATORY IMAGE
+  final List<String> rhsFrontDoorImages; // MANDATORY IMAGE
+  final List<String> rhsAPillarImages; // MANDATORY IMAGE
+  final List<String> rhsRunningBorderImages; // MANDATORY IMAGE
+  final List<String> rhsFrontTyreImages; // MANDATORY IMAGE
+  final List<String> rhsOrvmImages; // MANDATORY IMAGE
+  final List<String> rhsFenderImages; // MANDATORY IMAGE
+  final int noOfAirBags; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final String inbuiltSpeaker; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final String externalSpeaker; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final String commentsOnAc; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final String approvedBy; // AUTO
+  final DateTime? approvalDate; // AUTO
+  final DateTime? approvalTime; // AUTO
+  final String approvalStatus; // AUTO
+  final String contactNumber; // AUTO
+  final DateTime? newArrivalMessage; // AUTO
+  final String budgetCar; // AUTO
+  final String status; // AUTO
+  final int priceDiscovery; // AUTO
+  final String priceDiscoveryBy; // AUTO
+  final String latlong; // AUTO
+  final String retailAssociate; // AUTO
+  final int kmRangeLevel; // AUTO
+  final String highestBidder; // AUTO
+  final int v; // AUTO
+  final String ieName; // AUTO FETCH
+  final String
+  inspectionCity; // SINGLE SELECT DROPDOWN - SINGLE - MANDATORY ENTRY
 
-  List<String> bonnetImages;
-  List<String> frontWindshieldImages;
-  List<String> frontWiperWasherImages;
-  List<String> roofImages;
-  List<String> frontBumperImages;
+  // RC Book Section
+  final List<String>
+  rcBookAvailabilityDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final DateTime? fitnessValidity; // AUTO FETCH
+  final DateTime? yearAndMonthOfManufacture; // AUTO FETCH
+  final List<String>
+  mismatchInRcDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  insuranceDropdownList; // SINGLE SELECT DROPDOWN (Note: Insurance field is SINGLE in Excel) - MANDATORY ENTRY
+  final String policyNumber; // AUTO FETCH
+  final List<String>
+  mismatchInInsuranceDropdownList; // MULTIPLE SELECT DROPDOWN (Note: Not found in Excel, keeping as MULTIPLE based on naming) - MANDATORY ENTRY IF "INSURANCE" IS "THIRD PARTY || COMPREHENSIVE || ZERO DEPRECIATION"
+  final List<String>
+  additionalDetailsDropdownList; // MULTIPLE SELECT DROPDOWN - OPTIONAL ENTRY
 
-  List<String> lhsHeadlampImages;
-  List<String> lhsFoglampImages;
-  List<String> rhsHeadlampImages;
-  List<String> rhsFoglampImages;
+  // Images
+  final List<String> rcTokenImages; // MANDATORY IMAGE
+  final List<String> insuranceImages; // MANDATORY IMAGE
+  final List<String>
+  duplicateKeyImages; // MANDATORY ENTRY IF "DUPLICATE KEY" IS MARKED "AVAILABLE"
+  final List<String> form26AndGdCopyIfRcIsLostImages; // MANDATORY IMAGE
 
-  List<String> lhsFenderImages;
-  List<String> lhsFrontTyreImages;
-  List<String> lhsOrvmImages;
-  List<String> lhsAPillarImages;
-  List<String> lhsBPillarImages;
-  List<String> lhsFrontDoorImages;
-  List<String> lhsRearDoorImages;
-  List<String> lhsCPillarImages;
+  // Exterior Body Parts - All MULTIPLE SELECT DROPDOWNS
+  final List<String>
+  bonnetDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  frontWindshieldDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  roofDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  frontBumperDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsHeadlampDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsFoglampDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsHeadlampDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsFoglampDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsFenderDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsOrvmDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsAPillarDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsBPillarDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsCPillarDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsFrontWheelDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsFrontTyreDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsRearWheelDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsRearTyreDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsFrontDoorDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsRearDoorDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsRunningBorderDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsQuarterPanelDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rearBumperDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsTailLampDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsTailLampDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rearWindshieldDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  bootDoorDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  spareTyreDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  bootFloorDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsRearWheelDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsRearTyreDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsFrontWheelDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsFrontTyreDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsQuarterPanelDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsAPillarDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsBPillarDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsCPillarDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsRunningBorderDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsRearDoorDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsFrontDoorDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsOrvmDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsFenderDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  commentsOnExteriorDropdownList; // MULTIPLE SELECT DROPDOWN - OPTIONAL ENTRY
 
-  List<String> lhsRearTyreImages;
-  List<String> lhsQuarterPanelImages;
+  // Exterior Images
+  final List<String> frontMainImages; // MANDATORY IMAGE
+  final List<String> bonnetClosedImages; // MANDATORY IMAGE
+  final List<String> bonnetOpenImages; // MANDATORY IMAGE
+  final List<String> frontBumperLhs45DegreeImages; // MANDATORY IMAGE
+  final List<String> frontBumperRhs45DegreeImages; // MANDATORY IMAGE
+  final List<String> lhsFullViewImages; // MANDATORY IMAGE
+  final List<String> lhsFrontWheelImages; // MANDATORY IMAGE
+  final List<String> lhsRearWheelImages; // MANDATORY IMAGE
+  final List<String> lhsQuarterPanelWithRearDoorOpenImages; // MANDATORY IMAGE
+  final List<String> rearMainImages; // MANDATORY IMAGE
+  final List<String> rearWithBootDoorOpenImages; // MANDATORY IMAGE
+  final List<String> rearBumperLhs45DegreeImages; // MANDATORY IMAGE
+  final List<String> rearBumperRhs45DegreeImages; // MANDATORY IMAGE
+  final List<String> rhsFullViewImages; // MANDATORY IMAGE
+  final List<String> rhsQuarterPanelWithRearDoorOpenImages; // MANDATORY IMAGE
+  final List<String> rhsRearWheelImages; // MANDATORY IMAGE
+  final List<String> rhsFrontWheelImages; // MANDATORY IMAGE
 
-  List<String> rearBumperImages;
-  List<String> lhsTailLampImages;
-  List<String> lhsRearFogLampImages;
-  List<String> rhsTailLampImages;
-  List<String> rhsRearFogLampImages;
-  List<String> rearWindshieldImages;
-  List<String> rearWiperWasherImages;
+  // Engine Bay Components - All MULTIPLE SELECT DROPDOWNS
+  final List<String>
+  upperCrossMemberDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  radiatorSupportDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  headlightSupportDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lowerCrossMemberDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsApronDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsApronDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  firewallDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  cowlTopDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  engineDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  batteryDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  coolantDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  engineOilLevelDipstickDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  engineOilDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  engineMountDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  enginePermisableBlowByDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  exhaustSmokeDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  clutchDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  gearShiftDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  commentsOnEngineDropdownList; // MULTIPLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final List<String>
+  commentsOnEngineOilDropdownList; // MULTIPLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final List<String>
+  commentsOnTowingDropdownList; // MULTIPLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final List<String>
+  commentsOnTransmissionDropdownList; // MULTIPLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final List<String>
+  commentsOnRadiatorDropdownList; // MULTIPLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final List<String>
+  commentsOnOthersDropdownList; // MULTIPLE SELECT DROPDOWN - OPTIONAL ENTRY
 
-  List<String> lhsFrontWheelImages;
-  List<String> rhsFrontWheelImages;
-  List<String> lhsRearWheelImages;
-  List<String> rhsRearWheelImages;
+  // Engine Images
+  final List<String> engineBayImages; // MANDATORY IMAGE
+  final List<String> lhsApronImages; // MANDATORY IMAGE
+  final List<String> rhsApronImages; // MANDATORY IMAGE
+  final List<String> additionalEngineImages; // OPTIONAL IMAGE
+  final List<String> engineVideo; // MANDATORY VIDEO
+  final List<String> exhaustSmokeVideo; // MANDATORY VIDEO
 
-  List<String> lhsFrontWheel;
-  List<String> rhsFrontWheel;
-  List<String> lhsRearWheel;
-  List<String> rhsRearWheel;
+  // Test Drive & Features
+  final List<String>
+  steeringDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  brakesDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  suspensionDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final int
+  odometerReadingBeforeTestDrive; // SINGLE SELECT DROPDOWN (Note: Integer field, dropdown in Excel) - MANDATORY ENTRY
+  final List<String>
+  rearWiperWasherDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rearDefoggerDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  infotainmentSystemDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final String
+  steeringMountedMediaControls; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final String
+  steeringMountedSystemControls; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsFrontDoorFeaturesDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsFrontDoorFeaturesDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsRearDoorFeaturesDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  lhsRearDoorFeaturesDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  commentOnInteriorDropdownList; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
 
+  // Airbags - All SINGLE SELECT DROPDOWNS
+  final String driverAirbag; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final String coDriverAirbag; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final String coDriverSeatAirbag; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final String lhsCurtainAirbag; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final String lhsRearSideAirbag; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final String driverSeatAirbag; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final String rhsCurtainAirbag; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final String rhsRearSideAirbag; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final List<String>
+  sunroofDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final String seatsUpholstery; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
 
-  // engine bay images
-  List<String> engineBayImages;
-  String engineSoundVideo;
-  String exhaustSmokeVideo;
-  String clusterMeterWithEngineImage;
+  // Interior Images
+  final List<String> meterConsoleWithEngineOnImages; // MANDATORY IMAGE
+  final List<String>
+  airbagImages; // MANDATORY IMAGE - IF "NUMBER OF POWER WINDOW IS "1 AND ABOVE"
+  final List<String> frontSeatsFromDriverSideImages; // MANDATORY IMAGE
+  final List<String> rearSeatsFromRightSideImages; // MANDATORY IMAGE
+  final List<String> dashboardImages; // MANDATORY IMAGE
+  final List<String>
+  reverseCameraDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String> additionalInteriorImages; // OPTIONAL IMAGE
 
-  String odometerReadingInKms;
+  // AC & Climate
+  final String acTypeDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final String
+  acCoolingDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
 
-  List<String> engine;
-  List<String> commentsOnEngine;
-  List<String> engineOilLevelDipstick;
-  List<String> engineOil;
-  List<String> commentsOnEngineOil;
-  List<String> enginePermisableBlowBy;
-  List<String> coolant;
+  // Fresh Fields - Vehicle Details
+  final List<String> chassisEmbossmentImages; // MANDATORY IMAGE
+  final String
+  chassisDetails; // MULTIPLE SELECT DROPDOWN - AUTO FETCH - MANDATORY ENTRY
+  final List<String> vinPlateImages; // MANDATORY IMAGE
+  final String
+  vinPlateDetails; // SINGLE SELECT DROPDOWN - AUTO FETCH - MANDATORY ENTRY
+  final List<String> roadTaxImages; // MANDATORY IMAGE
+  final int seatingCapacity; // AUTO FETCH
+  final String color; // AUTO FETCH
+  final int numberOfCylinders; // AUTO FETCH
+  final String norms; // AUTO FETCH
+  final String hypothecatedTo; // AUTO FETCH
+  final String insurer; // AUTO FETCH
+  final List<String> pucImages; // MANDATORY IMAGE - AUTO FETCH
+  final DateTime? pucValidity; // AUTO FETCH
+  final String pucNumber; // AUTO FETCH
+  final String rcStatus; // AUTO FETCH
+  final String blacklistStatus; // AUTO FETCH
+  final List<String>
+  rtoNocImages; // MANDATORY IMAGE - IF "RTO NOC" IS MARKED "ISSUED" OR "EXPIRED"
+  final List<String>
+  rtoForm28Images; // MANDATORY IMAGE - IF "RTO FORM 28" IS MARKED "ISSUED" OR "EXPIRED"
 
-  String abs;
-
-  List<String> cowlTop;
-  String cowlTopImage;
-
-  List<String> firewall;
-  String firewallImage;
-
-  List<String> lhsApron;
-  List<String> rhsApron;
-
-  List<String> lhsApronImages;
-  List<String> rhsApronImages;
-
-  List<String> battery;
-  String batteryImage;
-
-  List<String> upperCrossMember;
-  List<String> lhsSideMember;
-  List<String> rhsSideMember;
-
-  List<String> engineMount;
-  List<String> headlightSupport;
-  List<String> radiatorSupport;
-  List<String> commentsOnRadiator;
-  List<String> lowerCrossMember;
-
-  List<String> exhaustSmoke;
-  List<String> commentsOnTowing;
-  List<String> commentsOnOthers;
-
-  List<String> optionalEngineImages;
-
-  List<String> commentsOnClusterMeter;
-  String fuelLevel;
-  String irvm;
-
-  List<String> dashboard;
-  List<String> infotainmentSystem;
-
-  String inbuiltSpeaker;
-  String externalSpeaker;
-
-  String steeringMountedMediaControls;
-
-  String steeringMountedSystemControls;
-
-  List<String> acType;
-  List<String> acCool;
-
-  List<String> acImages;
-
-  String commentsOnAc;
-
-  String noOfPowerWindows;
-
-  List<String> lhsFrontDoorFeatures;
-  List<String> rhsFrontDoorFeatures;
-  List<String> lhsRearDoorFeatures;
-  List<String> rhsRearDoorFeatures;
-
-  List<String> sunroof;
-
-  int numberOfAirbags;
-  String driverSideAirbag;
-  String coDriverSideAirbag;
-  String rhsCurtainAirbag;
-  String lhsCurtainAirbag;
-  String driverSideSeatAirbag;
-  String coDriverSideSeatAirbag;
-  String driverSideKneeAirbag;
-  String coDriverKneeAirbag;
-  String rhsRearSideAirbags;
-  String lhsRearSideAirbags;
-
-  String seatsUpholstery;
-  int interiorSeatingCapacity;
-  String driverSeat;
-  String coDriverSeat;
-  String frontCentreArmRest;
-  String rearSeats;
-  String thirdRowSeats;
-
-  String frontSeatsDriverSideImage;
-  String rearSeatsRightSideImage;
-  String dashboardFromRearSeatImage;
-
-  String reverseCamera;
-
-  List<String> optionalInteriorImages;
-  String commentOnInterior;
-
-  String steering;
-  String clutch;
-  String gearShift;
-  String transmissionType;
-  String commentsOnTransmission;
-  String driveTrain;
-  String brakes;
-  String suspension;
-  String testDriveOdometerImage;
-  String testDriveOdometerReading;
-
-  String additionalDetails;
-  String contactNumber;
-  String status;
+  // Additional Features
+  final List<String>
+  frontWiperAndWasherDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY IMAGE
+  final List<String> frontWiperAndWasherImages; // MANDATORY IMAGE
+  final List<String>
+  lhsRearFogLampDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY IMAGE
+  final List<String> lhsRearFogLampImages; // MANDATORY IMAGE
+  final List<String>
+  rhsRearFogLampDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY IMAGE
+  final List<String> rhsRearFogLampImages; // MANDATORY IMAGE
+  final List<String> rearWiperAndWasherImages; // MANDATORY IMAGE
+  final List<String>
+  spareWheelDropdownList; // MULTIPLE SELECT DROPDOWN - MANDATORY IMAGE
+  final List<String> spareWheelImages; // MANDATORY IMAGE
+  final List<String> cowlTopImages; // MANDATORY IMAGE
+  final List<String> firewallImages; // MANDATORY IMAGE
+  final List<String>
+  lhsSideMemberDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rhsSideMemberDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  transmissionTypeDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  driveTrainDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  commentsOnClusterMeterDropdownList; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final String irvm; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  dashboardDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String> acImages; // MANDATORY IMAGE
+  final List<String> reverseCameraImages; // MANDATORY IMAGE
+  final String driverSideKneeAirbag; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final String
+  coDriverKneeSeatAirbag; // SINGLE SELECT DROPDOWN - OPTIONAL ENTRY
+  final List<String>
+  driverSeatDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  coDriverSeatDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  frontCentreArmRestDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  rearSeatsDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String>
+  thirdRowSeatsDropdownList; // SINGLE SELECT DROPDOWN - MANDATORY ENTRY
+  final List<String> odometerReadingAfterTestDriveImages; // MANDATORY IMAGE
+  final int odometerReadingAfterTestDriveInKms; // MANDATORY ENTRY
 
   CarModel({
-    this.id = '',
-    this.timestamp,
-    this.emailAddress = '',
-    this.appointmentId = '',
-    this.city = '',
-    this.inspectionEngineerName = '',
-    this.registrationType = '',
-    this.rcBookAvailability = '',
-    this.rcCondition = '',
-    this.registrationNumber = '',
-    this.registrationDate,
-    this.fitnessTill,
-    this.toBeScrapped = '',
-    this.chassisEmbossmentImage = '',
-    this.chassisDetails = '',
-    this.vinPlateImage = '',
-    this.vinPlateDetails = '',
-    this.registrationState = '',
-    this.registrationCity = '',
-    this.registeredRto = '',
-    this.ownerSerialNumber = 0,
-    this.make = '',
-    this.model = '',
-    this.variant = '',
-    this.engineNumber = '',
-    this.chassisNumber = '',
-    this.registeredOwner = '',
-    this.registeredAddressAsPerRc = '',
-    this.yearMonthOfManufacture,
-    this.fuelType = '',
-    this.cubicCapacity = 0,
-    this.seatingCapacity = 0,
-    this.color = '',
-    this.numberOfCylinders = 0,
-    this.bodyType = '',
-    this.norms = '',
-    this.vehicleCategory = '',
-    this.wheelBase = '',
-    this.grossVehicleWeight = '',
-    this.unladenWeight = '',
-    this.hypothecationDetails = '',
-    this.hypothecatorName = '',
-    List<String>? mismatchInRc,
-    this.roadTaxValidity = '',
-    this.roadTaxType = '',
-    this.taxValidTill,
-    this.insurance = '',
-    this.insurancePolicyNumber = '',
-    this.insuranceValidity,
-    this.noClaimBonus = '',
-    this.mismatchInInsurance = '',
-    this.pollutionCertificateImage = '',
-    this.pollutionCertificateValidity,
-    this.pollutionCertificateNumber = '',
-    this.blacklistStatus = '',
-    this.duplicateKey = '',
-    this.rtoNoc = '',
-    this.rtoForm28 = '',
-    this.partyPeshi = '',
-    List<String>? optionalDetails,
-    List<String>? registrationCertificateAvailability,
-    this.registrationCertificateStatus = '',
-    List<String>? rcTaxToken,
-    List<String>? insuranceCopy,
-    List<String>? bothKeys,
-    List<String>? form26GdCopyIfRcIsLost,
-    List<String>? insuranceDetails,
-    List<String>? roadTaxImages,
-    List<String>? registrationCertificateImages,
-    this.frontMainImage = '',
-    this.lhsFullViewImage = '',
-    this.rearMainImage = '',
-    List<String>? bonnet,
-    List<String>? frontWindshield,
-    List<String>? frontWiperWasher,
-    List<String>? roof,
-    List<String>? frontBumper,
-    List<String>? lhsHeadlamp,
-    List<String>? lhsFoglamp,
-    List<String>? rhsHeadlamp,
-    List<String>? rhsFoglamp,
-    List<String>? lhsFender,
-    List<String>? lhsFrontTyre,
-    List<String>? lhsOrvm,
-    List<String>? lhsAPillar,
-    List<String>? lhsBPillar,
-    List<String>? lhsFrontDoor,
-    List<String>? lhsRearDoor,
-    List<String>? lhsCPillar,
-    List<String>? lhsRunningBoard,
-    List<String>? lhsRunningBoardImages,
-    List<String>? lhsRearTyre,
-    List<String>? lhsQuarterPanel,
-    List<String>? rearBumper,
-    List<String>? lhsTailLamp,
-    List<String>? lhsRearFogLamp,
-    List<String>? rhsTailLamp,
-    List<String>? rhsRearFogLamp,
-    List<String>? rearWindshield,
-    List<String>? rearWiperWasher,
-    this.bootDoorOpenImage = '',
-    this.bootDoorClosedImage = '',
-    List<String>? bootDoor,
-    List<String>? spareWheel,
-    List<String>? spareTyre,
-    List<String>? bootFloor,
-    List<String>? rhsFender,
-    List<String>? rhsFrontTyre,
-    List<String>? rhsOrvm,
-    List<String>? rhsAPillar,
-    List<String>? rhsBPillar,
-    List<String>? rhsFrontDoor,
-    List<String>? rhsRearDoor,
-    List<String>? rhsCPillar,
-    List<String>? rhsRunningBoard,
-    List<String>? rhsRunningBoardImages,
-    List<String>? rhsRearTyre,
-    List<String>? rhsQuarterPanel,
-    List<String>? bonnetImages,
-    List<String>? frontWindshieldImages,
-    List<String>? frontWiperWasherImages,
-    List<String>? roofImages,
-    List<String>? frontBumperImages,
-    List<String>? lhsHeadlampImages,
-    List<String>? lhsFoglampImages,
-    List<String>? rhsHeadlampImages,
-    List<String>? rhsFoglampImages,
-    List<String>? lhsFenderImages,
-    List<String>? lhsFrontTyreImages,
-    List<String>? lhsOrvmImages,
-    List<String>? lhsAPillarImages,
-    List<String>? lhsBPillarImages,
-    List<String>? lhsFrontDoorImages,
-    List<String>? lhsRearDoorImages,
-    List<String>? lhsCPillarImages,
-    List<String>? lhsRearTyreImages,
-    List<String>? lhsQuarterPanelImages,
-    List<String>? rearBumperImages,
-    List<String>? lhsTailLampImages,
-    List<String>? lhsRearFogLampImages,
-    List<String>? rhsTailLampImages,
-    List<String>? rhsRearFogLampImages,
-    List<String>? rearWindshieldImages,
-    List<String>? rearWiperWasherImages,
-    List<String>? lhsFrontWheelImages,
-    List<String>? rhsFrontWheelImages,
-    List<String>? lhsRearWheelImages,
-    List<String>? rhsRearWheelImages,
-    List<String>? lhsFrontWheel,
-    List<String>? rhsFrontWheel,
-    List<String>? lhsRearWheel,
-    List<String>? rhsRearWheel,
-    List<String>? engineBayImages,
-    this.engineSoundVideo = '',
-    this.exhaustSmokeVideo = '',
-    this.clusterMeterWithEngineImage = '',
-    this.odometerReadingInKms = '',
-    List<String>? engine,
-    List<String>? commentsOnEngine,
-    List<String>? engineOilLevelDipstick,
-    List<String>? engineOil,
-    List<String>? commentsOnEngineOil,
-    List<String>? enginePermisableBlowBy,
-    List<String>? coolant,
-    this.abs = '',
-    List<String>? cowlTop,
-    this.cowlTopImage = '',
-    List<String>? firewall,
-    this.firewallImage = '',
-    List<String>? lhsApron,
-    List<String>? rhsApron,
-    List<String>? lhsApronImages,
-    List<String>? rhsApronImages,
-    List<String>? battery,
-    this.batteryImage = '',
-    List<String>? upperCrossMember,
-    List<String>? lhsSideMember,
-    List<String>? rhsSideMember,
-    List<String>? engineMount,
-    List<String>? headlightSupport,
-    List<String>? radiatorSupport,
-    List<String>? commentsOnRadiator,
-    List<String>? lowerCrossMember,
-    List<String>? exhaustSmoke,
-    List<String>? commentsOnTowing,
-    List<String>? commentsOnOthers,
-    List<String>? optionalEngineImages,
-    List<String>? commentsOnClusterMeter,
-    this.fuelLevel = '',
-    this.irvm = '',
-    List<String>? dashboard,
-    List<String>? infotainmentSystem,
-    this.inbuiltSpeaker = '',
-    this.externalSpeaker = '',
-    this.steeringMountedMediaControls = '',
-    this.steeringMountedSystemControls = '',
-    List<String>? acType,
-    List<String>? acCool,
-    List<String>? acImages,
-    this.commentsOnAc = '',
-    this.noOfPowerWindows = '',
-    List<String>? lhsFrontDoorFeatures,
-    List<String>? rhsFrontDoorFeatures,
-    List<String>? lhsRearDoorFeatures,
-    List<String>? rhsRearDoorFeatures,
-    List<String>? sunroof,
-    this.numberOfAirbags = 0,
-    this.driverSideAirbag = '',
-    this.coDriverSideAirbag = '',
-    this.rhsCurtainAirbag = '',
-    this.lhsCurtainAirbag = '',
-    this.driverSideSeatAirbag = '',
-    this.coDriverSideSeatAirbag = '',
-    this.driverSideKneeAirbag = '',
-    this.coDriverKneeAirbag = '',
-    this.rhsRearSideAirbags = '',
-    this.lhsRearSideAirbags = '',
-    this.seatsUpholstery = '',
-    this.interiorSeatingCapacity = 0,
-    this.driverSeat = '',
-    this.coDriverSeat = '',
-    this.frontCentreArmRest = '',
-    this.rearSeats = '',
-    this.thirdRowSeats = '',
-    this.frontSeatsDriverSideImage = '',
-    this.rearSeatsRightSideImage = '',
-    this.dashboardFromRearSeatImage = '',
-    this.reverseCamera = '',
-    List<String>? optionalInteriorImages,
-    this.commentOnInterior = '',
-    this.steering = '',
-    this.clutch = '',
-    this.gearShift = '',
-    this.transmissionType = '',
-    this.commentsOnTransmission = '',
-    this.driveTrain = '',
-    this.brakes = '',
-    this.suspension = '',
-    this.testDriveOdometerImage = '',
-    this.testDriveOdometerReading = '',
-    this.additionalDetails = '',
-    this.contactNumber = '',
-    this.status = '',
-  }) : mismatchInRc = mismatchInRc ?? <String>[],
-       optionalDetails = optionalDetails ?? <String>[],
-       registrationCertificateAvailability =
-           registrationCertificateAvailability ?? <String>[],
-       rcTaxToken = rcTaxToken ?? <String>[],
-       insuranceCopy = insuranceCopy ?? <String>[],
-       bothKeys = bothKeys ?? <String>[],
-       form26GdCopyIfRcIsLost = form26GdCopyIfRcIsLost ?? <String>[],
-       insuranceDetails = insuranceDetails ?? <String>[],
-       roadTaxImages = roadTaxImages ?? <String>[],
-       registrationCertificateImages =
-           registrationCertificateImages ?? <String>[],
-       bonnet = bonnet ?? <String>[],
-       frontWindshield = frontWindshield ?? <String>[],
-       frontWiperWasher = frontWiperWasher ?? <String>[],
-       roof = roof ?? <String>[],
-       frontBumper = frontBumper ?? <String>[],
-       lhsHeadlamp = lhsHeadlamp ?? <String>[],
-       lhsFoglamp = lhsFoglamp ?? <String>[],
-       rhsHeadlamp = rhsHeadlamp ?? <String>[],
-       rhsFoglamp = rhsFoglamp ?? <String>[],
-       lhsFender = lhsFender ?? <String>[],
-       lhsFrontTyre = lhsFrontTyre ?? <String>[],
-       lhsOrvm = lhsOrvm ?? <String>[],
-       lhsAPillar = lhsAPillar ?? <String>[],
-       lhsBPillar = lhsBPillar ?? <String>[],
-       lhsFrontDoor = lhsFrontDoor ?? <String>[],
-       lhsRearDoor = lhsRearDoor ?? <String>[],
-       lhsCPillar = lhsCPillar ?? <String>[],
-       lhsRunningBoard = lhsRunningBoard ?? <String>[],
-       lhsRunningBoardImages = lhsRunningBoardImages ?? <String>[],
-       lhsRearTyre = lhsRearTyre ?? <String>[],
-       lhsQuarterPanel = lhsQuarterPanel ?? <String>[],
-       rearBumper = rearBumper ?? <String>[],
-       lhsTailLamp = lhsTailLamp ?? <String>[],
-       lhsRearFogLamp = lhsRearFogLamp ?? <String>[],
-       rhsTailLamp = rhsTailLamp ?? <String>[],
-       rhsRearFogLamp = rhsRearFogLamp ?? <String>[],
-       rearWindshield = rearWindshield ?? <String>[],
-       rearWiperWasher = rearWiperWasher ?? <String>[],
-       bootDoor = bootDoor ?? <String>[],
-       spareWheel = spareWheel ?? <String>[],
-       spareTyre = spareTyre ?? <String>[],
-       bootFloor = bootFloor ?? <String>[],
-       rhsFender = rhsFender ?? <String>[],
-       rhsFrontTyre = rhsFrontTyre ?? <String>[],
-       rhsOrvm = rhsOrvm ?? <String>[],
-       rhsAPillar = rhsAPillar ?? <String>[],
-       rhsBPillar = rhsBPillar ?? <String>[],
-       rhsFrontDoor = rhsFrontDoor ?? <String>[],
-       rhsRearDoor = rhsRearDoor ?? <String>[],
-       rhsCPillar = rhsCPillar ?? <String>[],
-       rhsRunningBoard = rhsRunningBoard ?? <String>[],
-       rhsRunningBoardImages = rhsRunningBoardImages ?? <String>[],
-       rhsRearTyre = rhsRearTyre ?? <String>[],
-       rhsQuarterPanel = rhsQuarterPanel ?? <String>[],
-       bonnetImages = bonnetImages ?? <String>[],
-       frontWindshieldImages = frontWindshieldImages ?? <String>[],
-       frontWiperWasherImages = frontWiperWasherImages ?? <String>[],
-       roofImages = roofImages ?? <String>[],
-       frontBumperImages = frontBumperImages ?? <String>[],
-       lhsHeadlampImages = lhsHeadlampImages ?? <String>[],
-       lhsFoglampImages = lhsFoglampImages ?? <String>[],
-       rhsHeadlampImages = rhsHeadlampImages ?? <String>[],
-       rhsFoglampImages = rhsFoglampImages ?? <String>[],
-       lhsFenderImages = lhsFenderImages ?? <String>[],
-       lhsFrontTyreImages = lhsFrontTyreImages ?? <String>[],
-       lhsOrvmImages = lhsOrvmImages ?? <String>[],
-       lhsAPillarImages = lhsAPillarImages ?? <String>[],
-       lhsBPillarImages = lhsBPillarImages ?? <String>[],
-       lhsFrontDoorImages = lhsFrontDoorImages ?? <String>[],
-       lhsRearDoorImages = lhsRearDoorImages ?? <String>[],
-       lhsCPillarImages = lhsCPillarImages ?? <String>[],
-       lhsRearTyreImages = lhsRearTyreImages ?? <String>[],
-       lhsQuarterPanelImages = lhsQuarterPanelImages ?? <String>[],
-       rearBumperImages = rearBumperImages ?? <String>[],
-       lhsTailLampImages = lhsTailLampImages ?? <String>[],
-       lhsRearFogLampImages = lhsRearFogLampImages ?? <String>[],
-       rhsTailLampImages = rhsTailLampImages ?? <String>[],
-       rhsRearFogLampImages = rhsRearFogLampImages ?? <String>[],
-       rearWindshieldImages = rearWindshieldImages ?? <String>[],
-       rearWiperWasherImages = rearWiperWasherImages ?? <String>[],
-       lhsFrontWheelImages = lhsFrontWheelImages ?? <String>[],
-       rhsFrontWheelImages = rhsFrontWheelImages ?? <String>[],
-       lhsRearWheelImages = lhsRearWheelImages ?? <String>[],
-       rhsRearWheelImages = rhsRearWheelImages ?? <String>[],
-       lhsFrontWheel = lhsFrontWheel ?? <String>[],
-       rhsFrontWheel = rhsFrontWheel ?? <String>[],
-       lhsRearWheel = lhsRearWheel ?? <String>[],
-       rhsRearWheel = rhsRearWheel ?? <String>[],
-       engineBayImages = engineBayImages ?? <String>[],
-       engine = engine ?? <String>[],
-       commentsOnEngine = commentsOnEngine ?? <String>[],
-       engineOilLevelDipstick = engineOilLevelDipstick ?? <String>[],
-       engineOil = engineOil ?? <String>[],
-       commentsOnEngineOil = commentsOnEngineOil ?? <String>[],
-       enginePermisableBlowBy = enginePermisableBlowBy ?? <String>[],
-       coolant = coolant ?? <String>[],
-       cowlTop = cowlTop ?? <String>[],
-       firewall = firewall ?? <String>[],
-       lhsApron = lhsApron ?? <String>[],
-       rhsApron = rhsApron ?? <String>[],
-       lhsApronImages = lhsApronImages ?? <String>[],
-       rhsApronImages = rhsApronImages ?? <String>[],
-       battery = battery ?? <String>[],
-       upperCrossMember = upperCrossMember ?? <String>[],
-       lhsSideMember = lhsSideMember ?? <String>[],
-       rhsSideMember = rhsSideMember ?? <String>[],
-       engineMount = engineMount ?? <String>[],
-       headlightSupport = headlightSupport ?? <String>[],
-       radiatorSupport = radiatorSupport ?? <String>[],
-       commentsOnRadiator = commentsOnRadiator ?? <String>[],
-       lowerCrossMember = lowerCrossMember ?? <String>[],
-       exhaustSmoke = exhaustSmoke ?? <String>[],
-       commentsOnTowing = commentsOnTowing ?? <String>[],
-       commentsOnOthers = commentsOnOthers ?? <String>[],
-       optionalEngineImages = optionalEngineImages ?? <String>[],
-       commentsOnClusterMeter = commentsOnClusterMeter ?? <String>[],
-       dashboard = dashboard ?? <String>[],
-       infotainmentSystem = infotainmentSystem ?? <String>[],
-       acType = acType ?? <String>[],
-       acCool = acCool ?? <String>[],
-       acImages = acImages ?? <String>[],
-       lhsFrontDoorFeatures = lhsFrontDoorFeatures ?? <String>[],
-       rhsFrontDoorFeatures = rhsFrontDoorFeatures ?? <String>[],
-       lhsRearDoorFeatures = lhsRearDoorFeatures ?? <String>[],
-       rhsRearDoorFeatures = rhsRearDoorFeatures ?? <String>[],
-       sunroof = sunroof ?? <String>[],
-       optionalInteriorImages = optionalInteriorImages ?? <String>[];
+    required this.id,
+    required this.timestamp,
+    required this.emailAddress,
+    required this.appointmentId,
+    required this.city,
+    required this.registrationType,
+    required this.rcBookAvailability,
+    required this.rcCondition,
+    required this.registrationNumber,
+    required this.registrationDate,
+    required this.fitnessTill,
+    required this.toBeScrapped,
+    required this.registrationState,
+    required this.registeredRto,
+    required this.ownerSerialNumber,
+    required this.make,
+    required this.model,
+    required this.variant,
+    required this.engineNumber,
+    required this.chassisNumber,
+    required this.registeredOwner,
+    required this.registeredAddressAsPerRc,
+    required this.yearMonthOfManufacture,
+    required this.fuelType,
+    required this.cubicCapacity,
+    required this.hypothecationDetails,
+    required this.mismatchInRc,
+    required this.roadTaxValidity,
+    required this.taxValidTill,
+    required this.insurance,
+    required this.insurancePolicyNumber,
+    required this.insuranceValidity,
+    required this.noClaimBonus,
+    required this.mismatchInInsurance,
+    required this.duplicateKey,
+    required this.rtoNoc,
+    required this.rtoForm28,
+    required this.partyPeshi,
+    required this.additionalDetails,
+    required this.rcTaxToken,
+    required this.insuranceCopy,
+    required this.bothKeys,
+    required this.form26GdCopyIfRcIsLost,
+    required this.bonnet,
+    required this.frontWindshield,
+    required this.roof,
+    required this.frontBumper,
+    required this.lhsHeadlamp,
+    required this.lhsFoglamp,
+    required this.rhsHeadlamp,
+    required this.rhsFoglamp,
+    required this.lhsFender,
+    required this.lhsOrvm,
+    required this.lhsAPillar,
+    required this.lhsBPillar,
+    required this.lhsCPillar,
+    required this.lhsFrontAlloy,
+    required this.lhsFrontTyre,
+    required this.lhsRearAlloy,
+    required this.lhsRearTyre,
+    required this.lhsFrontDoor,
+    required this.lhsRearDoor,
+    required this.lhsRunningBorder,
+    required this.lhsQuarterPanel,
+    required this.rearBumper,
+    required this.lhsTailLamp,
+    required this.rhsTailLamp,
+    required this.rearWindshield,
+    required this.bootDoor,
+    required this.spareTyre,
+    required this.bootFloor,
+    required this.rhsRearAlloy,
+    required this.rhsRearTyre,
+    required this.rhsFrontAlloy,
+    required this.rhsFrontTyre,
+    required this.rhsQuarterPanel,
+    required this.rhsAPillar,
+    required this.rhsBPillar,
+    required this.rhsCPillar,
+    required this.rhsRunningBorder,
+    required this.rhsRearDoor,
+    required this.rhsFrontDoor,
+    required this.rhsOrvm,
+    required this.rhsFender,
+    required this.comments,
+    required this.frontMain,
+    required this.bonnetImages,
+    required this.frontWindshieldImages,
+    required this.roofImages,
+    required this.frontBumperImages,
+    required this.lhsHeadlampImages,
+    required this.lhsFoglampImages,
+    required this.rhsHeadlampImages,
+    required this.rhsFoglampImages,
+    required this.lhsFront45Degree,
+    required this.lhsFenderImages,
+    required this.lhsFrontAlloyImages,
+    required this.lhsFrontTyreImages,
+    required this.lhsRunningBorderImages,
+    required this.lhsOrvmImages,
+    required this.lhsAPillarImages,
+    required this.lhsFrontDoorImages,
+    required this.lhsBPillarImages,
+    required this.lhsRearDoorImages,
+    required this.lhsCPillarImages,
+    required this.lhsRearTyreImages,
+    required this.lhsRearAlloyImages,
+    required this.lhsQuarterPanelImages,
+    required this.rearMain,
+    required this.rearWithBootDoorOpen,
+    required this.rearBumperImages,
+    required this.lhsTailLampImages,
+    required this.rhsTailLampImages,
+    required this.rearWindshieldImages,
+    required this.spareTyreImages,
+    required this.bootFloorImages,
+    required this.rhsRear45Degree,
+    required this.rhsQuarterPanelImages,
+    required this.rhsRearAlloyImages,
+    required this.rhsRearTyreImages,
+    required this.rhsCPillarImages,
+    required this.rhsRearDoorImages,
+    required this.rhsBPillarImages,
+    required this.rhsFrontDoorImages,
+    required this.rhsAPillarImages,
+    required this.rhsRunningBorderImages,
+    required this.rhsFrontAlloyImages,
+    required this.rhsFrontTyreImages,
+    required this.rhsOrvmImages,
+    required this.rhsFenderImages,
+    required this.upperCrossMember,
+    required this.radiatorSupport,
+    required this.headlightSupport,
+    required this.lowerCrossMember,
+    required this.lhsApron,
+    required this.rhsApron,
+    required this.firewall,
+    required this.cowlTop,
+    required this.engine,
+    required this.battery,
+    required this.coolant,
+    required this.engineOilLevelDipstick,
+    required this.engineOil,
+    required this.engineMount,
+    required this.enginePermisableBlowBy,
+    required this.exhaustSmoke,
+    required this.clutch,
+    required this.gearShift,
+    required this.commentsOnEngine,
+    required this.commentsOnEngineOil,
+    required this.commentsOnTowing,
+    required this.commentsOnTransmission,
+    required this.commentsOnRadiator,
+    required this.commentsOnOthers,
+    required this.engineBay,
+    required this.apronLhsRhs,
+    required this.batteryImages,
+    required this.additionalImages,
+    required this.engineSound,
+    required this.exhaustSmokeImages,
+    required this.steering,
+    required this.brakes,
+    required this.suspension,
+    required this.odometerReadingInKms,
+    required this.fuelLevel,
+    required this.abs,
+    required this.electricals,
+    required this.rearWiperWasher,
+    required this.rearDefogger,
+    required this.musicSystem,
+    required this.stereo,
+    required this.inbuiltSpeaker,
+    required this.externalSpeaker,
+    required this.steeringMountedAudioControl,
+    required this.noOfPowerWindows,
+    required this.powerWindowConditionRhsFront,
+    required this.powerWindowConditionLhsFront,
+    required this.powerWindowConditionRhsRear,
+    required this.powerWindowConditionLhsRear,
+    required this.commentOnInterior,
+    required this.noOfAirBags,
+    required this.airbagFeaturesDriverSide,
+    required this.airbagFeaturesCoDriverSide,
+    required this.airbagFeaturesLhsAPillarCurtain,
+    required this.airbagFeaturesLhsBPillarCurtain,
+    required this.airbagFeaturesLhsCPillarCurtain,
+    required this.airbagFeaturesRhsAPillarCurtain,
+    required this.airbagFeaturesRhsBPillarCurtain,
+    required this.airbagFeaturesRhsCPillarCurtain,
+    required this.sunroof,
+    required this.leatherSeats,
+    required this.fabricSeats,
+    required this.commentsOnElectricals,
+    required this.meterConsoleWithEngineOn,
+    required this.airbags,
+    required this.sunroofImages,
+    required this.frontSeatsFromDriverSideDoorOpen,
+    required this.rearSeatsFromRightSideDoorOpen,
+    required this.dashboardFromRearSeat,
+    required this.reverseCamera,
+    required this.additionalImages2,
+    required this.airConditioningManual,
+    required this.airConditioningClimateControl,
+    required this.commentsOnAc,
+    required this.approvedBy,
+    required this.approvalDate,
+    required this.approvalTime,
+    required this.approvalStatus,
+    required this.contactNumber,
+    required this.newArrivalMessage,
+    required this.budgetCar,
+    required this.status,
+    required this.priceDiscovery,
+    required this.priceDiscoveryBy,
+    required this.latlong,
+    required this.retailAssociate,
+    required this.kmRangeLevel,
+    required this.highestBidder,
+    required this.v,
+    required this.ieName,
+    required this.inspectionCity,
+    required this.rcBookAvailabilityDropdownList,
+    required this.fitnessValidity,
+    required this.yearAndMonthOfManufacture,
+    required this.mismatchInRcDropdownList,
+    required this.insuranceDropdownList,
+    required this.policyNumber,
+    required this.mismatchInInsuranceDropdownList,
+    required this.additionalDetailsDropdownList,
+    required this.rcTokenImages,
+    required this.insuranceImages,
+    required this.duplicateKeyImages,
+    required this.form26AndGdCopyIfRcIsLostImages,
+    required this.bonnetDropdownList,
+    required this.frontWindshieldDropdownList,
+    required this.roofDropdownList,
+    required this.frontBumperDropdownList,
+    required this.lhsHeadlampDropdownList,
+    required this.lhsFoglampDropdownList,
+    required this.rhsHeadlampDropdownList,
+    required this.rhsFoglampDropdownList,
+    required this.lhsFenderDropdownList,
+    required this.lhsOrvmDropdownList,
+    required this.lhsAPillarDropdownList,
+    required this.lhsBPillarDropdownList,
+    required this.lhsCPillarDropdownList,
+    required this.lhsFrontWheelDropdownList,
+    required this.lhsFrontTyreDropdownList,
+    required this.lhsRearWheelDropdownList,
+    required this.lhsRearTyreDropdownList,
+    required this.lhsFrontDoorDropdownList,
+    required this.lhsRearDoorDropdownList,
+    required this.lhsRunningBorderDropdownList,
+    required this.lhsQuarterPanelDropdownList,
+    required this.rearBumperDropdownList,
+    required this.lhsTailLampDropdownList,
+    required this.rhsTailLampDropdownList,
+    required this.rearWindshieldDropdownList,
+    required this.bootDoorDropdownList,
+    required this.spareTyreDropdownList,
+    required this.bootFloorDropdownList,
+    required this.rhsRearWheelDropdownList,
+    required this.rhsRearTyreDropdownList,
+    required this.rhsFrontWheelDropdownList,
+    required this.rhsFrontTyreDropdownList,
+    required this.rhsQuarterPanelDropdownList,
+    required this.rhsAPillarDropdownList,
+    required this.rhsBPillarDropdownList,
+    required this.rhsCPillarDropdownList,
+    required this.rhsRunningBorderDropdownList,
+    required this.rhsRearDoorDropdownList,
+    required this.rhsFrontDoorDropdownList,
+    required this.rhsOrvmDropdownList,
+    required this.rhsFenderDropdownList,
+    required this.commentsOnExteriorDropdownList,
+    required this.frontMainImages,
+    required this.bonnetClosedImages,
+    required this.bonnetOpenImages,
+    required this.frontBumperLhs45DegreeImages,
+    required this.frontBumperRhs45DegreeImages,
+    required this.lhsFullViewImages,
+    required this.lhsFrontWheelImages,
+    required this.lhsRearWheelImages,
+    required this.lhsQuarterPanelWithRearDoorOpenImages,
+    required this.rearMainImages,
+    required this.rearWithBootDoorOpenImages,
+    required this.rearBumperLhs45DegreeImages,
+    required this.rearBumperRhs45DegreeImages,
+    required this.rhsFullViewImages,
+    required this.rhsQuarterPanelWithRearDoorOpenImages,
+    required this.rhsRearWheelImages,
+    required this.rhsFrontWheelImages,
+    required this.upperCrossMemberDropdownList,
+    required this.radiatorSupportDropdownList,
+    required this.headlightSupportDropdownList,
+    required this.lowerCrossMemberDropdownList,
+    required this.lhsApronDropdownList,
+    required this.rhsApronDropdownList,
+    required this.firewallDropdownList,
+    required this.cowlTopDropdownList,
+    required this.engineDropdownList,
+    required this.batteryDropdownList,
+    required this.coolantDropdownList,
+    required this.engineOilLevelDipstickDropdownList,
+    required this.engineOilDropdownList,
+    required this.engineMountDropdownList,
+    required this.enginePermisableBlowByDropdownList,
+    required this.exhaustSmokeDropdownList,
+    required this.clutchDropdownList,
+    required this.gearShiftDropdownList,
+    required this.commentsOnEngineDropdownList,
+    required this.commentsOnEngineOilDropdownList,
+    required this.commentsOnTowingDropdownList,
+    required this.commentsOnTransmissionDropdownList,
+    required this.commentsOnRadiatorDropdownList,
+    required this.commentsOnOthersDropdownList,
+    required this.engineBayImages,
+    required this.lhsApronImages,
+    required this.rhsApronImages,
+    required this.additionalEngineImages,
+    required this.engineVideo,
+    required this.exhaustSmokeVideo,
+    required this.steeringDropdownList,
+    required this.brakesDropdownList,
+    required this.suspensionDropdownList,
+    required this.odometerReadingBeforeTestDrive,
+    required this.rearWiperWasherDropdownList,
+    required this.rearDefoggerDropdownList,
+    required this.infotainmentSystemDropdownList,
+    required this.steeringMountedMediaControls,
+    required this.steeringMountedSystemControls,
+    required this.rhsFrontDoorFeaturesDropdownList,
+    required this.lhsFrontDoorFeaturesDropdownList,
+    required this.rhsRearDoorFeaturesDropdownList,
+    required this.lhsRearDoorFeaturesDropdownList,
+    required this.commentOnInteriorDropdownList,
+    required this.driverAirbag,
+    required this.coDriverAirbag,
+    required this.coDriverSeatAirbag,
+    required this.lhsCurtainAirbag,
+    required this.lhsRearSideAirbag,
+    required this.driverSeatAirbag,
+    required this.rhsCurtainAirbag,
+    required this.rhsRearSideAirbag,
+    required this.sunroofDropdownList,
+    required this.seatsUpholstery,
+    required this.meterConsoleWithEngineOnImages,
+    required this.airbagImages,
+    required this.frontSeatsFromDriverSideImages,
+    required this.rearSeatsFromRightSideImages,
+    required this.dashboardImages,
+    required this.reverseCameraDropdownList,
+    required this.additionalInteriorImages,
+    required this.acTypeDropdownList,
+    required this.acCoolingDropdownList,
+    required this.chassisEmbossmentImages,
+    required this.chassisDetails,
+    required this.vinPlateImages,
+    required this.vinPlateDetails,
+    required this.roadTaxImages,
+    required this.seatingCapacity,
+    required this.color,
+    required this.numberOfCylinders,
+    required this.norms,
+    required this.hypothecatedTo,
+    required this.insurer,
+    required this.pucImages,
+    required this.pucValidity,
+    required this.pucNumber,
+    required this.rcStatus,
+    required this.blacklistStatus,
+    required this.rtoNocImages,
+    required this.rtoForm28Images,
+    required this.frontWiperAndWasherDropdownList,
+    required this.frontWiperAndWasherImages,
+    required this.lhsRearFogLampDropdownList,
+    required this.lhsRearFogLampImages,
+    required this.rhsRearFogLampDropdownList,
+    required this.rhsRearFogLampImages,
+    required this.rearWiperAndWasherImages,
+    required this.spareWheelDropdownList,
+    required this.spareWheelImages,
+    required this.cowlTopImages,
+    required this.firewallImages,
+    required this.lhsSideMemberDropdownList,
+    required this.rhsSideMemberDropdownList,
+    required this.transmissionTypeDropdownList,
+    required this.driveTrainDropdownList,
+    required this.commentsOnClusterMeterDropdownList,
+    required this.irvm,
+    required this.dashboardDropdownList,
+    required this.acImages,
+    required this.reverseCameraImages,
+    required this.driverSideKneeAirbag,
+    required this.coDriverKneeSeatAirbag,
+    required this.driverSeatDropdownList,
+    required this.coDriverSeatDropdownList,
+    required this.frontCentreArmRestDropdownList,
+    required this.rearSeatsDropdownList,
+    required this.thirdRowSeatsDropdownList,
+    required this.odometerReadingAfterTestDriveImages,
+    required this.odometerReadingAfterTestDriveInKms,
+  });
 
-  static List<String> _list(dynamic v) {
-    if (v == null) return <String>[];
-    if (v is List) return v.map((e) => e.toString()).toList();
-    if (v is String && v.trim().isNotEmpty) return [v.trim()];
-    return <String>[];
-  }
-
-  static DateTime? _dt(dynamic v) {
-    try {
-      if (v == null) return null;
-      if (v is String) return DateTime.tryParse(v);
-      if (v is int) return DateTime.fromMillisecondsSinceEpoch(v);
-    } catch (_) {}
-    return null;
-  }
-
-  static int _i(dynamic v, {int def = 0}) {
-    if (v == null) return def;
-    if (v is int) return v;
-    return int.tryParse(v.toString()) ?? def;
-  }
-
-  factory CarModel.fromJson(
-    Map<String, dynamic> json, {
-    String documentId = '',
+  factory CarModel.fromJson({
+    required Map<String, dynamic> json,
+    required String documentId,
   }) {
     return CarModel(
-      id: documentId.isNotEmpty ? documentId : (json['_id'] ?? '').toString(),
-      timestamp: _dt(json['timestamp']),
-      emailAddress: (json['emailAddress'] ?? '').toString(),
-      appointmentId: (json['appointmentId'] ?? '').toString(),
-      city: (json['city'] ?? '').toString(),
-      inspectionEngineerName: (json['inspectionEngineerName'] ?? '').toString(),
-      registrationType: (json['registrationType'] ?? '').toString(),
-      rcBookAvailability: (json['rcBookAvailability'] ?? '').toString(),
-      rcCondition: (json['rcCondition'] ?? '').toString(),
-      registrationNumber: (json['registrationNumber'] ?? '').toString(),
-      registrationDate: _dt(json['registrationDate']),
-      fitnessTill: _dt(json['fitnessTill']),
-      toBeScrapped: (json['toBeScrapped'] ?? '').toString(),
-      chassisEmbossmentImage: (json['chassisEmbossmentImage'] ?? '').toString(),
-      chassisDetails: (json['chassisDetails'] ?? '').toString(),
-      vinPlateImage: (json['vinPlateImage'] ?? '').toString(),
-      vinPlateDetails: (json['vinPlateDetails'] ?? '').toString(),
-      registrationState: (json['registrationState'] ?? '').toString(),
-      registrationCity: (json['registrationCity'] ?? '').toString(),
-      registeredRto: (json['registeredRto'] ?? '').toString(),
-      ownerSerialNumber: _i(json['ownerSerialNumber']),
-      make: (json['make'] ?? '').toString(),
-      model: (json['model'] ?? '').toString(),
-      variant: (json['variant'] ?? '').toString(),
-      engineNumber: (json['engineNumber'] ?? '').toString(),
-      chassisNumber: (json['chassisNumber'] ?? '').toString(),
-      registeredOwner: (json['registeredOwner'] ?? '').toString(),
-      registeredAddressAsPerRc: (json['registeredAddressAsPerRc'] ?? '')
-          .toString(),
-      yearMonthOfManufacture: _dt(json['yearMonthOfManufacture']),
-      fuelType: (json['fuelType'] ?? '').toString(),
-      cubicCapacity: _i(json['cubicCapacity']),
-      seatingCapacity: _i(json['seatingCapacity']),
-      color: (json['color'] ?? '').toString(),
-      numberOfCylinders: _i(json['numberOfCylinders']),
-      bodyType: (json['bodyType'] ?? '').toString(),
-      norms: (json['norms'] ?? '').toString(),
-      vehicleCategory: (json['vehicleCategory'] ?? '').toString(),
-      wheelBase: (json['wheelBase'] ?? '').toString(),
-      grossVehicleWeight: (json['grossVehicleWeight'] ?? '').toString(),
-      unladenWeight: (json['unladenWeight'] ?? '').toString(),
-      hypothecationDetails: (json['hypothecationDetails'] ?? '').toString(),
-      hypothecatorName: (json['hypothecatorName'] ?? '').toString(),
-      mismatchInRc: _list(json['mismatchInRc']),
-      roadTaxValidity: (json['roadTaxValidity'] ?? '').toString(),
-      roadTaxType: (json['roadTaxType'] ?? '').toString(),
-      taxValidTill: _dt(json['taxValidTill']),
-      insurance: (json['insurance'] ?? '').toString(),
-      insurancePolicyNumber: (json['insurancePolicyNumber'] ?? '').toString(),
-      insuranceValidity: _dt(json['insuranceValidity']),
-      noClaimBonus: (json['noClaimBonus'] ?? '').toString(),
-      mismatchInInsurance: (json['mismatchInInsurance'] ?? '').toString(),
-      pollutionCertificateImage: (json['pollutionCertificateImage'] ?? '')
-          .toString(),
-      pollutionCertificateValidity: _dt(json['pollutionCertificateValidity']),
-      pollutionCertificateNumber: (json['pollutionCertificateNumber'] ?? '')
-          .toString(),
-      blacklistStatus: (json['blacklistStatus'] ?? '').toString(),
-      duplicateKey: (json['duplicateKey'] ?? '').toString(),
-      rtoNoc: (json['rtoNoc'] ?? '').toString(),
-      rtoForm28: (json['rtoForm28'] ?? '').toString(),
-      partyPeshi: (json['partyPeshi'] ?? '').toString(),
-      optionalDetails: _list(json['optionalDetails']),
-      registrationCertificateAvailability: _list(
-        json['registrationCertificateAvailability'],
+      id: documentId,
+      timestamp: parseMongoDbDate(json["timestamp"]),
+      emailAddress: json["emailAddress"] ?? 'N/A',
+      appointmentId: json["appointmentId"] ?? 'N/A',
+      city: json["city"] ?? 'N/A',
+      registrationType: json["registrationType"] ?? 'N/A',
+      rcBookAvailability: json["rcBookAvailability"] ?? 'N/A',
+      rcCondition: json["rcCondition"] ?? 'N/A',
+      registrationNumber: json["registrationNumber"] ?? 'N/A',
+      registrationDate: parseMongoDbDate(json["registrationDate"]),
+      fitnessTill: parseMongoDbDate(json["fitnessTill"]),
+      toBeScrapped: json["toBeScrapped"] ?? 'N/A',
+      registrationState: json["registrationState"] ?? 'N/A',
+      registeredRto: json["registeredRto"] ?? 'N/A',
+      ownerSerialNumber: json["ownerSerialNumber"] ?? 0,
+      make: json["make"] ?? 'N/A',
+      model: json["model"] ?? 'N/A',
+      variant: json["variant"] ?? 'N/A',
+      engineNumber: json["engineNumber"] ?? 'N/A',
+      chassisNumber: json["chassisNumber"] ?? 'N/A',
+      registeredOwner: json["registeredOwner"] ?? 'N/A',
+      registeredAddressAsPerRc: json["registeredAddressAsPerRc"] ?? 'N/A',
+      yearMonthOfManufacture: parseMongoDbDate(json["yearMonthOfManufacture"]),
+      fuelType: json["fuelType"] ?? 'N/A',
+      cubicCapacity: json["cubicCapacity"] ?? 0,
+      hypothecationDetails: json["hypothecationDetails"] ?? 'N/A',
+      mismatchInRc: json["mismatchInRc"] ?? 'N/A',
+      roadTaxValidity: json["roadTaxValidity"] ?? 'N/A',
+      taxValidTill: parseMongoDbDate(json["taxValidTill"]),
+      insurance: json["insurance"] ?? 'N/A',
+      insurancePolicyNumber: json["insurancePolicyNumber"] ?? 'N/A',
+      insuranceValidity: parseMongoDbDate(json["insuranceValidity"]),
+      noClaimBonus: json["noClaimBonus"] ?? 'N/A',
+      mismatchInInsurance: json["mismatchInInsurance"] ?? 'N/A',
+      duplicateKey: json["duplicateKey"] ?? 'N/A',
+      rtoNoc: json["rtoNoc"] ?? 'N/A',
+      rtoForm28: json["rtoForm28"] ?? 'N/A',
+      partyPeshi: json["partyPeshi"] ?? 'N/A',
+      additionalDetails: json["additionalDetails"] ?? 'N/A',
+      rcTaxToken: parseStringList(json["rcTaxToken"]),
+      insuranceCopy: parseStringList(json["insuranceCopy"]),
+      bothKeys: parseStringList(json["bothKeys"]),
+      form26GdCopyIfRcIsLost: parseStringList(json["form26GdCopyIfRcIsLost"]),
+      bonnet: json["bonnet"] ?? 'N/A',
+      frontWindshield: json["frontWindshield"] ?? 'N/A',
+      roof: json["roof"] ?? 'N/A',
+      frontBumper: json["frontBumper"] ?? 'N/A',
+      lhsHeadlamp: json["lhsHeadlamp"] ?? 'N/A',
+      lhsFoglamp: json["lhsFoglamp"] ?? 'N/A',
+      rhsHeadlamp: json["rhsHeadlamp"] ?? 'N/A',
+      rhsFoglamp: json["rhsFoglamp"] ?? 'N/A',
+      lhsFender: json["lhsFender"] ?? 'N/A',
+      lhsOrvm: json["lhsOrvm"] ?? 'N/A',
+      lhsAPillar: json["lhsAPillar"] ?? 'N/A',
+      lhsBPillar: json["lhsBPillar"] ?? 'N/A',
+      lhsCPillar: json["lhsCPillar"] ?? 'N/A',
+      lhsFrontAlloy: json["lhsFrontAlloy"] ?? 'N/A',
+      lhsFrontTyre: json["lhsFrontTyre"] ?? 'N/A',
+      lhsRearAlloy: json["lhsRearAlloy"] ?? 'N/A',
+      lhsRearTyre: json["lhsRearTyre"] ?? 'N/A',
+      lhsFrontDoor: json["lhsFrontDoor"] ?? 'N/A',
+      lhsRearDoor: json["lhsRearDoor"] ?? 'N/A',
+      lhsRunningBorder: json["lhsRunningBorder"] ?? 'N/A',
+      lhsQuarterPanel: json["lhsQuarterPanel"] ?? 'N/A',
+      rearBumper: json["rearBumper"] ?? 'N/A',
+      lhsTailLamp: json["lhsTailLamp"] ?? 'N/A',
+      rhsTailLamp: json["rhsTailLamp"] ?? 'N/A',
+      rearWindshield: json["rearWindshield"] ?? 'N/A',
+      bootDoor: json["bootDoor"] ?? 'N/A',
+      spareTyre: json["spareTyre"] ?? 'N/A',
+      bootFloor: json["bootFloor"] ?? 'N/A',
+      rhsRearAlloy: json["rhsRearAlloy"] ?? 'N/A',
+      rhsRearTyre: json["rhsRearTyre"] ?? 'N/A',
+      rhsFrontAlloy: json["rhsFrontAlloy"] ?? 'N/A',
+      rhsFrontTyre: json["rhsFrontTyre"] ?? 'N/A',
+      rhsQuarterPanel: json["rhsQuarterPanel"] ?? 'N/A',
+      rhsAPillar: json["rhsAPillar"] ?? 'N/A',
+      rhsBPillar: json["rhsBPillar"] ?? 'N/A',
+      rhsCPillar: json["rhsCPillar"] ?? 'N/A',
+      rhsRunningBorder: json["rhsRunningBorder"] ?? 'N/A',
+      rhsRearDoor: json["rhsRearDoor"] ?? 'N/A',
+      rhsFrontDoor: json["rhsFrontDoor"] ?? 'N/A',
+      rhsOrvm: json["rhsOrvm"] ?? 'N/A',
+      rhsFender: json["rhsFender"] ?? 'N/A',
+      comments: json["comments"] ?? 'N/A',
+      frontMain: parseStringList(json["frontMain"]),
+      bonnetImages: parseStringList(json["bonnetImages"]),
+      frontWindshieldImages: parseStringList(json["frontWindshieldImages"]),
+      roofImages: parseStringList(json["roofImages"]),
+      frontBumperImages: parseStringList(json["frontBumperImages"]),
+      lhsHeadlampImages: parseStringList(json["lhsHeadlampImages"]),
+      lhsFoglampImages: parseStringList(json["lhsFoglampImages"]),
+      rhsHeadlampImages: parseStringList(json["rhsHeadlampImages"]),
+      rhsFoglampImages: parseStringList(json["rhsFoglampImages"]),
+      lhsFront45Degree: parseStringList(json["lhsFront45Degree"]),
+      lhsFenderImages: parseStringList(json["lhsFenderImages"]),
+      lhsFrontAlloyImages: parseStringList(json["lhsFrontAlloyImages"]),
+      lhsFrontTyreImages: parseStringList(json["lhsFrontTyreImages"]),
+      lhsRunningBorderImages: parseStringList(json["lhsRunningBorderImages"]),
+      lhsOrvmImages: parseStringList(json["lhsOrvmImages"]),
+      lhsAPillarImages: parseStringList(json["lhsAPillarImages"]),
+      lhsFrontDoorImages: parseStringList(json["lhsFrontDoorImages"]),
+      lhsBPillarImages: parseStringList(json["lhsBPillarImages"]),
+      lhsRearDoorImages: parseStringList(json["lhsRearDoorImages"]),
+      lhsCPillarImages: parseStringList(json["lhsCPillarImages"]),
+      lhsRearTyreImages: parseStringList(json["lhsRearTyreImages"]),
+      lhsRearAlloyImages: parseStringList(json["lhsRearAlloyImages"]),
+      lhsQuarterPanelImages: parseStringList(json["lhsQuarterPanelImages"]),
+      rearMain: parseStringList(json["rearMain"]),
+      rearWithBootDoorOpen: json["rearWithBootDoorOpen"] ?? 'N/A',
+      rearBumperImages: parseStringList(json["rearBumperImages"]),
+      lhsTailLampImages: parseStringList(json["lhsTailLampImages"]),
+      rhsTailLampImages: parseStringList(json["rhsTailLampImages"]),
+      rearWindshieldImages: parseStringList(json["rearWindshieldImages"]),
+      spareTyreImages: parseStringList(json["spareTyreImages"]),
+      bootFloorImages: parseStringList(json["bootFloorImages"]),
+      rhsRear45Degree: parseStringList(json["rhsRear45Degree"]),
+      rhsQuarterPanelImages: parseStringList(json["rhsQuarterPanelImages"]),
+      rhsRearAlloyImages: parseStringList(json["rhsRearAlloyImages"]),
+      rhsRearTyreImages: parseStringList(json["rhsRearTyreImages"]),
+      rhsCPillarImages: parseStringList(json["rhsCPillarImages"]),
+      rhsRearDoorImages: parseStringList(json["rhsRearDoorImages"]),
+      rhsBPillarImages: parseStringList(json["rhsBPillarImages"]),
+      rhsFrontDoorImages: parseStringList(json["rhsFrontDoorImages"]),
+      rhsAPillarImages: parseStringList(json["rhsAPillarImages"]),
+      rhsRunningBorderImages: parseStringList(json["rhsRunningBorderImages"]),
+      rhsFrontAlloyImages: parseStringList(json["rhsFrontAlloyImages"]),
+      rhsFrontTyreImages: parseStringList(json["rhsFrontTyreImages"]),
+      rhsOrvmImages: parseStringList(json["rhsOrvmImages"]),
+      rhsFenderImages: parseStringList(json["rhsFenderImages"]),
+      upperCrossMember: json["upperCrossMember"] ?? 'N/A',
+      radiatorSupport: json["radiatorSupport"] ?? 'N/A',
+      headlightSupport: json["headlightSupport"] ?? 'N/A',
+      lowerCrossMember: json["lowerCrossMember"] ?? 'N/A',
+      lhsApron: json["lhsApron"] ?? 'N/A',
+      rhsApron: json["rhsApron"] ?? 'N/A',
+      firewall: json["firewall"] ?? 'N/A',
+      cowlTop: json["cowlTop"] ?? 'N/A',
+      engine: json["engine"] ?? 'N/A',
+      battery: json["battery"] ?? 'N/A',
+      coolant: json["coolant"] ?? 'N/A',
+      engineOilLevelDipstick: json["engineOilLevelDipstick"] ?? 'N/A',
+      engineOil: json["engineOil"] ?? 'N/A',
+      engineMount: json["engineMount"] ?? 'N/A',
+      enginePermisableBlowBy: json["enginePermisableBlowBy"] ?? 'N/A',
+      exhaustSmoke: json["exhaustSmoke"] ?? 'N/A',
+      clutch: json["clutch"] ?? 'N/A',
+      gearShift: json["gearShift"] ?? 'N/A',
+      commentsOnEngine: json["commentsOnEngine"] ?? 'N/A',
+      commentsOnEngineOil: json["commentsOnEngineOil"] ?? 'N/A',
+      commentsOnTowing: json["commentsOnTowing"] ?? 'N/A',
+      commentsOnTransmission: json["commentsOnTransmission"] ?? 'N/A',
+      commentsOnRadiator: json["commentsOnRadiator"] ?? 'N/A',
+      commentsOnOthers: json["commentsOnOthers"] ?? 'N/A',
+      engineBay: parseStringList(json["engineBay"]),
+      apronLhsRhs: parseStringList(json["apronLhsRhs"]),
+      batteryImages: parseStringList(json["batteryImages"]),
+      additionalImages: parseStringList(json["additionalImages"]),
+      engineSound: parseStringList(json["engineSound"]),
+      exhaustSmokeImages: parseStringList(json["exhaustSmokeImages"]),
+      steering: json["steering"] ?? 'N/A',
+      brakes: json["brakes"] ?? 'N/A',
+      suspension: json["suspension"] ?? 'N/A',
+      odometerReadingInKms: json["odometerReadingInKms"] ?? 0,
+      fuelLevel: json["fuelLevel"] ?? 'N/A',
+      abs: json["abs"] ?? 'N/A',
+      electricals: json["electricals"] ?? 'N/A',
+      rearWiperWasher: json["rearWiperWasher"] ?? 'N/A',
+      rearDefogger: json["rearDefogger"] ?? 'N/A',
+      musicSystem: json["musicSystem"] ?? 'N/A',
+      stereo: json["stereo"] ?? 'N/A',
+      inbuiltSpeaker: json["inbuiltSpeaker"] ?? 'N/A',
+      externalSpeaker: json["externalSpeaker"] ?? 'N/A',
+      steeringMountedAudioControl: json["steeringMountedAudioControl"] ?? 'N/A',
+      noOfPowerWindows: json["noOfPowerWindows"] ?? 'N/A',
+      powerWindowConditionRhsFront:
+          json["powerWindowConditionRhsFront"] ?? 'N/A',
+      powerWindowConditionLhsFront:
+          json["powerWindowConditionLhsFront"] ?? 'N/A',
+      powerWindowConditionRhsRear: json["powerWindowConditionRhsRear"] ?? 'N/A',
+      powerWindowConditionLhsRear: json["powerWindowConditionLhsRear"] ?? 'N/A',
+      commentOnInterior: json["commentOnInterior"] ?? 'N/A',
+      noOfAirBags: json["noOfAirBags"] ?? 0,
+      airbagFeaturesDriverSide: json["airbagFeaturesDriverSide"] ?? 'N/A',
+      airbagFeaturesCoDriverSide: json["airbagFeaturesCoDriverSide"] ?? 'N/A',
+      airbagFeaturesLhsAPillarCurtain:
+          json["airbagFeaturesLhsAPillarCurtain"] ?? 'N/A',
+      airbagFeaturesLhsBPillarCurtain:
+          json["airbagFeaturesLhsBPillarCurtain"] ?? 'N/A',
+      airbagFeaturesLhsCPillarCurtain:
+          json["airbagFeaturesLhsCPillarCurtain"] ?? 'N/A',
+      airbagFeaturesRhsAPillarCurtain:
+          json["airbagFeaturesRhsAPillarCurtain"] ?? 'N/A',
+      airbagFeaturesRhsBPillarCurtain:
+          json["airbagFeaturesRhsBPillarCurtain"] ?? 'N/A',
+      airbagFeaturesRhsCPillarCurtain:
+          json["airbagFeaturesRhsCPillarCurtain"] ?? 'N/A',
+      sunroof: json["sunroof"] ?? 'N/A',
+      leatherSeats: json["leatherSeats"] ?? 'N/A',
+      fabricSeats: json["fabricSeats"] ?? 'N/A',
+      commentsOnElectricals: json["commentsOnElectricals"] ?? 'N/A',
+      meterConsoleWithEngineOn: parseStringList(
+        json["meterConsoleWithEngineOn"],
       ),
-      registrationCertificateStatus:
-          (json['registrationCertificateStatus'] ?? '').toString(),
-      rcTaxToken: _list(json['rcTaxToken']),
-      insuranceCopy: _list(json['insuranceCopy']),
-      bothKeys: _list(json['bothKeys']),
-      form26GdCopyIfRcIsLost: _list(json['form26GdCopyIfRcIsLost']),
-      insuranceDetails: _list(json['insuranceDetails']),
-      roadTaxImages: _list(json['roadTaxImages']),
-      registrationCertificateImages: _list(
-        json['registrationCertificateImages'],
+      airbags: parseStringList(json["airbags"]),
+      sunroofImages: parseStringList(json["sunroofImages"]),
+      frontSeatsFromDriverSideDoorOpen: parseStringList(
+        json["frontSeatsFromDriverSideDoorOpen"],
       ),
-      frontMainImage: (json['frontMainImage'] ?? '').toString(),
-      lhsFullViewImage: (json['lhsFullViewImage'] ?? '').toString(),
-      rearMainImage: (json['rearMainImage'] ?? '').toString(),
-      bonnet: _list(json['bonnet']),
-      frontWindshield: _list(json['frontWindshield']),
-      frontWiperWasher: _list(json['frontWiperWasher']),
-      roof: _list(json['roof']),
-      frontBumper: _list(json['frontBumper']),
-      lhsHeadlamp: _list(json['lhsHeadlamp']),
-      lhsFoglamp: _list(json['lhsFoglamp']),
-      rhsHeadlamp: _list(json['rhsHeadlamp']),
-      rhsFoglamp: _list(json['rhsFoglamp']),
-      lhsFender: _list(json['lhsFender']),
-      lhsFrontTyre: _list(json['lhsFrontTyre']),
-      lhsOrvm: _list(json['lhsOrvm']),
-      lhsAPillar: _list(json['lhsAPillar']),
-      lhsBPillar: _list(json['lhsBPillar']),
-      lhsFrontDoor: _list(json['lhsFrontDoor']),
-      lhsRearDoor: _list(json['lhsRearDoor']),
-      lhsCPillar: _list(json['lhsCPillar']),
-      lhsRunningBoard: _list(json['lhsRunningBoard']),
-      lhsRunningBoardImages: _list(json['lhsRunningBoardImages']),
-      lhsRearTyre: _list(json['lhsRearTyre']),
-      lhsQuarterPanel: _list(json['lhsQuarterPanel']),
-      rearBumper: _list(json['rearBumper']),
-      lhsTailLamp: _list(json['lhsTailLamp']),
-      lhsRearFogLamp: _list(json['lhsRearFogLamp']),
-      rhsTailLamp: _list(json['rhsTailLamp']),
-      rhsRearFogLamp: _list(json['rhsRearFogLamp']),
-      rearWindshield: _list(json['rearWindshield']),
-      rearWiperWasher: _list(json['rearWiperWasher']),
-      bootDoorOpenImage: (json['bootDoorOpenImage'] ?? '').toString(),
-      bootDoorClosedImage: (json['bootDoorClosedImage'] ?? '').toString(),
-      bootDoor: _list(json['bootDoor']),
-      spareWheel: _list(json['spareWheel']),
-      spareTyre: _list(json['spareTyre']),
-      bootFloor: _list(json['bootFloor']),
-      rhsFender: _list(json['rhsFender']),
-      rhsFrontTyre: _list(json['rhsFrontTyre']),
-      rhsOrvm: _list(json['rhsOrvm']),
-      rhsAPillar: _list(json['rhsAPillar']),
-      rhsBPillar: _list(json['rhsBPillar']),
-      rhsFrontDoor: _list(json['rhsFrontDoor']),
-      rhsRearDoor: _list(json['rhsRearDoor']),
-      rhsCPillar: _list(json['rhsCPillar']),
-      rhsRunningBoard: _list(json['rhsRunningBoard']),
-      rhsRunningBoardImages: _list(json['rhsRunningBoardImages']),
-      rhsRearTyre: _list(json['rhsRearTyre']),
-      rhsQuarterPanel: _list(json['rhsQuarterPanel']),
-      bonnetImages: _list(json['bonnetImages']),
-      frontWindshieldImages: _list(json['frontWindshieldImages']),
-      frontWiperWasherImages: _list(json['frontWiperWasherImages']),
-      roofImages: _list(json['roofImages']),
-      frontBumperImages: _list(json['frontBumperImages']),
-      lhsHeadlampImages: _list(json['lhsHeadlampImages']),
-      lhsFoglampImages: _list(json['lhsFoglampImages']),
-      rhsHeadlampImages: _list(json['rhsHeadlampImages']),
-      rhsFoglampImages: _list(json['rhsFoglampImages']),
-      lhsFenderImages: _list(json['lhsFenderImages']),
-      lhsFrontTyreImages: _list(json['lhsFrontTyreImages']),
-      lhsOrvmImages: _list(json['lhsOrvmImages']),
-      lhsAPillarImages: _list(json['lhsAPillarImages']),
-      lhsBPillarImages: _list(json['lhsBPillarImages']),
-      lhsFrontDoorImages: _list(json['lhsFrontDoorImages']),
-      lhsRearDoorImages: _list(json['lhsRearDoorImages']),
-      lhsCPillarImages: _list(json['lhsCPillarImages']),
-      lhsRearTyreImages: _list(json['lhsRearTyreImages']),
-      lhsQuarterPanelImages: _list(json['lhsQuarterPanelImages']),
-      rearBumperImages: _list(json['rearBumperImages']),
-      lhsTailLampImages: _list(json['lhsTailLampImages']),
-      lhsRearFogLampImages: _list(json['lhsRearFogLampImages']),
-      rhsTailLampImages: _list(json['rhsTailLampImages']),
-      rhsRearFogLampImages: _list(json['rhsRearFogLampImages']),
-      rearWindshieldImages: _list(json['rearWindshieldImages']),
-      rearWiperWasherImages: _list(json['rearWiperWasherImages']),
-      lhsFrontWheelImages: _list(json['lhsFrontWheelImages']),
-      rhsFrontWheelImages: _list(json['rhsFrontWheelImages']),
-      lhsRearWheelImages: _list(json['lhsRearWheelImages']),
-      rhsRearWheelImages: _list(json['rhsRearWheelImages']),
-      lhsFrontWheel: _list(json['lhsFrontWheel']),
-      rhsFrontWheel: _list(json['rhsFrontWheel']),
-      lhsRearWheel: _list(json['lhsRearWheel']),
-      rhsRearWheel: _list(json['rhsRearWheel']),
-      engineBayImages: _list(json['engineBayImages']),
-      engineSoundVideo: (json['engineSoundVideo'] ?? '').toString(),
-      exhaustSmokeVideo: (json['exhaustSmokeVideo'] ?? '').toString(),
-      clusterMeterWithEngineImage: (json['clusterMeterWithEngineImage'] ?? '')
-          .toString(),
-      odometerReadingInKms: (json['odometerReadingInKms'] ?? '').toString(),
-      engine: _list(json['engine']),
-      commentsOnEngine: _list(json['commentsOnEngine']),
-      engineOilLevelDipstick: _list(json['engineOilLevelDipstick']),
-      engineOil: _list(json['engineOil']),
-      commentsOnEngineOil: _list(json['commentsOnEngineOil']),
-      enginePermisableBlowBy: _list(json['enginePermisableBlowBy']),
-      coolant: _list(json['coolant']),
-      abs: (json['abs'] ?? '').toString(),
-      cowlTop: _list(json['cowlTop']),
-      cowlTopImage: (json['cowlTopImage'] ?? '').toString(),
-      firewall: _list(json['firewall']),
-      firewallImage: (json['firewallImage'] ?? '').toString(),
-      lhsApron: _list(json['lhsApron']),
-      rhsApron: _list(json['rhsApron']),
-      lhsApronImages: _list(json['lhsApronImages']),
-      rhsApronImages: _list(json['rhsApronImages']),
-      battery: _list(json['battery']),
-      batteryImage: (json['batteryImage'] ?? '').toString(),
-      upperCrossMember: _list(json['upperCrossMember']),
-      lhsSideMember: _list(json['lhsSideMember']),
-      rhsSideMember: _list(json['rhsSideMember']),
-      engineMount: _list(json['engineMount']),
-      headlightSupport: _list(json['headlightSupport']),
-      radiatorSupport: _list(json['radiatorSupport']),
-      commentsOnRadiator: _list(json['commentsOnRadiator']),
-      lowerCrossMember: _list(json['lowerCrossMember']),
-      exhaustSmoke: _list(json['exhaustSmoke']),
-      commentsOnTowing: _list(json['commentsOnTowing']),
-      commentsOnOthers: _list(json['commentsOnOthers']),
-      optionalEngineImages: _list(json['optionalEngineImages']),
-      commentsOnClusterMeter: _list(json['commentsOnClusterMeter']),
-      fuelLevel: (json['fuelLevel'] ?? '').toString(),
-      irvm: (json['irvm'] ?? '').toString(),
-      dashboard: _list(json['dashboard']),
-      infotainmentSystem: _list(json['infotainmentSystem']),
-      inbuiltSpeaker: (json['inbuiltSpeaker'] ?? '').toString(),
-      externalSpeaker: (json['externalSpeaker'] ?? '').toString(),
-      steeringMountedMediaControls: (json['steeringMountedMediaControls'] ?? '')
-          .toString(),
+      rearSeatsFromRightSideDoorOpen: parseStringList(
+        json["rearSeatsFromRightSideDoorOpen"],
+      ),
+      dashboardFromRearSeat: parseStringList(json["dashboardFromRearSeat"]),
+      reverseCamera: json["reverseCamera"] ?? 'N/A',
+      additionalImages2: parseStringList(json["additionalImages2"]),
+      airConditioningManual: json["airConditioningManual"] ?? 'N/A',
+      airConditioningClimateControl:
+          json["airConditioningClimateControl"] ?? 'N/A',
+      commentsOnAc: json["commentsOnAC"] ?? 'N/A',
+      approvedBy: json["approvedBy"] ?? 'N/A',
+      approvalDate: parseMongoDbDate(json["approvalDate"]),
+      approvalTime: parseMongoDbDate(json["approvalTime"]),
+      approvalStatus: json["approvalStatus"] ?? 'N/A',
+      contactNumber: json["contactNumber"] ?? 'N/A',
+      newArrivalMessage: parseMongoDbDate(json["newArrivalMessage"]),
+      budgetCar: json["budgetCar"] ?? 'N/A',
+      status: json["status"] ?? 'N/A',
+      priceDiscovery: json["priceDiscovery"] ?? 0,
+      priceDiscoveryBy: json["priceDiscoveryBy"] ?? 'N/A',
+      latlong: json["latlong"] ?? 'N/A',
+      retailAssociate: json["retailAssociate"] ?? 'N/A',
+      kmRangeLevel: json["kmRangeLevel"] ?? 0,
+      highestBidder: json["highestBidder"] ?? 'N/A',
+      v: json["__v"] ?? 0,
+
+      // ✅ New fields all (nullable)
+      ieName: json["ieName"] ?? 'N/A',
+      inspectionCity: json["inspectionCity"] ?? 'N/A',
+      rcBookAvailabilityDropdownList: parseStringList(
+        json["rcBookAvailabilityDropdownList"],
+      ),
+      fitnessValidity: parseMongoDbDate(json["fitnessValidity"]),
+      yearAndMonthOfManufacture: parseMongoDbDate(
+        json["yearAndMonthOfManufacture"],
+      ),
+      mismatchInRcDropdownList: parseStringList(
+        json["mismatchInRcDropdownList"],
+      ),
+      insuranceDropdownList: parseStringList(json["insuranceDropdownList"]),
+      policyNumber: json["policyNumber"] ?? 'N/A',
+      mismatchInInsuranceDropdownList: parseStringList(
+        json["mismatchInInsuranceDropdownList"],
+      ),
+      additionalDetailsDropdownList: parseStringList(
+        json["additionalDetailsDropdownList"],
+      ),
+      rcTokenImages: parseStringList(json["rcTokenImages"]),
+      insuranceImages: parseStringList(json["insuranceImages"]),
+      duplicateKeyImages: parseStringList(json["duplicateKeyImages"]),
+      form26AndGdCopyIfRcIsLostImages: parseStringList(
+        json["form26AndGdCopyIfRcIsLostImages"],
+      ),
+      bonnetDropdownList: parseStringList(json["bonnetDropdownList"]),
+      frontWindshieldDropdownList: parseStringList(
+        json["frontWindshieldDropdownList"],
+      ),
+      roofDropdownList: parseStringList(json["roofDropdownList"]),
+      frontBumperDropdownList: parseStringList(json["frontBumperDropdownList"]),
+      lhsHeadlampDropdownList: parseStringList(json["lhsHeadlampDropdownList"]),
+      lhsFoglampDropdownList: parseStringList(json["lhsFoglampDropdownList"]),
+      rhsHeadlampDropdownList: parseStringList(json["rhsHeadlampDropdownList"]),
+      rhsFoglampDropdownList: parseStringList(json["rhsFoglampDropdownList"]),
+      lhsFenderDropdownList: parseStringList(json["lhsFenderDropdownList"]),
+      lhsOrvmDropdownList: parseStringList(json["lhsOrvmDropdownList"]),
+      lhsAPillarDropdownList: parseStringList(json["lhsAPillarDropdownList"]),
+      lhsBPillarDropdownList: parseStringList(json["lhsBPillarDropdownList"]),
+      lhsCPillarDropdownList: parseStringList(json["lhsCPillarDropdownList"]),
+      lhsFrontWheelDropdownList: parseStringList(
+        json["lhsFrontWheelDropdownList"],
+      ),
+      lhsFrontTyreDropdownList: parseStringList(
+        json["lhsFrontTyreDropdownList"],
+      ),
+      lhsRearWheelDropdownList: parseStringList(
+        json["lhsRearWheelDropdownList"],
+      ),
+      lhsRearTyreDropdownList: parseStringList(json["lhsRearTyreDropdownList"]),
+      lhsFrontDoorDropdownList: parseStringList(
+        json["lhsFrontDoorDropdownList"],
+      ),
+      lhsRearDoorDropdownList: parseStringList(json["lhsRearDoorDropdownList"]),
+      lhsRunningBorderDropdownList: parseStringList(
+        json["lhsRunningBorderDropdownList"],
+      ),
+      lhsQuarterPanelDropdownList: parseStringList(
+        json["lhsQuarterPanelDropdownList"],
+      ),
+      rearBumperDropdownList: parseStringList(json["rearBumperDropdownList"]),
+      lhsTailLampDropdownList: parseStringList(json["lhsTailLampDropdownList"]),
+      rhsTailLampDropdownList: parseStringList(json["rhsTailLampDropdownList"]),
+      rearWindshieldDropdownList: parseStringList(
+        json["rearWindshieldDropdownList"],
+      ),
+      bootDoorDropdownList: parseStringList(json["bootDoorDropdownList"]),
+      spareTyreDropdownList: parseStringList(json["spareTyreDropdownList"]),
+      bootFloorDropdownList: parseStringList(json["bootFloorDropdownList"]),
+      rhsRearWheelDropdownList: parseStringList(
+        json["rhsRearWheelDropdownList"],
+      ),
+      rhsRearTyreDropdownList: parseStringList(json["rhsRearTyreDropdownList"]),
+      rhsFrontWheelDropdownList: parseStringList(
+        json["rhsFrontWheelDropdownList"],
+      ),
+      rhsFrontTyreDropdownList: parseStringList(
+        json["rhsFrontTyreDropdownList"],
+      ),
+      rhsQuarterPanelDropdownList: parseStringList(
+        json["rhsQuarterPanelDropdownList"],
+      ),
+      rhsAPillarDropdownList: parseStringList(json["rhsAPillarDropdownList"]),
+      rhsBPillarDropdownList: parseStringList(json["rhsBPillarDropdownList"]),
+      rhsCPillarDropdownList: parseStringList(json["rhsCPillarDropdownList"]),
+      rhsRunningBorderDropdownList: parseStringList(
+        json["rhsRunningBorderDropdownList"],
+      ),
+      rhsRearDoorDropdownList: parseStringList(json["rhsRearDoorDropdownList"]),
+      rhsFrontDoorDropdownList: parseStringList(
+        json["rhsFrontDoorDropdownList"],
+      ),
+      rhsOrvmDropdownList: parseStringList(json["rhsOrvmDropdownList"]),
+      rhsFenderDropdownList: parseStringList(json["rhsFenderDropdownList"]),
+      commentsOnExteriorDropdownList: parseStringList(
+        json["commentsOnExteriorDropdownList"],
+      ),
+      frontMainImages: parseStringList(json["frontMainImages"]),
+      bonnetClosedImages: parseStringList(json["bonnetClosedImages"]),
+      bonnetOpenImages: parseStringList(json["bonnetOpenImages"]),
+      frontBumperLhs45DegreeImages: parseStringList(
+        json["frontBumperLhs45DegreeImages"],
+      ),
+      frontBumperRhs45DegreeImages: parseStringList(
+        json["frontBumperRhs45DegreeImages"],
+      ),
+      lhsFullViewImages: parseStringList(json["lhsFullViewImages"]),
+      lhsFrontWheelImages: parseStringList(json["lhsFrontWheelImages"]),
+      lhsRearWheelImages: parseStringList(json["lhsRearWheelImages"]),
+      lhsQuarterPanelWithRearDoorOpenImages: parseStringList(
+        json["lhsQuarterPanelWithRearDoorOpenImages"],
+      ),
+      rearMainImages: parseStringList(json["rearMainImages"]),
+      rearWithBootDoorOpenImages: parseStringList(
+        json["rearWithBootDoorOpenImages"],
+      ),
+      rearBumperLhs45DegreeImages: parseStringList(
+        json["rearBumperLhs45DegreeImages"],
+      ),
+      rearBumperRhs45DegreeImages: parseStringList(
+        json["rearBumperRhs45DegreeImages"],
+      ),
+      rhsFullViewImages: parseStringList(json["rhsFullViewImages"]),
+      rhsQuarterPanelWithRearDoorOpenImages: parseStringList(
+        json["rhsQuarterPanelWithRearDoorOpenImages"],
+      ),
+      rhsRearWheelImages: parseStringList(json["rhsRearWheelImages"]),
+      rhsFrontWheelImages: parseStringList(json["rhsFrontWheelImages"]),
+      upperCrossMemberDropdownList: parseStringList(
+        json["upperCrossMemberDropdownList"],
+      ),
+      radiatorSupportDropdownList: parseStringList(
+        json["radiatorSupportDropdownList"],
+      ),
+      headlightSupportDropdownList: parseStringList(
+        json["headlightSupportDropdownList"],
+      ),
+      lowerCrossMemberDropdownList: parseStringList(
+        json["lowerCrossMemberDropdownList"],
+      ),
+      lhsApronDropdownList: parseStringList(json["lhsApronDropdownList"]),
+      rhsApronDropdownList: parseStringList(json["rhsApronDropdownList"]),
+      firewallDropdownList: parseStringList(json["firewallDropdownList"]),
+      cowlTopDropdownList: parseStringList(json["cowlTopDropdownList"]),
+      engineDropdownList: parseStringList(json["engineDropdownList"]),
+      batteryDropdownList: parseStringList(json["batteryDropdownList"]),
+      coolantDropdownList: parseStringList(json["coolantDropdownList"]),
+      engineOilLevelDipstickDropdownList: parseStringList(
+        json["engineOilLevelDipstickDropdownList"],
+      ),
+      engineOilDropdownList: parseStringList(json["engineOilDropdownList"]),
+      engineMountDropdownList: parseStringList(json["engineMountDropdownList"]),
+      enginePermisableBlowByDropdownList: parseStringList(
+        json["enginePermisableBlowByDropdownList"],
+      ),
+      exhaustSmokeDropdownList: parseStringList(
+        json["exhaustSmokeDropdownList"],
+      ),
+      clutchDropdownList: parseStringList(json["clutchDropdownList"]),
+      gearShiftDropdownList: parseStringList(json["gearShiftDropdownList"]),
+      commentsOnEngineDropdownList: parseStringList(
+        json["commentsOnEngineDropdownList"],
+      ),
+      commentsOnEngineOilDropdownList: parseStringList(
+        json["commentsOnEngineOilDropdownList"],
+      ),
+      commentsOnTowingDropdownList: parseStringList(
+        json["commentsOnTowingDropdownList"],
+      ),
+      commentsOnTransmissionDropdownList: parseStringList(
+        json["commentsOnTransmissionDropdownList"],
+      ),
+      commentsOnRadiatorDropdownList: parseStringList(
+        json["commentsOnRadiatorDropdownList"],
+      ),
+      commentsOnOthersDropdownList: parseStringList(
+        json["commentsOnOthersDropdownList"],
+      ),
+      engineBayImages: parseStringList(json["engineBayImages"]),
+      lhsApronImages: parseStringList(json["lhsApronImages"]),
+      rhsApronImages: parseStringList(json["rhsApronImages"]),
+      additionalEngineImages: parseStringList(json["additionalEngineImages"]),
+      engineVideo: parseStringList(json["engineVideo"]),
+      exhaustSmokeVideo: parseStringList(json["exhaustSmokeVideo"]),
+      steeringDropdownList: parseStringList(json["steeringDropdownList"]),
+      brakesDropdownList: parseStringList(json["brakesDropdownList"]),
+      suspensionDropdownList: parseStringList(json["suspensionDropdownList"]),
+      odometerReadingBeforeTestDrive:
+          json["odometerReadingBeforeTestDrive"] ?? 0,
+      rearWiperWasherDropdownList: parseStringList(
+        json["rearWiperWasherDropdownList"],
+      ),
+      rearDefoggerDropdownList: parseStringList(
+        json["rearDefoggerDropdownList"],
+      ),
+      infotainmentSystemDropdownList: parseStringList(
+        json["infotainmentSystemDropdownList"],
+      ),
+      steeringMountedMediaControls:
+          json["steeringMountedMediaControls"] ?? 'N/A',
       steeringMountedSystemControls:
-          (json['steeringMountedSystemControls'] ?? '').toString(),
-      acType: _list(json['acType']),
-      acCool: _list(json['acCool']),
-      acImages: _list(json['acImages']),
-      commentsOnAc: (json['commentsOnAc'] ?? '').toString(),
-      noOfPowerWindows: (json['noOfPowerWindows'] ?? '').toString(),
-      lhsFrontDoorFeatures: _list(json['lhsFrontDoorFeatures']),
-      rhsFrontDoorFeatures: _list(json['rhsFrontDoorFeatures']),
-      lhsRearDoorFeatures: _list(json['lhsRearDoorFeatures']),
-      rhsRearDoorFeatures: _list(json['rhsRearDoorFeatures']),
-      sunroof: _list(json['sunroof']),
-      numberOfAirbags: _i(json['numberOfAirbags']),
-      driverSideAirbag: (json['driverSideAirbag'] ?? '').toString(),
-      coDriverSideAirbag: (json['coDriverSideAirbag'] ?? '').toString(),
-      rhsCurtainAirbag: (json['rhsCurtainAirbag'] ?? '').toString(),
-      lhsCurtainAirbag: (json['lhsCurtainAirbag'] ?? '').toString(),
-      driverSideSeatAirbag: (json['driverSideSeatAirbag'] ?? '').toString(),
-      coDriverSideSeatAirbag: (json['coDriverSideSeatAirbag'] ?? '').toString(),
-      driverSideKneeAirbag: (json['driverSideKneeAirbag'] ?? '').toString(),
-      coDriverKneeAirbag: (json['coDriverKneeAirbag'] ?? '').toString(),
-      rhsRearSideAirbags: (json['rhsRearSideAirbags'] ?? '').toString(),
-      lhsRearSideAirbags: (json['lhsRearSideAirbags'] ?? '').toString(),
-      seatsUpholstery: (json['seatsUpholstery'] ?? '').toString(),
-      interiorSeatingCapacity: _i(json['interiorSeatingCapacity']),
-      driverSeat: (json['driverSeat'] ?? '').toString(),
-      coDriverSeat: (json['coDriverSeat'] ?? '').toString(),
-      frontCentreArmRest: (json['frontCentreArmRest'] ?? '').toString(),
-      rearSeats: (json['rearSeats'] ?? '').toString(),
-      thirdRowSeats: (json['thirdRowSeats'] ?? '').toString(),
-      frontSeatsDriverSideImage: (json['frontSeatsDriverSideImage'] ?? '')
-          .toString(),
-      rearSeatsRightSideImage: (json['rearSeatsRightSideImage'] ?? '')
-          .toString(),
-      dashboardFromRearSeatImage: (json['dashboardFromRearSeatImage'] ?? '')
-          .toString(),
-      reverseCamera: (json['reverseCamera'] ?? '').toString(),
-      optionalInteriorImages: _list(json['optionalInteriorImages']),
-      commentOnInterior: (json['commentOnInterior'] ?? '').toString(),
-      steering: (json['steering'] ?? '').toString(),
-      clutch: (json['clutch'] ?? '').toString(),
-      gearShift: (json['gearShift'] ?? '').toString(),
-      transmissionType: (json['transmissionType'] ?? '').toString(),
-      commentsOnTransmission: (json['commentsOnTransmission'] ?? '').toString(),
-      driveTrain: (json['driveTrain'] ?? '').toString(),
-      brakes: (json['brakes'] ?? '').toString(),
-      suspension: (json['suspension'] ?? '').toString(),
-      testDriveOdometerImage: (json['testDriveOdometerImage'] ?? '').toString(),
-      testDriveOdometerReading: (json['testDriveOdometerReading'] ?? '')
-          .toString(),
-      additionalDetails: (json['additionalDetails'] ?? '').toString(),
-      contactNumber: (json['contactNumber'] ?? '').toString(),
-      status: (json['status'] ?? '').toString(),
+          json["steeringMountedSystemControls"] ?? 'N/A',
+      rhsFrontDoorFeaturesDropdownList: parseStringList(
+        json["rhsFrontDoorFeaturesDropdownList"],
+      ),
+      lhsFrontDoorFeaturesDropdownList: parseStringList(
+        json["lhsFrontDoorFeaturesDropdownList"],
+      ),
+      rhsRearDoorFeaturesDropdownList: parseStringList(
+        json["rhsRearDoorFeaturesDropdownList"],
+      ),
+      lhsRearDoorFeaturesDropdownList: parseStringList(
+        json["lhsRearDoorFeaturesDropdownList"],
+      ),
+      commentOnInteriorDropdownList: parseStringList(
+        json["commentOnInteriorDropdownList"],
+      ),
+      driverAirbag: json["driverAirbag"] ?? 'N/A',
+      coDriverAirbag: json["coDriverAirbag"] ?? 'N/A',
+      coDriverSeatAirbag: json["coDriverSeatAirbag"] ?? 'N/A',
+      lhsCurtainAirbag: json["lhsCurtainAirbag"] ?? 'N/A',
+      lhsRearSideAirbag: json["lhsRearSideAirbag"] ?? 'N/A',
+      driverSeatAirbag: json["driverSeatAirbag"] ?? 'N/A',
+      rhsCurtainAirbag: json["rhsCurtainAirbag"] ?? 'N/A',
+      rhsRearSideAirbag: json["rhsRearSideAirbag"] ?? 'N/A',
+      sunroofDropdownList: parseStringList(json["sunroofDropdownList"]),
+      seatsUpholstery: json["seatsUpholstery"] ?? 'N/A',
+      meterConsoleWithEngineOnImages: parseStringList(
+        json["meterConsoleWithEngineOnImages"],
+      ),
+      airbagImages: parseStringList(json["airbagImages"]),
+      frontSeatsFromDriverSideImages: parseStringList(
+        json["frontSeatsFromDriverSideImages"],
+      ),
+      rearSeatsFromRightSideImages: parseStringList(
+        json["rearSeatsFromRightSideImages"],
+      ),
+      dashboardImages: parseStringList(json["dashboardImages"]),
+      reverseCameraDropdownList: parseStringList(
+        json["reverseCameraDropdownList"],
+      ),
+      additionalInteriorImages: parseStringList(
+        json["additionalInteriorImages"],
+      ),
+      acTypeDropdownList: json["acTypeDropdownList"] ?? 'N/A',
+      acCoolingDropdownList: json["acCoolingDropdownList"] ?? 'N/A',
+      chassisEmbossmentImages: parseStringList(json["chassisEmbossmentImages"]),
+      chassisDetails: json["chassisDetails"] ?? 'N/A',
+      vinPlateImages: parseStringList(json["vinPlateImages"]),
+      vinPlateDetails: json["vinPlateDetails"] ?? 'N/A',
+      roadTaxImages: parseStringList(json["roadTaxImages"]),
+      seatingCapacity: json["seatingCapacity"] ?? 0,
+      color: json["color"] ?? 'N/A',
+      numberOfCylinders: json["numberOfCylinders"] ?? 0,
+      norms: json["norms"] ?? 'N/A',
+      hypothecatedTo: json["hypothecatedTo"] ?? 'N/A',
+      insurer: json["insurer"] ?? 'N/A',
+      pucImages: parseStringList(json["pucImages"]),
+      pucValidity: parseMongoDbDate(json["pucValidity"]),
+      pucNumber: json["pucNumber"] ?? 'N/A',
+      rcStatus: json["rcStatus"] ?? 'N/A',
+      blacklistStatus: json["blacklistStatus"] ?? 'N/A',
+      rtoNocImages: parseStringList(json["rtoNocImages"]),
+      rtoForm28Images: parseStringList(json["rtoForm28Images"]),
+      frontWiperAndWasherDropdownList: parseStringList(
+        json["frontWiperAndWasherDropdownList"],
+      ),
+      frontWiperAndWasherImages: parseStringList(
+        json["frontWiperAndWasherImages"],
+      ),
+      lhsRearFogLampDropdownList: parseStringList(
+        json["lhsRearFogLampDropdownList"],
+      ),
+      lhsRearFogLampImages: parseStringList(json["lhsRearFogLampImages"]),
+      rhsRearFogLampDropdownList: parseStringList(
+        json["rhsRearFogLampDropdownList"],
+      ),
+      rhsRearFogLampImages: parseStringList(json["rhsRearFogLampImages"]),
+      rearWiperAndWasherImages: parseStringList(
+        json["rearWiperAndWasherImages"],
+      ),
+      spareWheelDropdownList: parseStringList(json["spareWheelDropdownList"]),
+      spareWheelImages: parseStringList(json["spareWheelImages"]),
+      cowlTopImages: parseStringList(json["cowlTopImages"]),
+      firewallImages: parseStringList(json["firewallImages"]),
+      lhsSideMemberDropdownList: parseStringList(
+        json["lhsSideMemberDropdownList"],
+      ),
+      rhsSideMemberDropdownList: parseStringList(
+        json["rhsSideMemberDropdownList"],
+      ),
+      transmissionTypeDropdownList: parseStringList(
+        json["transmissionTypeDropdownList"],
+      ),
+      driveTrainDropdownList: parseStringList(json["driveTrainDropdownList"]),
+      commentsOnClusterMeterDropdownList: parseStringList(
+        json["commentsOnClusterMeterDropdownList"],
+      ),
+      irvm: json["irvm"] ?? 'N/A',
+      dashboardDropdownList: parseStringList(json["dashboardDropdownList"]),
+      acImages: parseStringList(json["acImages"]),
+      reverseCameraImages: parseStringList(json["reverseCameraImages"]),
+      driverSideKneeAirbag: json["driverSideKneeAirbag"] ?? 'N/A',
+      coDriverKneeSeatAirbag: json["coDriverKneeSeatAirbag"] ?? 'N/A',
+      driverSeatDropdownList: parseStringList(json["driverSeatDropdownList"]),
+      coDriverSeatDropdownList: parseStringList(
+        json["coDriverSeatDropdownList"],
+      ),
+      frontCentreArmRestDropdownList: parseStringList(
+        json["frontCentreArmRestDropdownList"],
+      ),
+      rearSeatsDropdownList: parseStringList(json["rearSeatsDropdownList"]),
+      thirdRowSeatsDropdownList: parseStringList(
+        json["thirdRowSeatsDropdownList"],
+      ),
+      odometerReadingAfterTestDriveImages: parseStringList(
+        json["odometerReadingAfterTestDriveImages"],
+      ),
+      odometerReadingAfterTestDriveInKms:
+          json["odometerReadingAfterTestDriveInKms"] ?? 0,
     );
   }
 
   Map<String, dynamic> toJson() => {
-    "_id": id,
-    "timestamp": timestamp?.toIso8601String(),
+    // "_id": id?.toJson(),
+    "timestamp": timestamp,
     "emailAddress": emailAddress,
     "appointmentId": appointmentId,
     "city": city,
-    "inspectionEngineerName": inspectionEngineerName,
     "registrationType": registrationType,
     "rcBookAvailability": rcBookAvailability,
     "rcCondition": rcCondition,
     "registrationNumber": registrationNumber,
-    "registrationDate": registrationDate?.toIso8601String(),
-    "fitnessTill": fitnessTill?.toIso8601String(),
+    "registrationDate": registrationDate,
+    "fitnessTill": fitnessTill,
     "toBeScrapped": toBeScrapped,
-    "chassisEmbossmentImage": chassisEmbossmentImage,
-    "chassisDetails": chassisDetails,
-    "vinPlateImage": vinPlateImage,
-    "vinPlateDetails": vinPlateDetails,
     "registrationState": registrationState,
-    "registrationCity": registrationCity,
     "registeredRto": registeredRto,
     "ownerSerialNumber": ownerSerialNumber,
     "make": make,
@@ -994,54 +1682,29 @@ class CarModel {
     "chassisNumber": chassisNumber,
     "registeredOwner": registeredOwner,
     "registeredAddressAsPerRc": registeredAddressAsPerRc,
-    "yearMonthOfManufacture": yearMonthOfManufacture?.toIso8601String(),
+    "yearMonthOfManufacture": yearMonthOfManufacture,
     "fuelType": fuelType,
     "cubicCapacity": cubicCapacity,
-    "seatingCapacity": seatingCapacity,
-    "color": color,
-    "numberOfCylinders": numberOfCylinders,
-    "bodyType": bodyType,
-    "norms": norms,
-    "vehicleCategory": vehicleCategory,
-    "wheelBase": wheelBase,
-    "grossVehicleWeight": grossVehicleWeight,
-    "unladenWeight": unladenWeight,
     "hypothecationDetails": hypothecationDetails,
-    "hypothecatorName": hypothecatorName,
     "mismatchInRc": mismatchInRc,
     "roadTaxValidity": roadTaxValidity,
-    "roadTaxType": roadTaxType,
-    "taxValidTill": taxValidTill?.toIso8601String(),
+    "taxValidTill": taxValidTill,
     "insurance": insurance,
     "insurancePolicyNumber": insurancePolicyNumber,
-    "insuranceValidity": insuranceValidity?.toIso8601String(),
+    "insuranceValidity": insuranceValidity,
     "noClaimBonus": noClaimBonus,
     "mismatchInInsurance": mismatchInInsurance,
-    "pollutionCertificateImage": pollutionCertificateImage,
-    "pollutionCertificateValidity": pollutionCertificateValidity
-        ?.toIso8601String(),
-    "pollutionCertificateNumber": pollutionCertificateNumber,
-    "blacklistStatus": blacklistStatus,
     "duplicateKey": duplicateKey,
     "rtoNoc": rtoNoc,
     "rtoForm28": rtoForm28,
     "partyPeshi": partyPeshi,
-    "optionalDetails": optionalDetails,
-    "registrationCertificateAvailability": registrationCertificateAvailability,
-    "registrationCertificateStatus": registrationCertificateStatus,
-    "rcTaxToken": rcTaxToken,
-    "insuranceCopy": insuranceCopy,
+    "additionalDetails": additionalDetails,
+    "rcTaxToken": rcTaxToken.map((x) => x).toList(),
+    "insuranceCopy": insuranceCopy.map((x) => x).toList(),
     "bothKeys": bothKeys,
     "form26GdCopyIfRcIsLost": form26GdCopyIfRcIsLost,
-    "insuranceDetails": insuranceDetails,
-    "roadTaxImages": roadTaxImages,
-    "registrationCertificateImages": registrationCertificateImages,
-    "frontMainImage": frontMainImage,
-    "lhsFullViewImage": lhsFullViewImage,
-    "rearMainImage": rearMainImage,
     "bonnet": bonnet,
     "frontWindshield": frontWindshield,
-    "frontWiperWasher": frontWiperWasher,
     "roof": roof,
     "frontBumper": frontBumper,
     "lhsHeadlamp": lhsHeadlamp,
@@ -1049,166 +1712,563 @@ class CarModel {
     "rhsHeadlamp": rhsHeadlamp,
     "rhsFoglamp": rhsFoglamp,
     "lhsFender": lhsFender,
-    "lhsFrontTyre": lhsFrontTyre,
     "lhsOrvm": lhsOrvm,
     "lhsAPillar": lhsAPillar,
     "lhsBPillar": lhsBPillar,
+    "lhsCPillar": lhsCPillar,
+    "lhsFrontAlloy": lhsFrontAlloy,
+    "lhsFrontTyre": lhsFrontTyre,
+    "lhsRearAlloy": lhsRearAlloy,
+    "lhsRearTyre": lhsRearTyre,
     "lhsFrontDoor": lhsFrontDoor,
     "lhsRearDoor": lhsRearDoor,
-    "lhsCPillar": lhsCPillar,
-    "lhsRunningBoard": lhsRunningBoard,
-    "lhsRunningBoardImages": lhsRunningBoardImages,
-    "lhsRearTyre": lhsRearTyre,
+    "lhsRunningBorder": lhsRunningBorder,
     "lhsQuarterPanel": lhsQuarterPanel,
     "rearBumper": rearBumper,
     "lhsTailLamp": lhsTailLamp,
-    "lhsRearFogLamp": lhsRearFogLamp,
     "rhsTailLamp": rhsTailLamp,
-    "rhsRearFogLamp": rhsRearFogLamp,
     "rearWindshield": rearWindshield,
-    "rearWiperWasher": rearWiperWasher,
-    "bootDoorOpenImage": bootDoorOpenImage,
-    "bootDoorClosedImage": bootDoorClosedImage,
     "bootDoor": bootDoor,
-    "spareWheel": spareWheel,
     "spareTyre": spareTyre,
     "bootFloor": bootFloor,
-    "rhsFender": rhsFender,
+    "rhsRearAlloy": rhsRearAlloy,
+    "rhsRearTyre": rhsRearTyre,
+    "rhsFrontAlloy": rhsFrontAlloy,
     "rhsFrontTyre": rhsFrontTyre,
-    "rhsOrvm": rhsOrvm,
+    "rhsQuarterPanel": rhsQuarterPanel,
     "rhsAPillar": rhsAPillar,
     "rhsBPillar": rhsBPillar,
-    "rhsFrontDoor": rhsFrontDoor,
-    "rhsRearDoor": rhsRearDoor,
     "rhsCPillar": rhsCPillar,
-    "rhsRunningBoard": rhsRunningBoard,
-    "rhsRunningBoardImages": rhsRunningBoardImages,
-    "rhsRearTyre": rhsRearTyre,
-    "rhsQuarterPanel": rhsQuarterPanel,
-    "bonnetImages": bonnetImages,
+    "rhsRunningBorder": rhsRunningBorder,
+    "rhsRearDoor": rhsRearDoor,
+    "rhsFrontDoor": rhsFrontDoor,
+    "rhsOrvm": rhsOrvm,
+    "rhsFender": rhsFender,
+    "comments": comments,
+    "frontMain": frontMain.map((x) => x).toList(),
+    "bonnetImages": bonnetImages.map((x) => x).toList(),
     "frontWindshieldImages": frontWindshieldImages,
-    "frontWiperWasherImages": frontWiperWasherImages,
     "roofImages": roofImages,
-    "frontBumperImages": frontBumperImages,
+    "frontBumperImages": frontBumperImages.map((x) => x).toList(),
     "lhsHeadlampImages": lhsHeadlampImages,
     "lhsFoglampImages": lhsFoglampImages,
     "rhsHeadlampImages": rhsHeadlampImages,
     "rhsFoglampImages": rhsFoglampImages,
-    "lhsFenderImages": lhsFenderImages,
-    "lhsFrontTyreImages": lhsFrontTyreImages,
+    "lhsFront45Degree": lhsFront45Degree.map((x) => x).toList(),
+    "lhsFenderImages": lhsFenderImages.map((x) => x).toList(),
+    "lhsFrontAlloyImages": lhsFrontAlloyImages,
+    "lhsFrontTyreImages": lhsFrontTyreImages.map((x) => x).toList(),
+    "lhsRunningBorderImages": lhsRunningBorderImages.map((x) => x).toList(),
     "lhsOrvmImages": lhsOrvmImages,
     "lhsAPillarImages": lhsAPillarImages,
+    "lhsFrontDoorImages": lhsFrontDoorImages.map((x) => x).toList(),
     "lhsBPillarImages": lhsBPillarImages,
-    "lhsFrontDoorImages": lhsFrontDoorImages,
-    "lhsRearDoorImages": lhsRearDoorImages,
+    "lhsRearDoorImages": lhsRearDoorImages.map((x) => x).toList(),
     "lhsCPillarImages": lhsCPillarImages,
-    "lhsRearTyreImages": lhsRearTyreImages,
-    "lhsQuarterPanelImages": lhsQuarterPanelImages,
-    "rearBumperImages": rearBumperImages,
+    "lhsRearTyreImages": lhsRearTyreImages.map((x) => x).toList(),
+    "lhsRearAlloyImages": lhsRearAlloyImages,
+    "lhsQuarterPanelImages": lhsQuarterPanelImages.map((x) => x).toList(),
+    "rearMain": rearMain.map((x) => x).toList(),
+    "rearWithBootDoorOpen": rearWithBootDoorOpen,
+    "rearBumperImages": rearBumperImages.map((x) => x).toList(),
     "lhsTailLampImages": lhsTailLampImages,
-    "lhsRearFogLampImages": lhsRearFogLampImages,
     "rhsTailLampImages": rhsTailLampImages,
-    "rhsRearFogLampImages": rhsRearFogLampImages,
     "rearWindshieldImages": rearWindshieldImages,
-    "rearWiperWasherImages": rearWiperWasherImages,
-    "lhsFrontWheelImages": lhsFrontWheelImages,
-    "rhsFrontWheelImages": rhsFrontWheelImages,
-    "lhsRearWheelImages": lhsRearWheelImages,
-    "rhsRearWheelImages": rhsRearWheelImages,
-    "lhsFrontWheel": lhsFrontWheel,
-    "rhsFrontWheel": rhsFrontWheel,
-    "lhsRearWheel": lhsRearWheel,
-    "rhsRearWheel": rhsRearWheel,
-    "engineBayImages": engineBayImages,
-    "engineSoundVideo": engineSoundVideo,
-    "exhaustSmokeVideo": exhaustSmokeVideo,
-    "clusterMeterWithEngineImage": clusterMeterWithEngineImage,
-    "odometerReadingInKms": odometerReadingInKms,
-    "engine": engine,
-    "commentsOnEngine": commentsOnEngine,
-    "engineOilLevelDipstick": engineOilLevelDipstick,
-    "engineOil": engineOil,
-    "commentsOnEngineOil": commentsOnEngineOil,
-    "enginePermisableBlowBy": enginePermisableBlowBy,
-    "coolant": coolant,
-    "abs": abs,
-    "cowlTop": cowlTop,
-    "cowlTopImage": cowlTopImage,
-    "firewall": firewall,
-    "firewallImage": firewallImage,
+    "spareTyreImages": spareTyreImages.map((x) => x).toList(),
+    "bootFloorImages": bootFloorImages.map((x) => x).toList(),
+    "rhsRear45Degree": rhsRear45Degree.map((x) => x).toList(),
+    "rhsQuarterPanelImages": rhsQuarterPanelImages.map((x) => x).toList(),
+    "rhsRearAlloyImages": rhsRearAlloyImages,
+    "rhsRearTyreImages": rhsRearTyreImages,
+    "rhsCPillarImages": rhsCPillarImages,
+    "rhsRearDoorImages": rhsRearDoorImages.map((x) => x).toList(),
+    "rhsBPillarImages": rhsBPillarImages,
+    "rhsFrontDoorImages": rhsFrontDoorImages.map((x) => x).toList(),
+    "rhsAPillarImages": rhsAPillarImages,
+    "rhsRunningBorderImages": rhsRunningBorderImages.map((x) => x).toList(),
+    "rhsFrontAlloyImages": rhsFrontAlloyImages,
+    "rhsFrontTyreImages": rhsFrontTyreImages.map((x) => x).toList(),
+    "rhsOrvmImages": rhsOrvmImages,
+    "rhsFenderImages": rhsFenderImages.map((x) => x).toList(),
+    "upperCrossMember": upperCrossMember,
+    "radiatorSupport": radiatorSupport,
+    "headlightSupport": headlightSupport,
+    "lowerCrossMember": lowerCrossMember,
     "lhsApron": lhsApron,
     "rhsApron": rhsApron,
-    "lhsApronImages": lhsApronImages,
-    "rhsApronImages": rhsApronImages,
+    "firewall": firewall,
+    "cowlTop": cowlTop,
+    "engine": engine,
     "battery": battery,
-    "batteryImage": batteryImage,
-    "upperCrossMember": upperCrossMember,
-    "lhsSideMember": lhsSideMember,
-    "rhsSideMember": rhsSideMember,
+    "coolant": coolant,
+    "engineOilLevelDipstick": engineOilLevelDipstick,
+    "engineOil": engineOil,
     "engineMount": engineMount,
-    "headlightSupport": headlightSupport,
-    "radiatorSupport": radiatorSupport,
-    "commentsOnRadiator": commentsOnRadiator,
-    "lowerCrossMember": lowerCrossMember,
+    "enginePermisableBlowBy": enginePermisableBlowBy,
     "exhaustSmoke": exhaustSmoke,
-    "commentsOnTowing": commentsOnTowing,
-    "commentsOnOthers": commentsOnOthers,
-    "optionalEngineImages": optionalEngineImages,
-    "commentsOnClusterMeter": commentsOnClusterMeter,
-    "fuelLevel": fuelLevel,
-    "irvm": irvm,
-    "dashboard": dashboard,
-    "infotainmentSystem": infotainmentSystem,
-    "inbuiltSpeaker": inbuiltSpeaker,
-    "externalSpeaker": externalSpeaker,
-    "steeringMountedMediaControls": steeringMountedMediaControls,
-    "steeringMountedSystemControls": steeringMountedSystemControls,
-    "acType": acType,
-    "acCool": acCool,
-    "acImages": acImages,
-    "commentsOnAc": commentsOnAc,
-    "noOfPowerWindows": noOfPowerWindows,
-    "lhsFrontDoorFeatures": lhsFrontDoorFeatures,
-    "rhsFrontDoorFeatures": rhsFrontDoorFeatures,
-    "lhsRearDoorFeatures": lhsRearDoorFeatures,
-    "rhsRearDoorFeatures": rhsRearDoorFeatures,
-    "sunroof": sunroof,
-    "numberOfAirbags": numberOfAirbags,
-    "driverSideAirbag": driverSideAirbag,
-    "coDriverSideAirbag": coDriverSideAirbag,
-    "rhsCurtainAirbag": rhsCurtainAirbag,
-    "lhsCurtainAirbag": lhsCurtainAirbag,
-    "driverSideSeatAirbag": driverSideSeatAirbag,
-    "coDriverSideSeatAirbag": coDriverSideSeatAirbag,
-    "driverSideKneeAirbag": driverSideKneeAirbag,
-    "coDriverKneeAirbag": coDriverKneeAirbag,
-    "rhsRearSideAirbags": rhsRearSideAirbags,
-    "lhsRearSideAirbags": lhsRearSideAirbags,
-    "seatsUpholstery": seatsUpholstery,
-    "interiorSeatingCapacity": interiorSeatingCapacity,
-    "driverSeat": driverSeat,
-    "coDriverSeat": coDriverSeat,
-    "frontCentreArmRest": frontCentreArmRest,
-    "rearSeats": rearSeats,
-    "thirdRowSeats": thirdRowSeats,
-    "frontSeatsDriverSideImage": frontSeatsDriverSideImage,
-    "rearSeatsRightSideImage": rearSeatsRightSideImage,
-    "dashboardFromRearSeatImage": dashboardFromRearSeatImage,
-    "reverseCamera": reverseCamera,
-    "optionalInteriorImages": optionalInteriorImages,
-    "commentOnInterior": commentOnInterior,
-    "steering": steering,
     "clutch": clutch,
     "gearShift": gearShift,
-    "transmissionType": transmissionType,
+    "commentsOnEngine": commentsOnEngine,
+    "commentsOnEngineOil": commentsOnEngineOil,
+    "commentsOnTowing": commentsOnTowing,
     "commentsOnTransmission": commentsOnTransmission,
-    "driveTrain": driveTrain,
+    "commentsOnRadiator": commentsOnRadiator,
+    "commentsOnOthers": commentsOnOthers,
+    "engineBay": engineBay.map((x) => x).toList(),
+    "apronLhsRhs": apronLhsRhs.map((x) => x).toList(),
+    "batteryImages": batteryImages.map((x) => x).toList(),
+    "additionalImages": additionalImages,
+    "engineSound": engineSound.map((x) => x).toList(),
+    "exhaustSmokeImages": exhaustSmokeImages.map((x) => x).toList(),
+    "steering": steering,
     "brakes": brakes,
     "suspension": suspension,
-    "testDriveOdometerImage": testDriveOdometerImage,
-    "testDriveOdometerReading": testDriveOdometerReading,
-    "additionalDetails": additionalDetails,
+    "odometerReadingInKms": odometerReadingInKms,
+    "fuelLevel": fuelLevel,
+    "abs": abs,
+    "electricals": electricals,
+    "rearWiperWasher": rearWiperWasher,
+    "rearDefogger": rearDefogger,
+    "musicSystem": musicSystem,
+    "stereo": stereo,
+    "inbuiltSpeaker": inbuiltSpeaker,
+    "externalSpeaker": externalSpeaker,
+    "steeringMountedAudioControl": steeringMountedAudioControl,
+    "noOfPowerWindows": noOfPowerWindows,
+    "powerWindowConditionRhsFront": powerWindowConditionRhsFront,
+    "powerWindowConditionLhsFront": powerWindowConditionLhsFront,
+    "powerWindowConditionRhsRear": powerWindowConditionRhsRear,
+    "powerWindowConditionLhsRear": powerWindowConditionLhsRear,
+    "commentOnInterior": commentOnInterior,
+    "noOfAirBags": noOfAirBags,
+    "airbagFeaturesDriverSide": airbagFeaturesDriverSide,
+    "airbagFeaturesCoDriverSide": airbagFeaturesCoDriverSide,
+    "airbagFeaturesLhsAPillarCurtain": airbagFeaturesLhsAPillarCurtain,
+    "airbagFeaturesLhsBPillarCurtain": airbagFeaturesLhsBPillarCurtain,
+    "airbagFeaturesLhsCPillarCurtain": airbagFeaturesLhsCPillarCurtain,
+    "airbagFeaturesRhsAPillarCurtain": airbagFeaturesRhsAPillarCurtain,
+    "airbagFeaturesRhsBPillarCurtain": airbagFeaturesRhsBPillarCurtain,
+    "airbagFeaturesRhsCPillarCurtain": airbagFeaturesRhsCPillarCurtain,
+    "sunroof": sunroof,
+    "leatherSeats": leatherSeats,
+    "fabricSeats": fabricSeats,
+    "commentsOnElectricals": commentsOnElectricals,
+    "meterConsoleWithEngineOn": meterConsoleWithEngineOn.map((x) => x).toList(),
+    "airbags": airbags.map((x) => x).toList(),
+    "sunroofImages": sunroofImages,
+    "frontSeatsFromDriverSideDoorOpen": frontSeatsFromDriverSideDoorOpen
+        .map((x) => x)
+        .toList(),
+    "rearSeatsFromRightSideDoorOpen": rearSeatsFromRightSideDoorOpen
+        .map((x) => x)
+        .toList(),
+    "dashboardFromRearSeat": dashboardFromRearSeat.map((x) => x).toList(),
+    "reverseCamera": reverseCamera,
+    "additionalImages2": additionalImages2,
+    "airConditioningManual": airConditioningManual,
+    "airConditioningClimateControl": airConditioningClimateControl,
+    "commentsOnAC": commentsOnAc,
+    "approvedBy": approvedBy,
+    "approvalDate": approvalDate,
+    "approvalTime": approvalTime,
+    "approvalStatus": approvalStatus,
     "contactNumber": contactNumber,
+    "newArrivalMessage": newArrivalMessage,
+    "budgetCar": budgetCar,
     "status": status,
+    "priceDiscovery": priceDiscovery,
+    "priceDiscoveryBy": priceDiscoveryBy,
+    "latlong": latlong,
+    "retailAssociate": retailAssociate,
+    "kmRangeLevel": kmRangeLevel,
+    "highestBidder": highestBidder,
+    "__v": v,
+
+    // ✅ New fields all (nullable-safe)
+    "ieName": ieName,
+    "inspectionCity": inspectionCity,
+    "rcBookAvailabilityDropdownList": rcBookAvailabilityDropdownList
+        .map((x) => x)
+        .toList(),
+    "fitnessValidity": fitnessValidity,
+    "yearAndMonthOfManufacture": yearAndMonthOfManufacture,
+    "mismatchInRcDropdownList": mismatchInRcDropdownList.map((x) => x).toList(),
+    "insuranceDropdownList": insuranceDropdownList.map((x) => x).toList(),
+    "policyNumber": policyNumber,
+    "mismatchInInsuranceDropdownList": mismatchInInsuranceDropdownList
+        .map((x) => x)
+        .toList(),
+    "additionalDetailsDropdownList": additionalDetailsDropdownList
+        .map((x) => x)
+        .toList(),
+    "rcTokenImages": rcTokenImages.map((x) => x).toList(),
+    "insuranceImages": insuranceImages.map((x) => x).toList(),
+    "duplicateKeyImages": duplicateKeyImages.map((x) => x).toList(),
+    "form26AndGdCopyIfRcIsLostImages": form26AndGdCopyIfRcIsLostImages
+        .map((x) => x)
+        .toList(),
+    "bonnetDropdownList": bonnetDropdownList.map((x) => x).toList(),
+    "frontWindshieldDropdownList": frontWindshieldDropdownList
+        .map((x) => x)
+        .toList(),
+    "roofDropdownList": roofDropdownList.map((x) => x).toList(),
+    "frontBumperDropdownList": frontBumperDropdownList.map((x) => x).toList(),
+    "lhsHeadlampDropdownList": lhsHeadlampDropdownList.map((x) => x).toList(),
+    "lhsFoglampDropdownList": lhsFoglampDropdownList.map((x) => x).toList(),
+    "rhsHeadlampDropdownList": rhsHeadlampDropdownList.map((x) => x).toList(),
+    "rhsFoglampDropdownList": rhsFoglampDropdownList.map((x) => x).toList(),
+    "lhsFenderDropdownList": lhsFenderDropdownList.map((x) => x).toList(),
+    "lhsOrvmDropdownList": lhsOrvmDropdownList.map((x) => x).toList(),
+    "lhsAPillarDropdownList": lhsAPillarDropdownList.map((x) => x).toList(),
+    "lhsBPillarDropdownList": lhsBPillarDropdownList.map((x) => x).toList(),
+    "lhsCPillarDropdownList": lhsCPillarDropdownList.map((x) => x).toList(),
+    "lhsFrontWheelDropdownList": lhsFrontWheelDropdownList
+        .map((x) => x)
+        .toList(),
+    "lhsFrontTyreDropdownList": lhsFrontTyreDropdownList.map((x) => x).toList(),
+    "lhsRearWheelDropdownList": lhsRearWheelDropdownList.map((x) => x).toList(),
+    "lhsRearTyreDropdownList": lhsRearTyreDropdownList.map((x) => x).toList(),
+    "lhsFrontDoorDropdownList": lhsFrontDoorDropdownList.map((x) => x).toList(),
+    "lhsRearDoorDropdownList": lhsRearDoorDropdownList.map((x) => x).toList(),
+    "lhsRunningBorderDropdownList": lhsRunningBorderDropdownList
+        .map((x) => x)
+        .toList(),
+    "lhsQuarterPanelDropdownList": lhsQuarterPanelDropdownList
+        .map((x) => x)
+        .toList(),
+    "rearBumperDropdownList": rearBumperDropdownList.map((x) => x).toList(),
+    "lhsTailLampDropdownList": lhsTailLampDropdownList.map((x) => x).toList(),
+    "rhsTailLampDropdownList": rhsTailLampDropdownList.map((x) => x).toList(),
+    "rearWindshieldDropdownList": rearWindshieldDropdownList
+        .map((x) => x)
+        .toList(),
+    "bootDoorDropdownList": bootDoorDropdownList.map((x) => x).toList(),
+    "spareTyreDropdownList": spareTyreDropdownList.map((x) => x).toList(),
+    "bootFloorDropdownList": bootFloorDropdownList.map((x) => x).toList(),
+    "rhsRearWheelDropdownList": rhsRearWheelDropdownList.map((x) => x).toList(),
+    "rhsRearTyreDropdownList": rhsRearTyreDropdownList.map((x) => x).toList(),
+    "rhsFrontWheelDropdownList": rhsFrontWheelDropdownList
+        .map((x) => x)
+        .toList(),
+    "rhsFrontTyreDropdownList": rhsFrontTyreDropdownList.map((x) => x).toList(),
+    "rhsQuarterPanelDropdownList": rhsQuarterPanelDropdownList
+        .map((x) => x)
+        .toList(),
+    "rhsAPillarDropdownList": rhsAPillarDropdownList.map((x) => x).toList(),
+    "rhsBPillarDropdownList": rhsBPillarDropdownList.map((x) => x).toList(),
+    "rhsCPillarDropdownList": rhsCPillarDropdownList.map((x) => x).toList(),
+    "rhsRunningBorderDropdownList": rhsRunningBorderDropdownList
+        .map((x) => x)
+        .toList(),
+    "rhsRearDoorDropdownList": rhsRearDoorDropdownList.map((x) => x).toList(),
+    "rhsFrontDoorDropdownList": rhsFrontDoorDropdownList.map((x) => x).toList(),
+    "rhsOrvmDropdownList": rhsOrvmDropdownList.map((x) => x).toList(),
+    "rhsFenderDropdownList": rhsFenderDropdownList.map((x) => x).toList(),
+    "commentsOnExteriorDropdownList": commentsOnExteriorDropdownList
+        .map((x) => x)
+        .toList(),
+    "frontMainImages": frontMainImages.map((x) => x).toList(),
+    "bonnetClosedImages": bonnetClosedImages.map((x) => x).toList(),
+    "bonnetOpenImages": bonnetOpenImages.map((x) => x).toList(),
+    "frontBumperLhs45DegreeImages": frontBumperLhs45DegreeImages
+        .map((x) => x)
+        .toList(),
+    "frontBumperRhs45DegreeImages": frontBumperRhs45DegreeImages
+        .map((x) => x)
+        .toList(),
+    "lhsFullViewImages": lhsFullViewImages.map((x) => x).toList(),
+    "lhsFrontWheelImages": lhsFrontWheelImages.map((x) => x).toList(),
+    "lhsRearWheelImages": lhsRearWheelImages.map((x) => x).toList(),
+    "lhsQuarterPanelWithRearDoorOpenImages":
+        lhsQuarterPanelWithRearDoorOpenImages.map((x) => x).toList(),
+    "rearMainImages": rearMainImages.map((x) => x).toList(),
+    "rearWithBootDoorOpenImages": rearWithBootDoorOpenImages
+        .map((x) => x)
+        .toList(),
+    "rearBumperLhs45DegreeImages": rearBumperLhs45DegreeImages
+        .map((x) => x)
+        .toList(),
+    "rearBumperRhs45DegreeImages": rearBumperRhs45DegreeImages
+        .map((x) => x)
+        .toList(),
+    "rhsFullViewImages": rhsFullViewImages.map((x) => x).toList(),
+    "rhsQuarterPanelWithRearDoorOpenImages":
+        rhsQuarterPanelWithRearDoorOpenImages.map((x) => x).toList(),
+    "rhsRearWheelImages": rhsRearWheelImages.map((x) => x).toList(),
+    "rhsFrontWheelImages": rhsFrontWheelImages.map((x) => x).toList(),
+    "upperCrossMemberDropdownList": upperCrossMemberDropdownList
+        .map((x) => x)
+        .toList(),
+    "radiatorSupportDropdownList": radiatorSupportDropdownList
+        .map((x) => x)
+        .toList(),
+    "headlightSupportDropdownList": headlightSupportDropdownList
+        .map((x) => x)
+        .toList(),
+    "lowerCrossMemberDropdownList": lowerCrossMemberDropdownList
+        .map((x) => x)
+        .toList(),
+    "lhsApronDropdownList": lhsApronDropdownList.map((x) => x).toList(),
+    "rhsApronDropdownList": rhsApronDropdownList.map((x) => x).toList(),
+    "firewallDropdownList": firewallDropdownList.map((x) => x).toList(),
+    "cowlTopDropdownList": cowlTopDropdownList.map((x) => x).toList(),
+    "engineDropdownList": engineDropdownList.map((x) => x).toList(),
+    "batteryDropdownList": batteryDropdownList.map((x) => x).toList(),
+    "coolantDropdownList": coolantDropdownList.map((x) => x).toList(),
+    "engineOilLevelDipstickDropdownList": engineOilLevelDipstickDropdownList
+        .map((x) => x)
+        .toList(),
+    "engineOilDropdownList": engineOilDropdownList.map((x) => x).toList(),
+    "engineMountDropdownList": engineMountDropdownList.map((x) => x).toList(),
+    "enginePermisableBlowByDropdownList": enginePermisableBlowByDropdownList
+        .map((x) => x)
+        .toList(),
+    "exhaustSmokeDropdownList": exhaustSmokeDropdownList.map((x) => x).toList(),
+    "clutchDropdownList": clutchDropdownList.map((x) => x).toList(),
+    "gearShiftDropdownList": gearShiftDropdownList.map((x) => x).toList(),
+    "commentsOnEngineDropdownList": commentsOnEngineDropdownList
+        .map((x) => x)
+        .toList(),
+    "commentsOnEngineOilDropdownList": commentsOnEngineOilDropdownList
+        .map((x) => x)
+        .toList(),
+    "commentsOnTowingDropdownList": commentsOnTowingDropdownList
+        .map((x) => x)
+        .toList(),
+    "commentsOnTransmissionDropdownList": commentsOnTransmissionDropdownList
+        .map((x) => x)
+        .toList(),
+    "commentsOnRadiatorDropdownList": commentsOnRadiatorDropdownList
+        .map((x) => x)
+        .toList(),
+    "commentsOnOthersDropdownList": commentsOnOthersDropdownList
+        .map((x) => x)
+        .toList(),
+    "engineBayImages": engineBayImages.map((x) => x).toList(),
+    "lhsApronImages": lhsApronImages.map((x) => x).toList(),
+    "rhsApronImages": rhsApronImages.map((x) => x).toList(),
+    "additionalEngineImages": additionalEngineImages.map((x) => x).toList(),
+    "engineVideo": engineVideo.map((x) => x).toList(),
+    "exhaustSmokeVideo": exhaustSmokeVideo.map((x) => x).toList(),
+    "steeringDropdownList": steeringDropdownList.map((x) => x).toList(),
+    "brakesDropdownList": brakesDropdownList.map((x) => x).toList(),
+    "suspensionDropdownList": suspensionDropdownList.map((x) => x).toList(),
+    "odometerReadingBeforeTestDrive": odometerReadingBeforeTestDrive,
+    "rearWiperWasherDropdownList": rearWiperWasherDropdownList
+        .map((x) => x)
+        .toList(),
+    "rearDefoggerDropdownList": rearDefoggerDropdownList.map((x) => x).toList(),
+    "infotainmentSystemDropdownList": infotainmentSystemDropdownList
+        .map((x) => x)
+        .toList(),
+    "steeringMountedMediaControls": steeringMountedMediaControls,
+    "steeringMountedSystemControls": steeringMountedSystemControls,
+    "rhsFrontDoorFeaturesDropdownList": rhsFrontDoorFeaturesDropdownList
+        .map((x) => x)
+        .toList(),
+    "lhsFrontDoorFeaturesDropdownList": lhsFrontDoorFeaturesDropdownList
+        .map((x) => x)
+        .toList(),
+    "rhsRearDoorFeaturesDropdownList": rhsRearDoorFeaturesDropdownList
+        .map((x) => x)
+        .toList(),
+    "lhsRearDoorFeaturesDropdownList": lhsRearDoorFeaturesDropdownList
+        .map((x) => x)
+        .toList(),
+    "commentOnInteriorDropdownList": commentOnInteriorDropdownList
+        .map((x) => x)
+        .toList(),
+    "driverAirbag": driverAirbag,
+    "coDriverAirbag": coDriverAirbag,
+    "coDriverSeatAirbag": coDriverSeatAirbag,
+    "lhsCurtainAirbag": lhsCurtainAirbag,
+    "lhsRearSideAirbag": lhsRearSideAirbag,
+    "driverSeatAirbag": driverSeatAirbag,
+    "rhsCurtainAirbag": rhsCurtainAirbag,
+    "rhsRearSideAirbag": rhsRearSideAirbag,
+    "sunroofDropdownList": sunroofDropdownList.map((x) => x).toList(),
+    "seatsUpholstery": seatsUpholstery,
+    "meterConsoleWithEngineOnImages": meterConsoleWithEngineOnImages
+        .map((x) => x)
+        .toList(),
+    "airbagImages": airbagImages.map((x) => x).toList(),
+    "frontSeatsFromDriverSideImages": frontSeatsFromDriverSideImages
+        .map((x) => x)
+        .toList(),
+    "rearSeatsFromRightSideImages": rearSeatsFromRightSideImages
+        .map((x) => x)
+        .toList(),
+    "dashboardImages": dashboardImages.map((x) => x).toList(),
+    "reverseCameraDropdownList": reverseCameraDropdownList
+        .map((x) => x)
+        .toList(),
+    "additionalInteriorImages": additionalInteriorImages.map((x) => x).toList(),
+    "acTypeDropdownList": acTypeDropdownList,
+    "acCoolingDropdownList": acCoolingDropdownList,
+    "chassisEmbossmentImages": chassisEmbossmentImages.map((x) => x).toList(),
+    "chassisDetails": chassisDetails,
+    "vinPlateImages": vinPlateImages.map((x) => x).toList(),
+    "vinPlateDetails": vinPlateDetails,
+    "roadTaxImages": roadTaxImages.map((x) => x).toList(),
+    "seatingCapacity": seatingCapacity,
+    "color": color,
+    "numberOfCylinders": numberOfCylinders,
+    "norms": norms,
+    "hypothecatedTo": hypothecatedTo,
+    "insurer": insurer,
+    "pucImages": pucImages.map((x) => x).toList(),
+    "pucValidity": pucValidity,
+    "pucNumber": pucNumber,
+    "rcStatus": rcStatus,
+    "blacklistStatus": blacklistStatus,
+    "rtoNocImages": rtoNocImages.map((x) => x).toList(),
+    "rtoForm28Images": rtoForm28Images.map((x) => x).toList(),
+    "frontWiperAndWasherDropdownList": frontWiperAndWasherDropdownList
+        .map((x) => x)
+        .toList(),
+    "frontWiperAndWasherImages": frontWiperAndWasherImages
+        .map((x) => x)
+        .toList(),
+    "lhsRearFogLampDropdownList": lhsRearFogLampDropdownList
+        .map((x) => x)
+        .toList(),
+    "lhsRearFogLampImages": lhsRearFogLampImages.map((x) => x).toList(),
+    "rhsRearFogLampDropdownList": rhsRearFogLampDropdownList
+        .map((x) => x)
+        .toList(),
+    "rhsRearFogLampImages": rhsRearFogLampImages.map((x) => x).toList(),
+    "rearWiperAndWasherImages": rearWiperAndWasherImages.map((x) => x).toList(),
+    "spareWheelDropdownList": spareWheelDropdownList.map((x) => x).toList(),
+    "spareWheelImages": spareWheelImages.map((x) => x).toList(),
+    "cowlTopImages": cowlTopImages.map((x) => x).toList(),
+    "firewallImages": firewallImages.map((x) => x).toList(),
+    "lhsSideMemberDropdownList": lhsSideMemberDropdownList
+        .map((x) => x)
+        .toList(),
+    "rhsSideMemberDropdownList": rhsSideMemberDropdownList
+        .map((x) => x)
+        .toList(),
+    "transmissionTypeDropdownList": transmissionTypeDropdownList
+        .map((x) => x)
+        .toList(),
+    "driveTrainDropdownList": driveTrainDropdownList.map((x) => x).toList(),
+    "commentsOnClusterMeterDropdownList": commentsOnClusterMeterDropdownList
+        .map((x) => x)
+        .toList(),
+    "irvm": irvm,
+    "dashboardDropdownList": dashboardDropdownList.map((x) => x).toList(),
+    "acImages": acImages.map((x) => x).toList(),
+    "reverseCameraImages": reverseCameraImages.map((x) => x).toList(),
+    "driverSideKneeAirbag": driverSideKneeAirbag,
+    "coDriverKneeSeatAirbag": coDriverKneeSeatAirbag,
+    "driverSeatDropdownList": driverSeatDropdownList.map((x) => x).toList(),
+    "coDriverSeatDropdownList": coDriverSeatDropdownList.map((x) => x).toList(),
+    "frontCentreArmRestDropdownList": frontCentreArmRestDropdownList
+        .map((x) => x)
+        .toList(),
+    "rearSeatsDropdownList": rearSeatsDropdownList.map((x) => x).toList(),
+    "thirdRowSeatsDropdownList": thirdRowSeatsDropdownList
+        .map((x) => x)
+        .toList(),
+    "odometerReadingAfterTestDriveImages": odometerReadingAfterTestDriveImages
+        .map((x) => x)
+        .toList(),
+    "odometerReadingAfterTestDriveInKms": odometerReadingAfterTestDriveInKms,
   };
+}
+
+DateTime? parseMongoDbDate(dynamic v) {
+  try {
+    if (v == null) return null;
+
+    // 1) ISO string: "2025-08-11T10:50:00.000Z" or "+00:00" or no offset
+    if (v is String) {
+      // numeric string? treat as epoch ms
+      final maybeNum = int.tryParse(v);
+      if (maybeNum != null) {
+        return DateTime.fromMillisecondsSinceEpoch(
+          maybeNum,
+          isUtc: true,
+        ).toLocal();
+      }
+
+      final dt = DateTime.parse(
+        v,
+      ); // Dart sets isUtc=true if Z or +/-offset present
+      return dt.isUtc ? dt.toLocal() : dt; // normalize to local
+    }
+
+    // 2) Epoch milliseconds (int)
+    if (v is int) {
+      return DateTime.fromMillisecondsSinceEpoch(v, isUtc: true).toLocal();
+    }
+
+    // 3) Extended JSON: {"$date": "..."} or {"$date": 1723363800000} or {"$date":{"$numberLong":"..."}}
+    if (v is Map) {
+      final raw = v[r'$date'];
+      if (raw == null) return null;
+
+      if (raw is String) {
+        // could be ISO or numeric string
+        final maybeNum = int.tryParse(raw);
+        if (maybeNum != null) {
+          return DateTime.fromMillisecondsSinceEpoch(
+            maybeNum,
+            isUtc: true,
+          ).toLocal();
+        }
+        final dt = DateTime.parse(raw);
+        return dt.isUtc ? dt.toLocal() : dt;
+      }
+
+      if (raw is int) {
+        return DateTime.fromMillisecondsSinceEpoch(raw, isUtc: true).toLocal();
+      }
+
+      if (raw is Map && raw[r'$numberLong'] != null) {
+        final ms = int.tryParse(raw[r'$numberLong'].toString());
+        if (ms != null) {
+          return DateTime.fromMillisecondsSinceEpoch(ms, isUtc: true).toLocal();
+        }
+      }
+    }
+  } catch (e) {
+    // optional: debugPrint('parseMongoDbDate error: $e  (value: $v)');
+  }
+  return null;
+}
+
+// DateTime? parseMongoDbDate(dynamic dateJson) {
+//   try {
+//     if (dateJson == null) return null;
+
+//     if (dateJson is String) {
+//       return DateTime.tryParse(dateJson);
+//     }
+
+//     if (dateJson is Map<String, dynamic> && dateJson['\$date'] is String) {
+//       return DateTime.tryParse(dateJson['\$date']);
+//     }
+
+//     if (dateJson is Map<String, dynamic> &&
+//         dateJson['\$date'] is Map<String, dynamic>) {
+//       final millisStr = dateJson['\$date']['\$numberLong'];
+//       final millis = int.tryParse(millisStr ?? '');
+//       return millis != null
+//           ? DateTime.fromMillisecondsSinceEpoch(millis)
+//           : null;
+//     }
+//   } catch (e) {
+//     print('parseMongoDbDate error: $e');
+//   }
+
+//   return null;
+// }
+
+List<String> parseStringList(dynamic value) {
+  if (value == null) return [];
+  if (value is List) return value.map((e) => e.toString()).toList();
+  //   if (value is String) return [value];
+  if (value is String && value.trim().isNotEmpty) return [value];
+  return [];
 }
