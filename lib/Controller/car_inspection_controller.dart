@@ -2636,17 +2636,17 @@ class CarInspectionStepperController extends GetxController {
     final idx = currentStep.value;
     final isTestDriveStep = idx == 6;
     if (!isTestDriveStep) {
-      // final fk = formKeys[idx];
-      // final ok = fk.currentState?.validate() ?? true;
-      // if (!ok) {
-      //   ToastWidget.show(
-      //     context: Get.context!,
-      //     title: "Missing",
-      //     subtitle: "Please complete required fields",
-      //     type: ToastType.error,
-      //   );
-      //   return false;
-      // }
+      final fk = formKeys[idx];
+      final ok = fk.currentState?.validate() ?? true;
+      if (!ok) {
+        ToastWidget.show(
+          context: Get.context!,
+          title: "Missing",
+          subtitle: "Please complete required fields",
+          type: ToastType.error,
+        );
+        return false;
+      }
 
       // Go to next step
       if (idx < steps.length - 1) {
