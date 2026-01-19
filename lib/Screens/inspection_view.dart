@@ -1524,7 +1524,7 @@ class _CarInspectionStepperScreenState
       case 0:
         return RegistrationDocumentsStep(
           key: key,
-          formKey: c.formKeys[7],
+          formKey: c.formKeys[0],
           c: c,
         );
       case 1:
@@ -1539,10 +1539,10 @@ class _CarInspectionStepperScreenState
         return InteriorElectronicsStep(key: key, formKey: c.formKeys[5], c: c);
       case 6:
         return MechanicalTestDriveStep(key: key, formKey: c.formKeys[6], c: c);
-      case 7:
-        return FinalDetailsStep(key: key, formKey: c.formKeys[0], c: c);
-      case 8:
-        return ReviewStep(key: key, c: c);
+      // case 7:
+      //   return FinalDetailsStep(key: key, formKey: c.formKeys[0], c: c);
+      // case 8:
+      //   return ReviewStep(key: key, c: c);
       default:
         return const SizedBox.shrink(key: ValueKey('empty'));
     }
@@ -1628,7 +1628,7 @@ class _BottomBarPro extends StatelessWidget {
     final step = controller.currentStep.value;
     final total = controller.steps.length;
     final isLast = step == total - 1;
-    final isInteriorStep = step == 5; // Interior step index
+    final isTestDriveStep = step == 6; // ✅ Test Drive step index = 6
 
     const double btnHeight = 52;
 
@@ -1685,8 +1685,8 @@ class _BottomBarPro extends StatelessWidget {
                 height: btnHeight,
                 child: Obx(() {
                   final isLoading = controller.submitLoading.value;
-                  // Show Submit button for Interior step OR last step before Review
-                  final isSubmitStep = isInteriorStep || step == total - 2;
+                  // ✅ Show Submit button for Test Drive step OR last step before Review
+                  final isSubmitStep = isTestDriveStep || step == total - 2;
 
                   return ElevatedButton(
                     onPressed: (isLoading || isLast)
@@ -1694,13 +1694,15 @@ class _BottomBarPro extends StatelessWidget {
                         : () async {
                             final submittedOk = await controller
                                 .goNextOrSubmit();
-                            if (submittedOk && isInteriorStep) {
-                              // If submitted from Interior step, update telecalling status
+                            if (submittedOk && isTestDriveStep) {
+                              // ✅ If submitted from Test Drive step, update telecalling status
                               await controller.updateTelecallingInspected(
                                 telecallingId: lead.id.toString(),
                                 inspectionDateTimeLocal: DateTime.now(),
                                 remarks: "This car is Inspected",
                               );
+                              Get.delete<CarInspectionStepperController>();
+
                               Get.offAll(DashboardScreen());
                             }
                           },
@@ -2690,8 +2692,8 @@ class ExteriorFrontStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsHeadlamp",
-                  label: "LHS Headlamp",
-                  hint: "LHS Headlamp",
+                  label: "Left Headlamp",
+                  hint: "Left Headlamp",
                   icon: Icons.highlight_outlined,
                   items: headlampOptions,
                 ),
@@ -2700,8 +2702,8 @@ class ExteriorFrontStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsHeadlamp",
-                  label: "RHS Headlamp",
-                  hint: "RHS Headlamp",
+                  label: "Right Headlamp",
+                  hint: "Right Headlamp",
                   icon: Icons.highlight_outlined,
                   items: headlampOptions,
                 ),
@@ -2710,8 +2712,8 @@ class ExteriorFrontStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsFoglamp",
-                  label: "LHS Foglamp",
-                  hint: "LHS Foglamp",
+                  label: "Left Foglamp",
+                  hint: "Left Foglamp",
                   icon: Icons.wb_cloudy_outlined,
                   items: foglampOptions,
                 ),
@@ -2720,8 +2722,8 @@ class ExteriorFrontStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsFoglamp",
-                  label: "RHS Foglamp",
-                  hint: "RHS Foglamp",
+                  label: "Right Foglamp",
+                  hint: "Right Foglamp",
                   icon: Icons.wb_cloudy_outlined,
                   items: foglampOptions,
                 ),
@@ -2738,7 +2740,7 @@ class ExteriorFrontStep extends StatelessWidget {
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "lhsFenderImages",
-                  label: 'LHS Fender Images',
+                  label: 'Left Fender Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "lhsFenderImages",
                   ),
@@ -2859,7 +2861,7 @@ class ExteriorFrontStep extends StatelessWidget {
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "frontBumperLhs45DegreeImages",
-                  label: 'Front Bumper LHS 45° Images',
+                  label: 'Front Bumper Left 45° Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "frontBumperLhs45DegreeImages",
                   ),
@@ -2871,7 +2873,7 @@ class ExteriorFrontStep extends StatelessWidget {
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "frontBumperRhs45DegreeImages",
-                  label: 'Front Bumper RHS 45° Images',
+                  label: 'Front Bumper Right 45° Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "frontBumperRhs45DegreeImages",
                   ),
@@ -2959,8 +2961,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsTailLamp",
-                  label: "LHS Tail Lamp",
-                  hint: "LHS Tail Lamp",
+                  label: "Left Tail Lamp",
+                  hint: "Left Tail Lamp",
                   icon: Icons.lightbulb_outline,
                   items: tailLampOptions,
                 ),
@@ -2969,8 +2971,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsTailLamp",
-                  label: "RHS Tail Lamp",
-                  hint: "RHS Tail Lamp",
+                  label: "Right Tail Lamp",
+                  hint: "Right Tail Lamp",
                   icon: Icons.lightbulb_outline,
                   items: tailLampOptions,
                 ),
@@ -3049,7 +3051,7 @@ class ExteriorRearSidesStep extends StatelessWidget {
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "rearBumperLhs45DegreeImages",
-                  label: 'Rear Bumper LHS 45° Images',
+                  label: 'Rear Bumper Left 45° Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "rearBumperLhs45DegreeImages",
                   ),
@@ -3061,7 +3063,7 @@ class ExteriorRearSidesStep extends StatelessWidget {
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "rearBumperRhs45DegreeImages",
-                  label: 'Rear Bumper RHS 45° Images',
+                  label: 'Rear Bumper Right 45° Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "rearBumperRhs45DegreeImages",
                   ),
@@ -3079,7 +3081,7 @@ class ExteriorRearSidesStep extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 buildSectionHeader(
-                  'Exterior - Left Side (LHS)',
+                  'Exterior - Left Side',
                   Icons.directions_car,
                 ),
                 const SizedBox(height: 14),
@@ -3087,7 +3089,7 @@ class ExteriorRearSidesStep extends StatelessWidget {
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "lhsSideMainImages",
-                  label: 'LHS Side Main Images',
+                  label: 'Left Side Main Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "lhsSideMainImages",
                   ),
@@ -3101,15 +3103,15 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsFrontDoor",
-                  label: "LHS Front Door",
-                  hint: "LHS Front Door",
+                  label: "Left Front Door",
+                  hint: "Left Front Door",
                   icon: Icons.door_front_door_outlined,
                   items: doorOptions,
                 ),
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "lhsFrontDoorImages",
-                  label: 'LHS Front Door Images',
+                  label: 'Left Front Door Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "lhsFrontDoorImages",
                   ),
@@ -3123,15 +3125,15 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsRearDoor",
-                  label: "LHS Rear Door",
-                  hint: "LHS Rear Door",
+                  label: "Left Rear Door",
+                  hint: "Left Rear Door",
                   icon: Icons.door_back_door_outlined,
                   items: doorOptions,
                 ),
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "lhsRearDoorImages",
-                  label: 'LHS Rear Door Images',
+                  label: 'Left Rear Door Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "lhsRearDoorImages",
                   ),
@@ -3145,15 +3147,15 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsQuarterPanel",
-                  label: "LHS Quarter Panel",
-                  hint: "LHS Quarter Panel",
+                  label: "Left Quarter Panel",
+                  hint: "Left Quarter Panel",
                   icon: Icons.crop_square_outlined,
                   items: quarterPanelOptions,
                 ),
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "lhsQuarterPanelImages",
-                  label: 'LHS Quarter Panel Images',
+                  label: 'Left Quarter Panel Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "lhsQuarterPanelImages",
                   ),
@@ -3167,15 +3169,15 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsOrvm",
-                  label: "LHS ORVM",
-                  hint: "LHS ORVM",
+                  label: "Left ORVM",
+                  hint: "Left ORVM",
                   icon: Icons.remove_red_eye_outlined,
                   items: orvmOptions,
                 ),
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "lhsOrvmImages",
-                  label: 'LHS ORVM Images',
+                  label: 'Left ORVM Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "lhsOrvmImages",
                   ),
@@ -3189,8 +3191,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsFrontAlloy",
-                  label: "LHS Front Alloy",
-                  hint: "LHS Front Alloy",
+                  label: "Left Front Alloy",
+                  hint: "Left Front Alloy",
                   icon: Icons.tire_repair_outlined,
                   items: alloyOptions,
                 ),
@@ -3199,8 +3201,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsFrontTyre",
-                  label: "LHS Front Tyre",
-                  hint: "LHS Front Tyre",
+                  label: "Left Front Tyre",
+                  hint: "Left Front Tyre",
                   icon: Icons.tire_repair_outlined,
                   items: tyreLifeOptions,
                 ),
@@ -3209,8 +3211,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsAPillar",
-                  label: "LHS A Pillar",
-                  hint: "LHS A Pillar",
+                  label: "Left A Pillar",
+                  hint: "Left A Pillar",
                   icon: Icons.view_column_outlined,
                   items: pillarOptions,
                 ),
@@ -3219,8 +3221,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsBPillar",
-                  label: "LHS B Pillar",
-                  hint: "LHS B Pillar",
+                  label: "Left B Pillar",
+                  hint: "Left B Pillar",
                   icon: Icons.view_column_outlined,
                   items: pillarOptions,
                 ),
@@ -3229,8 +3231,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsCPillar",
-                  label: "LHS C Pillar",
-                  hint: "LHS C Pillar",
+                  label: "Left C Pillar",
+                  hint: "Left C Pillar",
                   icon: Icons.view_column_outlined,
                   items: pillarOptions,
                 ),
@@ -3239,8 +3241,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsRunningBorder",
-                  label: "LHS Running Border",
-                  hint: "LHS Running Border",
+                  label: "Left Running Border",
+                  hint: "Left Running Border",
                   icon: Icons.border_bottom_outlined,
                   items: runningBorderOptions,
                 ),
@@ -3249,8 +3251,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsRearAlloy",
-                  label: "LHS Rear Alloy",
-                  hint: "LHS Rear Alloy",
+                  label: "Left Rear Alloy",
+                  hint: "Left Rear Alloy",
                   icon: Icons.tire_repair_outlined,
                   items: alloyOptions,
                 ),
@@ -3259,8 +3261,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsRearTyre",
-                  label: "LHS Rear Tyre",
-                  hint: "LHS Rear Tyre",
+                  label: "Left Rear Tyre",
+                  hint: "Left Rear Tyre",
                   icon: Icons.tire_repair_outlined,
                   items: tyreLifeOptions,
                 ),
@@ -3273,7 +3275,7 @@ class ExteriorRearSidesStep extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 buildSectionHeader(
-                  'Exterior - Right Side (RHS)',
+                  'Exterior - Right Side',
                   Icons.directions_car,
                 ),
                 const SizedBox(height: 14),
@@ -3281,7 +3283,7 @@ class ExteriorRearSidesStep extends StatelessWidget {
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "rhsSideMainImages",
-                  label: 'RHS Side Main Images',
+                  label: 'Right Side Main Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "rhsSideMainImages",
                   ),
@@ -3295,15 +3297,15 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsFrontDoor",
-                  label: "RHS Front Door",
-                  hint: "RHS Front Door",
+                  label: "Right Front Door",
+                  hint: "Right Front Door",
                   icon: Icons.door_front_door_outlined,
                   items: doorOptions,
                 ),
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "rhsFrontDoorImages",
-                  label: 'RHS Front Door Images',
+                  label: 'Right Front Door Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "rhsFrontDoorImages",
                   ),
@@ -3317,15 +3319,15 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsRearDoor",
-                  label: "RHS Rear Door",
-                  hint: "RHS Rear Door",
+                  label: "Right Rear Door",
+                  hint: "Right Rear Door",
                   icon: Icons.door_back_door_outlined,
                   items: doorOptions,
                 ),
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "rhsRearDoorImages",
-                  label: 'RHS Rear Door Images',
+                  label: 'Right Rear Door Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "rhsRearDoorImages",
                   ),
@@ -3339,15 +3341,15 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsQuarterPanel",
-                  label: "RHS Quarter Panel",
-                  hint: "RHS Quarter Panel",
+                  label: "Right Quarter Panel",
+                  hint: "Right Quarter Panel",
                   icon: Icons.crop_square_outlined,
                   items: quarterPanelOptions,
                 ),
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "rhsQuarterPanelImages",
-                  label: 'RHS Quarter Panel Images',
+                  label: 'Right Quarter Panel Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "rhsQuarterPanelImages",
                   ),
@@ -3361,15 +3363,15 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsOrvm",
-                  label: "RHS ORVM",
-                  hint: "RHS ORVM",
+                  label: "Right ORVM",
+                  hint: "Right ORVM",
                   icon: Icons.remove_red_eye_outlined,
                   items: orvmOptions,
                 ),
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "rhsOrvmImages",
-                  label: 'RHS ORVM Images',
+                  label: 'Right ORVM Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "rhsOrvmImages",
                   ),
@@ -3383,7 +3385,7 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsFender",
-                  label: "RHS Fender",
+                  label: "Right Fender",
                   hint: "RHS Fender",
                   icon: Icons.car_repair_outlined,
                   items: fenderOptions,
@@ -3393,8 +3395,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsFrontAlloy",
-                  label: "RHS Front Alloy",
-                  hint: "RHS Front Alloy",
+                  label: "Right Front Alloy",
+                  hint: "Right Front Alloy",
                   icon: Icons.tire_repair_outlined,
                   items: alloyOptions,
                 ),
@@ -3403,8 +3405,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsFrontTyre",
-                  label: "RHS Front Tyre",
-                  hint: "RHS Front Tyre",
+                  label: "Right Front Tyre",
+                  hint: "Right Front Tyre",
                   icon: Icons.tire_repair_outlined,
                   items: tyreLifeOptions,
                 ),
@@ -3413,8 +3415,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsAPillar",
-                  label: "RHS A Pillar",
-                  hint: "RHS A Pillar",
+                  label: "Right A Pillar",
+                  hint: "Right A Pillar",
                   icon: Icons.view_column_outlined,
                   items: pillarOptions,
                 ),
@@ -3423,8 +3425,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsBPillar",
-                  label: "RHS B Pillar",
-                  hint: "RHS B Pillar",
+                  label: "Right B Pillar",
+                  hint: "Right B Pillar",
                   icon: Icons.view_column_outlined,
                   items: pillarOptions,
                 ),
@@ -3433,8 +3435,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsCPillar",
-                  label: "RHS C Pillar",
-                  hint: "RHS C Pillar",
+                  label: "Right C Pillar",
+                  hint: "Right C Pillar",
                   icon: Icons.view_column_outlined,
                   items: pillarOptions,
                 ),
@@ -3443,8 +3445,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsRunningBorder",
-                  label: "RHS Running Border",
-                  hint: "RHS Running Border",
+                  label: "Right Running Border",
+                  hint: "Right Running Border",
                   icon: Icons.border_bottom_outlined,
                   items: runningBorderOptions,
                 ),
@@ -3463,8 +3465,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsRearTyre",
-                  label: "RHS Rear Tyre",
-                  hint: "RHS Rear Tyre",
+                  label: "Right Rear Tyre",
+                  hint: "Right Rear Tyre",
                   icon: Icons.tire_repair_outlined,
                   items: tyreLifeOptions,
                 ),
@@ -3547,8 +3549,8 @@ class EngineMechanicalStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsApron",
-                  label: "LHS Apron",
-                  hint: "LHS Apron",
+                  label: "Left Apron",
+                  hint: "Left Apron",
                   icon: Icons.view_sidebar_outlined,
                   items: engineBayOptions,
                 ),
@@ -3557,8 +3559,8 @@ class EngineMechanicalStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsApron",
-                  label: "RHS Apron",
-                  hint: "RHS Apron",
+                  label: "Right Apron",
+                  hint: "Right Apron",
                   icon: Icons.view_sidebar_outlined,
                   items: engineBayOptions,
                 ),
@@ -3783,7 +3785,7 @@ class EngineMechanicalStep extends StatelessWidget {
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "lhsApronImages",
-                  label: 'LHS Apron Images',
+                  label: 'Left Apron Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "lhsApronImages",
                   ),
@@ -3795,7 +3797,7 @@ class EngineMechanicalStep extends StatelessWidget {
                 buildValidatedMultiImagePicker(
                   c: c,
                   fieldKey: "rhsApronImages",
-                  label: 'RHS Apron Images',
+                  label: 'Right Apron Images',
                   minRequired: MandatoryImagesConfig.getMinRequired(
                     "rhsApronImages",
                   ),
@@ -3991,8 +3993,8 @@ class InteriorElectronicsStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsCurtainAirbag",
-                  label: "LHS Curtain Airbag",
-                  hint: "LHS Curtain Airbag",
+                  label: "Left Curtain Airbag",
+                  hint: "Left Curtain Airbag",
                   icon: Icons.window_outlined,
                   items: yesNo,
                 ),
@@ -4000,8 +4002,8 @@ class InteriorElectronicsStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsCurtainAirbag",
-                  label: "RHS Curtain Airbag",
-                  hint: "RHS Curtain Airbag",
+                  label: "Right Curtain Airbag",
+                  hint: "Right Curtain Airbag",
                   icon: Icons.window_outlined,
                   items: yesNo,
                 ),
@@ -4009,8 +4011,8 @@ class InteriorElectronicsStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsRearSideAirbag",
-                  label: "LHS Rear Side Airbag",
-                  hint: "LHS Rear Airbag",
+                  label: "Left Rear Side Airbag",
+                  hint: "Left Rear Airbag",
                   icon: Icons.airline_seat_recline_extra_outlined,
                   items: yesNo,
                 ),
@@ -4018,8 +4020,8 @@ class InteriorElectronicsStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsRearSideAirbag",
-                  label: "RHS Rear Side Airbag",
-                  hint: "RHS Rear Airbag",
+                  label: "Right Rear Side Airbag",
+                  hint: "Right Rear Airbag",
                   icon: Icons.airline_seat_recline_extra_outlined,
                   items: yesNo,
                 ),
@@ -4111,8 +4113,8 @@ class InteriorElectronicsStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsFrontDoorFeatures",
-                  label: "RHS Front Door Features",
-                  hint: "RHS Front Door",
+                  label: "Right Front Door Features",
+                  hint: "Right Front Door",
                   icon: Icons.door_front_door_outlined,
                   items: const ["Power Window Working", "Manual", "N/A"],
                 ),
@@ -4120,8 +4122,8 @@ class InteriorElectronicsStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsFrontDoorFeatures",
-                  label: "LHS Front Door Features",
-                  hint: "LHS Front Door",
+                  label: "Left Front Door Features",
+                  hint: "Left Front Door",
                   icon: Icons.door_front_door_outlined,
                   items: const ["Power Window Working", "Manual", "N/A"],
                 ),
@@ -4129,8 +4131,8 @@ class InteriorElectronicsStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsRearDoorFeatures",
-                  label: "RHS Rear Door Features",
-                  hint: "RHS Rear Door",
+                  label: "Right Rear Door Features",
+                  hint: "Right Rear Door",
                   icon: Icons.door_back_door_outlined,
                   items: const ["Power Window Working", "Manual", "N/A"],
                 ),
@@ -4138,8 +4140,8 @@ class InteriorElectronicsStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "lhsRearDoorFeatures",
-                  label: "LHS Rear Door Features",
-                  hint: "LHS Rear Door",
+                  label: "Left Rear Door Features",
+                  hint: "Left Rear Door",
                   icon: Icons.door_back_door_outlined,
                   items: const ["Power Window Working", "Manual", "N/A"],
                 ),
@@ -4565,89 +4567,89 @@ class FinalDetailsStep extends StatelessWidget {
   }
 }
 
-class ReviewStep extends StatelessWidget {
-  final CarInspectionStepperController c;
+// class ReviewStep extends StatelessWidget {
+//   final CarInspectionStepperController c;
 
-  const ReviewStep({super.key, required this.c});
+//   const ReviewStep({super.key, required this.c});
 
-  String _pick(String key) => c.getText(key).trim();
+//   String _pick(String key) => c.getText(key).trim();
 
-  Widget _kv(String k, String v) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 160,
-            child: Text(
-              k,
-              style: TextStyle(
-                color: Colors.grey.shade700,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-          Expanded(
-            child: Text(
-              v.isEmpty ? '-' : v,
-              style: const TextStyle(fontWeight: FontWeight.w800),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+//   Widget _kv(String k, String v) {
+//     return Padding(
+//       padding: const EdgeInsets.only(bottom: 10),
+//       child: Row(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           SizedBox(
+//             width: 160,
+//             child: Text(
+//               k,
+//               style: TextStyle(
+//                 color: Colors.grey.shade700,
+//                 fontWeight: FontWeight.w800,
+//               ),
+//             ),
+//           ),
+//           Expanded(
+//             child: Text(
+//               v.isEmpty ? '-' : v,
+//               style: const TextStyle(fontWeight: FontWeight.w800),
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
 
-  @override
-  Widget build(BuildContext context) {
-    return buildModernCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          buildSectionHeader('Review Summary', Icons.preview),
-          const SizedBox(height: 14),
+//   @override
+//   Widget build(BuildContext context) {
+//     return buildModernCard(
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           buildSectionHeader('Review Summary', Icons.preview),
+//           const SizedBox(height: 14),
 
-          _kv('Appointment Id', _pick("appointmentId")),
-          _kv('Registration Number', _pick("registrationNumber")),
-          _kv('Make', _pick("make")),
-          _kv('Model', _pick("model")),
-          _kv('Variant', _pick("variant")),
-          _kv('Fuel Type', _pick("fuelType")),
+//           _kv('Appointment Id', _pick("appointmentId")),
+//           _kv('Registration Number', _pick("registrationNumber")),
+//           _kv('Make', _pick("make")),
+//           _kv('Model', _pick("model")),
+//           _kv('Variant', _pick("variant")),
+//           _kv('Fuel Type', _pick("fuelType")),
 
-          const Divider(height: 26),
+//           const Divider(height: 26),
 
-          _kv('Inspection Engineer', _pick("ieName")),
-          _kv('Inspection City', _pick("inspectionCity")),
-          _kv('Contact Number', _pick("contactNumber")),
+//           _kv('Inspection Engineer', _pick("ieName")),
+//           _kv('Inspection City', _pick("inspectionCity")),
+//           _kv('Contact Number', _pick("contactNumber")),
 
-          const Divider(height: 26),
+//           const Divider(height: 26),
 
-          _kv('RC Book Availability', _pick("rcBookAvailability")),
-          _kv('RC Condition', _pick("rcCondition")),
-          _kv('To Be Scrapped', _pick("toBeScrapped")),
-          _kv('Duplicate Key', _pick("duplicateKey")),
-          _kv('Mismatch In RC', _pick("mismatchInRc")),
-          _kv('Insurance', _pick("insurance")),
-          _kv('Hypothecation Details', _pick("hypothecationDetails")),
-          _kv('Road Tax Validity', _pick("roadTaxValidity")),
-          _kv('RTO NOC', _pick("rtoNoc")),
-          _kv('RTO Form 28', _pick("rtoForm28")),
-          _kv('Party Peshi', _pick("partyPeshi")),
+//           _kv('RC Book Availability', _pick("rcBookAvailability")),
+//           _kv('RC Condition', _pick("rcCondition")),
+//           _kv('To Be Scrapped', _pick("toBeScrapped")),
+//           _kv('Duplicate Key', _pick("duplicateKey")),
+//           _kv('Mismatch In RC', _pick("mismatchInRc")),
+//           _kv('Insurance', _pick("insurance")),
+//           _kv('Hypothecation Details', _pick("hypothecationDetails")),
+//           _kv('Road Tax Validity', _pick("roadTaxValidity")),
+//           _kv('RTO NOC', _pick("rtoNoc")),
+//           _kv('RTO Form 28', _pick("rtoForm28")),
+//           _kv('Party Peshi', _pick("partyPeshi")),
 
-          const Divider(height: 26),
+//           const Divider(height: 26),
 
-          _kv('Bonnet', _pick("bonnet")),
-          _kv('Front Bumper', _pick("frontBumper")),
-          _kv('Front Windshield', _pick("frontWindshield")),
-          _kv('Roof', _pick("roof")),
-          _kv('Rear Bumper', _pick("rearBumper")),
-          _kv('Boot Door', _pick("bootDoor")),
-        ],
-      ),
-    );
-  }
-}
+//           _kv('Bonnet', _pick("bonnet")),
+//           _kv('Front Bumper', _pick("frontBumper")),
+//           _kv('Front Windshield', _pick("frontWindshield")),
+//           _kv('Roof', _pick("roof")),
+//           _kv('Rear Bumper', _pick("rearBumper")),
+//           _kv('Boot Door', _pick("bootDoor")),
+//         ],
+//       ),
+//     );
+//   }
+// }
 
 class ValidatedVideoPickerWidget extends StatelessWidget {
   final CarInspectionStepperController controller;

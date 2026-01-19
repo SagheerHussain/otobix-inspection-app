@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:get/get.dart';
 import 'package:otobix_inspection_app/Screens/notification_screen.dart';
 import 'package:otobix_inspection_app/widgets/dashboard_shimmer.dart';
@@ -10,7 +13,6 @@ import 'package:otobix_inspection_app/Controller/car_inspection_controller.dart'
 import 'package:url_launcher/url_launcher.dart';
 
 const String kStaticLocationTitle = "Ajoy Nagar, Santoshpur";
-const String kStaticLocationSubtitle = "Kolkata, West Bengal 700099, India";
 
 ButtonStyle primaryBtnStyle({required Color bg, Color? disabledBg}) {
   return ElevatedButton.styleFrom(
@@ -215,7 +217,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: _EmptyStatePro(
                       title: q.isNotEmpty
                           ? "No results for \"$q\""
-                          : "No Data found",
+                          : "No Leads",
                       primaryText: "Refresh",
                       onPrimary: () => controller.getInspectionList(),
                     ),
@@ -310,13 +312,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
       bottomNavigationBar: Obx(() {
         final selectedCtrlIndex = controller.dashboardTabIndex.value;
         final selectedUiIndex = _controllerToUi(selectedCtrlIndex);
+
+        final isIOS = Platform.isIOS;
+
+        // ✅ Manual safe-area padding (no double safe area)
         final bottomInset = MediaQuery.of(context).padding.bottom;
+        final safeBottom = isIOS ? bottomInset.ceilToDouble() : bottomInset;
+
+        // ✅ Sizes (tuned for iOS)
+        final double iconSize = isIOS ? 20.0 : 22.0;
+        final double fontSize = isIOS ? 9.0 : 10.0;
+        final double spacing = isIOS ? 2.0 : 3.0;
+
+        // ✅ Total bar height for CONTENT only (not including safeBottom)
+        final double barH = isIOS ? 60.0 : 60.0;
 
         Widget navIcon(String path, bool isActive) {
           final c = isActive ? AppColors.green : const Color(0xFF64748B);
           return ColorFiltered(
             colorFilter: ColorFilter.mode(c, BlendMode.srcIn),
-            child: Image.asset(path, width: 22, height: 22),
+            child: Image.asset(
+              path,
+              width: iconSize,
+              height: iconSize,
+              fit: BoxFit.contain,
+            ),
           );
         }
 
@@ -324,43 +344,62 @@ class _DashboardScreenState extends State<DashboardScreen> {
           return Text(
             text,
             maxLines: 1,
-            softWrap: false,
             overflow: TextOverflow.ellipsis,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontWeight: isActive ? FontWeight.w900 : FontWeight.w800,
-              fontSize: 10.0,
+              fontSize: fontSize,
               height: 1.0,
               color: isActive ? AppColors.green : const Color(0xFF64748B),
             ),
           );
         }
 
-        Widget navItem(String path, String text, bool isActive) {
-          return SizedBox(
-            height: 46,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                navIcon(path, isActive),
-                const SizedBox(height: 2),
-                SizedBox(
-                  width: 66,
-                  height: 12,
-                  child: Center(child: navLabel(text, isActive)),
+        Widget navItem({
+          required String path,
+          required String text,
+          required bool isActive,
+          required VoidCallback onTap,
+        }) {
+          return Expanded(
+            child: InkWell(
+              onTap: onTap,
+              splashColor: Colors.transparent,
+              highlightColor: Colors.transparent,
+              child: SizedBox(
+                height: barH,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    navIcon(path, isActive),
+                    SizedBox(height: spacing),
+                    // ✅ Give label enough room on iOS (no fixed tiny height like 11)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 6),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: navLabel(text, isActive),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           );
         }
 
-        return SafeArea(
-          top: false,
-          bottom: false,
+        return MediaQuery(
+          // ✅ prevent iOS text scaling from causing tiny overflows inside bottom bar only
+          data: MediaQuery.of(
+            context,
+          ).copyWith(textScaler: TextScaler.noScaling),
           child: Container(
-            height: 70 + bottomInset,
-            padding: EdgeInsets.only(bottom: bottomInset),
+            height: barH + safeBottom,
+            padding: EdgeInsets.only(
+              bottom: safeBottom,
+              left: isIOS ? 4 : 0,
+              right: isIOS ? 4 : 0,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
               boxShadow: [
@@ -382,101 +421,114 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  final totalItems = _uiToController.length; // 5
-                  final itemW = constraints.maxWidth / totalItems;
-
-                  // ✅ exact selected item start
+                  final totalItems = _uiToController.length;
+                  final availableWidth = constraints.maxWidth - (isIOS ? 8 : 0);
+                  final itemW = availableWidth / totalItems;
                   final left = itemW * selectedUiIndex;
 
                   return Stack(
-                    clipBehavior: Clip.none,
                     children: [
-                      // ✅ BottomNavigationBar (with 3px top padding so line never gets covered)
-                      Positioned.fill(
-                        child: Padding(
-                          padding: const EdgeInsets.only(
-                            top: 3,
-                          ), // ✅ small, not visible gap
-                          child: BottomNavigationBar(
-                            backgroundColor: Colors.white,
-                            currentIndex: selectedUiIndex,
-                            onTap: (uiIndex) {
-                              final ctrlIndex = _uiToController[uiIndex];
-                              controller.setDashboardTab(ctrlIndex);
-                              // ✅ Animate to selected page
-                              _pageController.animateToPage(
-                                uiIndex,
-                                duration: const Duration(milliseconds: 300),
-                                curve: Curves.easeInOut,
-                              );
-                            },
-                            type: BottomNavigationBarType.fixed,
-                            elevation: 0,
-                            showSelectedLabels: false,
-                            showUnselectedLabels: false,
-                            selectedFontSize: 0,
-                            unselectedFontSize: 0,
-                            items: [
-                              BottomNavigationBarItem(
-                                icon: navItem(
-                                  "assets/images/scheduled.png",
-                                  "Scheduled",
-                                  selectedCtrlIndex == 1,
-                                ),
-                                label: "",
-                              ),
-                              BottomNavigationBarItem(
-                                icon: navItem(
-                                  "assets/images/canceled.png",
-                                  "Canceled",
-                                  selectedCtrlIndex == 0,
-                                ),
-                                label: "",
-                              ),
-                              BottomNavigationBarItem(
-                                icon: navItem(
-                                  "assets/images/reschedule.png",
-                                  "Re-Scheduled",
-                                  selectedCtrlIndex == 2,
-                                ),
-                                label: "",
-                              ),
-                              BottomNavigationBarItem(
-                                icon: navItem(
-                                  "assets/images/running.png",
-                                  "Running",
-                                  selectedCtrlIndex == 3,
-                                ),
-                                label: "",
-                              ),
-                              BottomNavigationBarItem(
-                                icon: navItem(
-                                  "assets/images/inspected.png",
-                                  "Inspected",
-                                  selectedCtrlIndex == 4,
-                                ),
-                                label: "",
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-
-                      // ✅ TOP INDICATOR (always above nav)
+                      // ✅ Top indicator line
                       Positioned(
                         top: 0,
-                        left: left,
+                        left: left + (isIOS ? 4 : 0),
                         width: itemW,
                         child: Center(
                           child: AnimatedContainer(
                             duration: const Duration(milliseconds: 220),
                             curve: Curves.easeOut,
                             height: 3,
-                            width: itemW * 0.62,
+                            width: itemW * 0.6,
                             decoration: BoxDecoration(
                               color: AppColors.green,
                               borderRadius: BorderRadius.circular(999),
                             ),
+                          ),
+                        ),
+                      ),
+
+                      // ✅ Items row
+                      Positioned.fill(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 6),
+                          child: Row(
+                            children: [
+                              navItem(
+                                path: "assets/images/scheduled.png",
+                                text: "Scheduled",
+                                isActive: selectedCtrlIndex == 1,
+                                onTap: () {
+                                  const uiIndex = 0;
+                                  final ctrlIndex = _uiToController[uiIndex];
+                                  controller.setDashboardTab(ctrlIndex);
+                                  _pageController.animateToPage(
+                                    uiIndex,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                              ),
+                              navItem(
+                                path: "assets/images/canceled.png",
+                                text: "Canceled",
+                                isActive: selectedCtrlIndex == 0,
+                                onTap: () {
+                                  const uiIndex = 1;
+                                  final ctrlIndex = _uiToController[uiIndex];
+                                  controller.setDashboardTab(ctrlIndex);
+                                  _pageController.animateToPage(
+                                    uiIndex,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                              ),
+                              navItem(
+                                path: "assets/images/reschedule.png",
+                                text: "Re-Scheduled",
+                                isActive: selectedCtrlIndex == 2,
+                                onTap: () {
+                                  const uiIndex = 2;
+                                  final ctrlIndex = _uiToController[uiIndex];
+                                  controller.setDashboardTab(ctrlIndex);
+                                  _pageController.animateToPage(
+                                    uiIndex,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                              ),
+                              navItem(
+                                path: "assets/images/running.png",
+                                text: "Running",
+                                isActive: selectedCtrlIndex == 3,
+                                onTap: () {
+                                  const uiIndex = 3;
+                                  final ctrlIndex = _uiToController[uiIndex];
+                                  controller.setDashboardTab(ctrlIndex);
+                                  _pageController.animateToPage(
+                                    uiIndex,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                              ),
+                              navItem(
+                                path: "assets/images/inspected.png",
+                                text: "Inspected",
+                                isActive: selectedCtrlIndex == 4,
+                                onTap: () {
+                                  const uiIndex = 4;
+                                  final ctrlIndex = _uiToController[uiIndex];
+                                  controller.setDashboardTab(ctrlIndex);
+                                  _pageController.animateToPage(
+                                    uiIndex,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                              ),
+                            ],
                           ),
                         ),
                       ),
@@ -494,7 +546,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
           children: [
             // ✅ HEADER SECTION
             Padding(
-              padding: const EdgeInsets.fromLTRB(18, 14, 18, 10),
+              padding: const EdgeInsets.fromLTRB(18, 14, 28, 28),
               child: Container(
                 padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
                 decoration: BoxDecoration(
@@ -962,7 +1014,6 @@ class ScheduleCardExact extends StatelessWidget {
     final locTitle = _safe(item.city, kStaticLocationTitle);
     final locSubtitle = _safe(
       item.inspectionAddress, // ✅ This field exists in model
-      kStaticLocationSubtitle,
     );
 
     return Container(
@@ -1098,6 +1149,7 @@ class ScheduleCardExact extends StatelessWidget {
                       label: "Customer",
                       leading: _InitialCircle(text: customerInitials),
                       value: customerName,
+                      valueMaxLines: 2,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -1294,48 +1346,60 @@ class _MiniInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      constraints: const BoxConstraints(minHeight: 78),
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFC),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: const Color(0xFFE2E8F0)),
-      ),
-      child: Row(
-        children: [
-          leading,
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF94A3B8),
-                    letterSpacing: 0.6,
+    return SizedBox(
+      height: 78, // ✅ fixed height for all cards
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF8FAFC),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: const Color(0xFFE2E8F0)),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // ✅ keep leading size fixed so text gets consistent width
+            SizedBox(width: 44, height: 44, child: Center(child: leading)),
+            const SizedBox(width: 10),
+
+            Expanded(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w900,
+                      color: Color(0xFF94A3B8),
+                      letterSpacing: 0.6,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  value,
-                  maxLines: valueMaxLines,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w900,
-                    color: Color(0xFF0F172A),
-                    height: 1.15,
+                  const SizedBox(height: 4),
+
+                  // ✅ this is the main fix
+                  Flexible(
+                    child: Text(
+                      value,
+                      maxLines: valueMaxLines,
+                      softWrap: true,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w900,
+                        color: Color(0xFF0F172A),
+                        height: 1.05, // ✅ tighter so 2 lines fit in same height
+                      ),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1947,11 +2011,11 @@ class _UpdateStatusButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: const Color(0xFFE2E8F0)),
         ),
-        child: const Row(
+        child: Row(
           children: [
             Text(
               "Update Status",
-              style: TextStyle(fontWeight: FontWeight.w900),
+              style: TextStyle(fontWeight: FontWeight.w900, fontSize: 9.h),
             ),
             Spacer(),
             Icon(Icons.keyboard_arrow_down_rounded, color: Color(0xFF64748B)),

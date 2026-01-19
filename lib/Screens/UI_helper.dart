@@ -7,6 +7,8 @@ import 'package:otobix_inspection_app/widgets/app_theme.dart';
 import 'package:otobix_inspection_app/widgets/toast_widget.dart';
 import 'package:flutter_native_video_trimmer/flutter_native_video_trimmer.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:photo_view/photo_view.dart';
+import 'package:photo_view/photo_view_gallery.dart';
 
 const List<String> yesNo = ["Yes", "No"];
 const List<String> availableNA = ["Available", "Not Available"];
@@ -49,30 +51,22 @@ const List<String> transmissionOptions = [
 const List<String> driveTrainOptions = ["FWD", "RWD", "AWD", "4x4"];
 const List<String> cityOptions = ["City A", "City B", "City C"];
 
-// =====================================================
-// ✅ UPDATED: VIDEO TRIM HELPER using flutter_native_video_trimmer
-// =====================================================
 const int kMaxVideoSeconds = 15;
 
 Future<String?> _trimFirst15Seconds(String inputPath) async {
   try {
     debugPrint("🎬 Starting video trim for: $inputPath");
 
-    // ✅ Initialize the video trimmer
     final videoTrimmer = VideoTrimmer();
-
-    // ✅ Load the video file
     await videoTrimmer.loadVideo(inputPath);
 
-    // ✅ Get temporary directory for output
     final dir = await getTemporaryDirectory();
     final outPath =
         '${dir.path}/trimmed_${DateTime.now().millisecondsSinceEpoch}.mp4';
 
-    // ✅ Trim video to first 15 seconds (0 to 15000 milliseconds)
     final trimmedPath = await videoTrimmer.trimVideo(
       startTimeMs: 0,
-      endTimeMs: kMaxVideoSeconds * 1000, // Convert seconds to milliseconds
+      endTimeMs: kMaxVideoSeconds * 1000,
     );
 
     debugPrint("🎬 Video trimmed successfully");
@@ -85,16 +79,14 @@ Future<String?> _trimFirst15Seconds(String inputPath) async {
       }
     }
 
-    // ✅ Fallback: Try trimming with different approach if first fails
     debugPrint("🎬 Trying alternative trim approach");
 
     final alternativePath =
         '${dir.path}/trimmed_alt_${DateTime.now().millisecondsSinceEpoch}.mp4';
 
-    // Try with smaller segment if full 15 seconds fails
     final alternativeTrimmed = await videoTrimmer.trimVideo(
       startTimeMs: 0,
-      endTimeMs: (kMaxVideoSeconds - 2) * 1000, // Try 13 seconds
+      endTimeMs: (kMaxVideoSeconds - 2) * 1000,
     );
 
     if (alternativeTrimmed != null && alternativeTrimmed.isNotEmpty) {
@@ -109,6 +101,58 @@ Future<String?> _trimFirst15Seconds(String inputPath) async {
   } catch (e) {
     debugPrint("❌ Trim exception: $e");
     return null;
+  }
+}
+
+// =====================================================
+// ✅ ADDED: Full Screen Image Viewer Widget
+// =====================================================
+class FullScreenImageViewer extends StatelessWidget {
+  final List<String> imagePaths;
+  final int initialIndex;
+
+  const FullScreenImageViewer({
+    super.key,
+    required this.imagePaths,
+    this.initialIndex = 0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        automaticallyImplyLeading: true,
+        elevation: 0,
+      ),
+      body: PhotoViewGallery.builder(
+        scrollPhysics: const BouncingScrollPhysics(),
+        builder: (BuildContext context, int index) {
+          return PhotoViewGalleryPageOptions(
+            imageProvider: FileImage(File(imagePaths[index])),
+            minScale: PhotoViewComputedScale.contained * 0.8,
+            maxScale: PhotoViewComputedScale.covered * 3.0,
+            heroAttributes: PhotoViewHeroAttributes(tag: imagePaths[index]),
+          );
+        },
+        itemCount: imagePaths.length,
+        loadingBuilder: (context, event) => Center(
+          child: SizedBox(
+            width: 20.0,
+            height: 20.0,
+            child: CircularProgressIndicator(
+              value: event == null
+                  ? 0
+                  : event.cumulativeBytesLoaded / event.expectedTotalBytes!,
+            ),
+          ),
+        ),
+        backgroundDecoration: const BoxDecoration(color: Colors.black),
+        pageController: PageController(initialPage: initialIndex),
+      ),
+    );
   }
 }
 
@@ -188,9 +232,6 @@ InputDecoration _fieldDecoration({
   );
 }
 
-// =====================================================
-// ✅ FIXED TextField Widget with State Management
-// =====================================================
 class _ModernTextField extends StatefulWidget {
   final String label;
   final String hint;
@@ -304,9 +345,6 @@ Widget buildModernTextField({
   );
 }
 
-// =====================================================
-// ✅ CSV list helpers
-// =====================================================
 List<String> _uniqueKeepOrder(List<String> items) {
   final seen = <String>{};
   final out = <String>[];
@@ -348,9 +386,6 @@ List<String> _normalizePickedOrder(List<String> picked, List<String> allItems) {
   return [...ordered, ...extras];
 }
 
-// =====================================================
-// Single-select dropdown
-// =====================================================
 class _CenteredOverlaySingleDropdown extends StatefulWidget {
   final BuildContext parentContext;
   final String label;
@@ -850,9 +885,6 @@ Widget buildModernMultiSelectDropdownKey({
   });
 }
 
-// =====================================================
-// Multi-select dropdown
-// =====================================================
 class _MultiSelectDialog extends StatefulWidget {
   final String label;
   final List<String> items;
@@ -917,7 +949,6 @@ class _MultiSelectDialogState extends State<_MultiSelectDialog> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Header
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
               decoration: BoxDecoration(
@@ -966,7 +997,6 @@ class _MultiSelectDialogState extends State<_MultiSelectDialog> {
               ),
             ),
 
-            // Items List
             Expanded(
               child: widget.items.isEmpty
                   ? Center(
@@ -1051,7 +1081,6 @@ class _MultiSelectDialogState extends State<_MultiSelectDialog> {
                     ),
             ),
 
-            // Footer
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
               decoration: BoxDecoration(
@@ -1235,9 +1264,6 @@ Widget buildModernDatePicker({
   );
 }
 
-// =====================================================
-// VIDEO SOURCE DIALOG
-// =====================================================
 Future<ImageSource?> _showVideoSourceDialog(BuildContext context) async {
   final result = await showModalBottomSheet<int>(
     context: context,
@@ -1331,9 +1357,6 @@ Future<ImageSource?> _showVideoSourceDialog(BuildContext context) async {
   return null;
 }
 
-// =====================================================
-// IMAGE SOURCE DIALOG
-// =====================================================
 Future<ImageSource?> _showImageSourceDialog(BuildContext context) async {
   final result = await showModalBottomSheet<int>(
     context: context,
@@ -1464,7 +1487,6 @@ Widget buildImagePicker({
   bool validationError = false,
   BuildContext? context,
 }) {
-  // ✅ Load from local storage first
   WidgetsBinding.instance.addPostFrameCallback((_) async {
     final localImages = await c.loadLocalImagesFromStorage(fieldKey);
     if (localImages.isNotEmpty &&
@@ -1632,49 +1654,61 @@ Widget buildImagePicker({
               );
             }
 
-            return Stack(
-              children: [
-                Container(
-                  width: 98,
-                  margin: const EdgeInsets.only(right: 10),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: validationError
-                          ? Colors.red
-                          : Colors.grey.shade300,
-                    ),
-                    image: DecorationImage(
-                      image: FileImage(File(imagePaths[index])),
-                      fit: BoxFit.cover,
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context!).push(
+                  MaterialPageRoute(
+                    builder: (context) => FullScreenImageViewer(
+                      imagePaths: imagePaths,
+                      initialIndex: index,
                     ),
                   ),
-                ),
-                if (enabled)
-                  Positioned(
-                    top: 6,
-                    right: 14,
-                    child: GestureDetector(
-                      onTap: () async {
-                        final updated = List<String>.from(imagePaths)
-                          ..removeAt(index);
-                        await c.setLocalImages(fieldKey, updated);
-                      },
-                      child: Container(
-                        padding: const EdgeInsets.all(4),
-                        decoration: const BoxDecoration(
-                          color: Colors.red,
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          size: 14,
-                          color: Colors.white,
-                        ),
+                );
+              },
+              child: Stack(
+                children: [
+                  Container(
+                    width: 98,
+                    margin: const EdgeInsets.only(right: 10),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(
+                        color: validationError
+                            ? Colors.red
+                            : Colors.grey.shade300,
+                      ),
+                      image: DecorationImage(
+                        image: FileImage(File(imagePaths[index])),
+                        fit: BoxFit.cover,
                       ),
                     ),
                   ),
-              ],
+                  if (enabled)
+                    Positioned(
+                      top: 6,
+                      right: 14,
+                      child: GestureDetector(
+                        onTap: () async {
+                          final updated = List<String>.from(imagePaths)
+                            ..removeAt(index);
+                          await c.setLocalImages(fieldKey, updated);
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             );
           },
         ),
@@ -1684,9 +1718,6 @@ Widget buildImagePicker({
   );
 }
 
-// =====================================================
-// Video Thumbnail Widget
-// =====================================================
 class VideoThumbnailTile extends StatelessWidget {
   final String videoPath;
   final bool enabled;
@@ -1769,13 +1800,11 @@ class _AddVideoTile extends StatelessWidget {
         XFile? videoFile;
 
         if (source == ImageSource.camera) {
-          // ✅ Camera: hard cap 15 seconds
           videoFile = await picker.pickVideo(
             source: ImageSource.camera,
             maxDuration: const Duration(seconds: kMaxVideoSeconds),
           );
         } else {
-          // ✅ Gallery: pick any length
           videoFile = await picker.pickVideo(source: ImageSource.gallery);
         }
 
@@ -1793,7 +1822,6 @@ class _AddVideoTile extends StatelessWidget {
           return;
         }
 
-        // ✅ Store ONLY trimmed video so API uploads only 15s
         c.setLocalVideo(fieldKey, trimmedPath);
       },
       child: Container(
@@ -1843,7 +1871,6 @@ Widget buildVideoPicker({
     builder: (context, setState) {
       void refresh() => setState(() {});
 
-      // ✅ Load from local storage first
       WidgetsBinding.instance.addPostFrameCallback((_) async {
         final localVideo = await c.loadLocalVideoFromStorage(fieldKey);
         if (localVideo != null &&
@@ -1873,7 +1900,6 @@ Widget buildVideoPicker({
                 Obx(() {
                   final loading = c.isFieldUploading(fieldKey);
 
-                  // ✅ IMPORTANT: Uploaded sirf tab true jab video select ho
                   final rawUploaded = c.isVideoUploaded(fieldKey);
                   final uploaded = hasVideo && rawUploaded;
 
@@ -1957,9 +1983,6 @@ Widget buildVideoPicker({
                 enabled: enabled,
                 onRemove: () {
                   c.setLocalVideo(fieldKey, null);
-
-                  // ✅ UI will show Upload because hasVideo=false
-                  // (Controller reset optional below)
                   refresh();
                 },
               )
@@ -1974,9 +1997,6 @@ Widget buildVideoPicker({
   );
 }
 
-// =====================================================
-// Validated Video Picker Widget ✅ (validator reads latest value)
-// =====================================================
 Widget buildValidatedVideoPicker({
   required BuildContext context,
   required CarInspectionStepperController c,
