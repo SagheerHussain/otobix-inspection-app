@@ -1499,9 +1499,7 @@ Widget buildImagePicker({
   });
 
   final imagePaths = c.getLocalImages(fieldKey);
-
-  final hasMinimumRequired = imagePaths.length >= minRequired;
-  final showUploadButton = minRequired == 0 ? true : hasMinimumRequired;
+  final uploadedUrls = c.getList(fieldKey);
 
   return Column(
     crossAxisAlignment: CrossAxisAlignment.start,
@@ -1533,6 +1531,7 @@ Widget buildImagePicker({
               ],
             ),
           ),
+          // ✅ REMOVED: Upload button completely
           Text(
             '${imagePaths.length}/$maxImages',
             style: TextStyle(
@@ -1540,66 +1539,6 @@ Widget buildImagePicker({
               fontWeight: FontWeight.w700,
             ),
           ),
-          const SizedBox(width: 10),
-
-          if (showUploadButton)
-            Obx(() {
-              final loading = c.isFieldUploading(fieldKey);
-              final uploaded = c.isFieldUploaded(fieldKey);
-
-              return InkWell(
-                onTap: (!enabled || loading || !hasMinimumRequired)
-                    ? null
-                    : () => c.uploadSelectedImagesForField(fieldKey),
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 7,
-                  ),
-                  decoration: BoxDecoration(
-                    color: uploaded
-                        ? kPrimary.withOpacity(0.10)
-                        : const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(10),
-                    border: Border.all(
-                      color: uploaded
-                          ? kPrimary.withOpacity(0.35)
-                          : AppColor.border,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (loading)
-                        const SizedBox(
-                          width: 14,
-                          height: 14,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: kPrimary,
-                          ),
-                        )
-                      else if (uploaded)
-                        Icon(
-                          Icons.check_circle_rounded,
-                          size: 16,
-                          color: kPrimary,
-                        ),
-                      if (loading || uploaded) const SizedBox(width: 6),
-                      Text(
-                        uploaded ? "Uploaded" : "Upload",
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          fontSize: 12,
-                          color: uploaded ? kPrimary : AppColor.textDark,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }),
         ],
       ),
       const SizedBox(height: 10),
@@ -1654,6 +1593,12 @@ Widget buildImagePicker({
               );
             }
 
+            final imagePath = imagePaths[index];
+            final isUploaded =
+                imagePath.startsWith('http://') ||
+                imagePath.startsWith('https://') ||
+                uploadedUrls.contains(imagePath);
+
             return GestureDetector(
               onTap: () {
                 Navigator.of(context!).push(
@@ -1678,7 +1623,9 @@ Widget buildImagePicker({
                             : Colors.grey.shade300,
                       ),
                       image: DecorationImage(
-                        image: FileImage(File(imagePaths[index])),
+                        image: isUploaded && imagePath.startsWith('http')
+                            ? NetworkImage(imagePath) as ImageProvider
+                            : FileImage(File(imagePath)),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -1689,9 +1636,7 @@ Widget buildImagePicker({
                       right: 14,
                       child: GestureDetector(
                         onTap: () async {
-                          final updated = List<String>.from(imagePaths)
-                            ..removeAt(index);
-                          await c.setLocalImages(fieldKey, updated);
+                          await c.removeImage(fieldKey, imagePath);
                         },
                         child: Container(
                           padding: const EdgeInsets.all(4),
@@ -1707,6 +1652,41 @@ Widget buildImagePicker({
                         ),
                       ),
                     ),
+                  // ✅ Upload status indicator
+                  Positioned(
+                    bottom: 6,
+                    left: 6,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 6,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.7),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          if (c.isFieldUploading(fieldKey))
+                            const SizedBox(
+                              width: 10,
+                              height: 10,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 1,
+                                color: Colors.white,
+                              ),
+                            )
+                          else if (isUploaded)
+                            const Icon(
+                              Icons.cloud_done,
+                              size: 10,
+                              color: Colors.green,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             );

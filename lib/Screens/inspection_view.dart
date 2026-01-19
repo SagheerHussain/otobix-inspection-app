@@ -1538,11 +1538,12 @@ class _CarInspectionStepperScreenState
       case 5:
         return InteriorElectronicsStep(key: key, formKey: c.formKeys[5], c: c);
       case 6:
-        return MechanicalTestDriveStep(key: key, formKey: c.formKeys[6], c: c);
-      // case 7:
-      //   return FinalDetailsStep(key: key, formKey: c.formKeys[0], c: c);
-      // case 8:
-      //   return ReviewStep(key: key, c: c);
+        return MechanicalTestDriveStep(
+          key: key,
+          formKey: GlobalKey<FormState>(), // Add a placeholder if needed
+          c: c,
+        );
+
       default:
         return const SizedBox.shrink(key: ValueKey('empty'));
     }
@@ -1630,6 +1631,10 @@ class _BottomBarPro extends StatelessWidget {
     final isLast = step == total - 1;
     final isTestDriveStep = step == 6; // ✅ Test Drive step index = 6
 
+    // ✅ TestDrive step ko special handling - woh last step hai but Submit button enable hona chahiye
+    final shouldDisableButton =
+        controller.submitLoading.value || (isLast && !isTestDriveStep);
+
     const double btnHeight = 52;
 
     return Container(
@@ -1685,28 +1690,21 @@ class _BottomBarPro extends StatelessWidget {
                 height: btnHeight,
                 child: Obx(() {
                   final isLoading = controller.submitLoading.value;
-                  // ✅ Show Submit button for Test Drive step OR last step before Review
-                  final isSubmitStep = isTestDriveStep || step == total - 2;
 
                   return ElevatedButton(
-                    onPressed: (isLoading || isLast)
+                    onPressed: shouldDisableButton
                         ? null
                         : () async {
-                            final submittedOk = await controller
-                                .goNextOrSubmit();
-                            if (submittedOk && isTestDriveStep) {
-                              // ✅ If submitted from Test Drive step, update telecalling status
-                              await controller.updateTelecallingInspected(
-                                telecallingId: lead.id.toString(),
-                                inspectionDateTimeLocal: DateTime.now(),
-                                remarks: "This car is Inspected",
+                            if (isTestDriveStep) {
+                              final submitted = await controller.goNextOrSubmit(
+                                leadId: lead.id.toString(),
                               );
-                              Get.delete<CarInspectionStepperController>();
-
-                              Get.offAll(DashboardScreen());
+                            } else {
+                              await controller.goNextOrSubmit(
+                                leadId: lead.id.toString(),
+                              );
                             }
                           },
-
                     style: ElevatedButton.styleFrom(
                       minimumSize: const Size.fromHeight(btnHeight),
                       padding: const EdgeInsets.symmetric(vertical: 14),
@@ -1732,14 +1730,14 @@ class _BottomBarPro extends StatelessWidget {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                isSubmitStep ? 'Submit' : 'Next',
+                                isTestDriveStep ? 'Submit' : 'Next',
                                 style: const TextStyle(
                                   fontWeight: FontWeight.w900,
                                 ),
                               ),
                               const SizedBox(width: 8),
                               Icon(
-                                isSubmitStep
+                                isTestDriveStep
                                     ? Icons.check_rounded
                                     : Icons.arrow_forward_rounded,
                                 size: 18,
@@ -3386,7 +3384,7 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   c: c,
                   keyName: "rhsFender",
                   label: "Right Fender",
-                  hint: "RHS Fender",
+                  hint: "Right Fender",
                   icon: Icons.car_repair_outlined,
                   items: fenderOptions,
                 ),
@@ -3455,8 +3453,8 @@ class ExteriorRearSidesStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "rhsRearAlloy",
-                  label: "RHS Rear Alloy",
-                  hint: "RHS Rear Alloy",
+                  label: "Right Rear Alloy",
+                  hint: "Right Rear Alloy",
                   icon: Icons.tire_repair_outlined,
                   items: alloyOptions,
                 ),

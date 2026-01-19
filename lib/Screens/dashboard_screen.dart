@@ -217,7 +217,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     child: _EmptyStatePro(
                       title: q.isNotEmpty
                           ? "No results for \"$q\""
-                          : "No Leads",
+                          : "No Leads Assigned",
                       primaryText: "Refresh",
                       onPrimary: () => controller.getInspectionList(),
                     ),

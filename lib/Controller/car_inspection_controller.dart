@@ -13,6 +13,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:otobix_inspection_app/Screens/dashboard_screen.dart';
 import 'package:otobix_inspection_app/helpers/sharedpreference_helper.dart';
 import 'package:otobix_inspection_app/widgets/toast_widget.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -36,8 +37,6 @@ class CarInspectionStepperController extends GetxController {
     {"title": "Engine", "icon": Icons.build_circle_outlined},
     {"title": "Interior", "icon": Icons.airline_seat_recline_normal},
     {"title": "TestDrive", "icon": Icons.drive_eta},
-    {"title": "Final", "icon": Icons.checklist_rounded},
-    {"title": "Review", "icon": Icons.preview_outlined},
   ];
 
   late final List<GlobalKey<FormState>> formKeys;
@@ -112,6 +111,8 @@ class CarInspectionStepperController extends GetxController {
   // =====================================================
   // API ENDPOINTS
   // =====================================================
+  static const String deleteCloudinaryMediaUrl =
+      "https://otobix-app-backend-development.onrender.com/api/inspection/car/delete-media-from-cloudinary";
   static const String uploadCarImagesUrl =
       "https://otobix-app-backend-development.onrender.com/api/inspection/car/upload-car-images-to-cloudinary";
 
@@ -659,6 +660,71 @@ class CarInspectionStepperController extends GetxController {
       );
     } catch (e) {
       debugPrint("❌ Error saving local images: $e");
+    }
+  }
+
+  // ✅ NEW: Remove image method
+  Future<void> removeImage(String fieldKey, String imagePath) async {
+    try {
+      debugPrint("🗑️ Removing image: $imagePath from field: $fieldKey");
+
+      // Get current images for this field
+      final currentImages = getLocalImages(fieldKey);
+      if (!currentImages.contains(imagePath)) {
+        debugPrint("⚠️ Image not found in current list");
+        return;
+      }
+
+      // Check if it's a URL (already uploaded to Cloudinary)
+      final isUploadedUrl =
+          imagePath.startsWith('http://') || imagePath.startsWith('https://');
+
+      // If it's a Cloudinary URL, delete from Cloudinary
+      if (isUploadedUrl) {
+        final deleted = await deleteMediaFromCloudinary(
+          mediaUrl: imagePath,
+          fieldKey: fieldKey,
+        );
+
+        if (!deleted) {
+          debugPrint("❌ Failed to delete from Cloudinary");
+        } else {
+          debugPrint("✅ Deleted from Cloudinary");
+        }
+      }
+
+      // Remove from local memory
+      final updatedImages = List<String>.from(currentImages)
+        ..removeWhere((path) => path == imagePath);
+
+      localPickedImages[fieldKey] = updatedImages;
+
+      // Also remove from uploaded URLs list if it exists there
+      final uploadedUrls = getList(fieldKey);
+      if (uploadedUrls.contains(imagePath)) {
+        final updatedUrls = List<String>.from(uploadedUrls)
+          ..removeWhere((url) => url == imagePath);
+        setList(fieldKey, updatedUrls, silent: true, force: true);
+      }
+
+      // ✅ Save updated list to persistent storage
+      final appt = getString("appointmentId", def: "").trim();
+      if (appt.isNotEmpty && appt != "N/A") {
+        await saveLocalImagesToStorage(fieldKey, updatedImages);
+      }
+
+      // Show success message
+
+      touch(); // Update UI
+    } catch (e) {
+      debugPrint("❌ Error removing image: $e");
+
+      ToastWidget.show(
+        context: Get.context!,
+        title: "Error",
+        subtitle: "Failed to remove image: $e",
+        type: ToastType.error,
+      );
     }
   }
 
@@ -1416,7 +1482,12 @@ class CarInspectionStepperController extends GetxController {
   List<String> getLocalImages(String fieldKey) =>
       localPickedImages[fieldKey] ?? <String>[];
 
+  // =====================================================
+  // ✅ UPDATED: Auto-upload when images are selected
+  // =====================================================
+
   Future<void> setLocalImages(String fieldKey, List<String> paths) async {
+    // First save to local storage
     localPickedImages[fieldKey] = paths;
 
     // ✅ Save to local storage with appointment ID
@@ -1426,8 +1497,49 @@ class CarInspectionStepperController extends GetxController {
     if (appt.isNotEmpty && appt.toUpperCase() != "N/A") {
       await _autoSaveField(fieldKey, const []);
     }
+
     setList(fieldKey, const [], silent: true, force: true);
     touch();
+
+    // ✅ NEW: Auto-upload images immediately after selection
+    if (paths.isNotEmpty) {
+      final List<String> newImages = [];
+
+      // Check which images are new (not already uploaded)
+      final currentUploadedUrls = getList(fieldKey);
+      for (final path in paths) {
+        // If it's a local path (not URL), it needs upload
+        if (!path.startsWith('http://') && !path.startsWith('https://')) {
+          newImages.add(path);
+        }
+      }
+
+      // Upload only new images
+      if (newImages.isNotEmpty) {
+        // Wait a bit for UI to update
+        await Future.delayed(const Duration(milliseconds: 300));
+
+        // Upload the images
+        final uploadedUrls = await _uploadImagesToCloudinary(
+          appointmentId: appt,
+          localPaths: newImages,
+        );
+
+        if (uploadedUrls.isNotEmpty) {
+          // Combine existing uploaded URLs with new ones
+          final existingUrls = getList(fieldKey);
+          final allUrls = [...existingUrls, ...uploadedUrls];
+          setList(fieldKey, allUrls, silent: true, force: true);
+
+          ToastWidget.show(
+            context: Get.context!,
+            title: "Uploaded",
+            subtitle: "Images uploaded successfully",
+            type: ToastType.success,
+          );
+        }
+      }
+    }
   }
 
   bool isFieldUploading(String fieldKey) => uploadingFields.contains(fieldKey);
@@ -1454,14 +1566,30 @@ class CarInspectionStepperController extends GetxController {
 
       debugPrint("⬆️ UPLOAD START: $fieldKey | appt: $appt");
 
+      // Filter out already uploaded URLs
+      final pathsToUpload = localPaths
+          .where(
+            (path) =>
+                !path.startsWith('http://') && !path.startsWith('https://'),
+          )
+          .toList();
+
+      if (pathsToUpload.isEmpty) {
+        // All images are already uploaded
+        return getList(fieldKey);
+      }
+
       final urls = await _uploadImagesToCloudinary(
         appointmentId: appt,
-        localPaths: localPaths,
+        localPaths: pathsToUpload,
       );
 
       debugPrint("✅ UPLOAD SUCCESS: $fieldKey | ${urls.length} URLs");
 
-      setList(fieldKey, urls, silent: true, force: true);
+      // Combine with existing uploaded URLs
+      final existingUrls = getList(fieldKey);
+      final allUrls = [...existingUrls, ...urls];
+      setList(fieldKey, allUrls, silent: true, force: true);
 
       ToastWidget.show(
         context: Get.context!,
@@ -1471,7 +1599,7 @@ class CarInspectionStepperController extends GetxController {
       );
 
       touch();
-      return urls;
+      return allUrls;
     } catch (e) {
       _snackErr("Upload failed: $e");
       debugPrint("❌ UPLOAD FAILED: $fieldKey | $e");
@@ -1479,6 +1607,55 @@ class CarInspectionStepperController extends GetxController {
     } finally {
       uploadingFields.remove(fieldKey);
       touch();
+    }
+  }
+  // =====================================================
+  // ✅ NEW: Delete media from Cloudinary
+  // =====================================================
+
+  Future<bool> deleteMediaFromCloudinary({
+    required String mediaUrl,
+    required String fieldKey,
+  }) async {
+    try {
+      final hasInternet = await _checkInternetConnection();
+      if (!hasInternet) return false;
+
+      final token = await _getBearerToken();
+      if (token.isEmpty) {
+        _snackErr("Token missing (prefs key: token)");
+        return false;
+      }
+
+      final appt = getString("appointmentId", def: "").trim();
+      if (appt.isEmpty || appt == "N/A") {
+        _snackErr("Appointment ID missing");
+        return false;
+      }
+
+      final response = await http.delete(
+        Uri.parse(deleteCloudinaryMediaUrl),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          "appointmentId": appt,
+          "fieldKey": fieldKey,
+          "mediaUrl": mediaUrl,
+        }),
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        debugPrint("✅ Media deleted from Cloudinary: $mediaUrl");
+        return true;
+      } else {
+        debugPrint("❌ Failed to delete media: ${response.statusCode}");
+        return false;
+      }
+    } catch (e) {
+      debugPrint("❌ Delete media error: $e");
+      return false;
     }
   }
 
@@ -1676,7 +1853,7 @@ class CarInspectionStepperController extends GetxController {
     _loadAllDropdowns();
     getInspectionList();
 
-    formKeys = List.generate(steps.length - 1, (_) => GlobalKey<FormState>());
+    formKeys = List.generate(steps.length, (_) => GlobalKey<FormState>());
 
     _seedDefaults();
 
@@ -2458,44 +2635,116 @@ class CarInspectionStepperController extends GetxController {
     }
   }
 
-  Future<bool> goNextOrSubmit() async {
+  // Future<bool> goNextOrSubmit() async {
+  //   final idx = currentStep.value;
+  //   final isInteriorStep = idx == 7; // Interior Electronics Step
+  //   final isReview = idx == steps.length - 1;
+
+  //   // if (isReview) return false;
+
+  //   // final fk = formKeys[idx];
+  //   // final ok = fk.currentState?.validate() ?? true;
+  //   // if (!ok) {
+  //   //   ToastWidget.show(
+  //   //     context: Get.context!,
+  //   //     title: "Missing",
+  //   //     subtitle: "Please complete required fields",
+  //   //     type: ToastType.error,
+  //   //   );
+  //   //   return false;
+  //   // }
+
+  //   // ✅ MODIFICATION: When user reaches Interior step and clicks "Next", submit immediately
+  //   if (isInteriorStep) {
+  //     // Show loading state
+  //     submitLoading.value = true;
+
+  //     try {
+  //       // Submit the data
+  //       final submitted = await submit();
+
+  //       if (submitted) {
+  //         // On successful submit, go to Review step
+  //         currentStep.value = steps.length - 1; // Review step
+  //         ToastWidget.show(
+  //           context: Get.context!,
+  //           title: "Submitted Successfully",
+  //           subtitle: "Inspection data has been submitted. Please review.",
+  //           type: ToastType.success,
+  //         );
+  //         touch();
+  //         return true;
+  //       }
+  //       return false;
+  //     } catch (e) {
+  //       ToastWidget.show(
+  //         context: Get.context!,
+  //         title: "Submission Failed",
+  //         subtitle: e.toString(),
+  //         type: ToastType.error,
+  //       );
+  //       return false;
+  //     } finally {
+  //       submitLoading.value = false;
+  //     }
+  //   }
+
+  //   // Normal flow for other steps (not Interior)
+  //   if (idx < steps.length - 2) {
+  //     currentStep.value++;
+  //     touch();
+  //     return false;
+  //   }
+
+  //   // For TestDrive step (step 6) - proceed normally to Docs
+  //   final submitted = await submit();
+  //   if (submitted) {
+  //     currentStep.value++;
+  //     touch();
+  //     return true;
+  //   }
+
+  //   return false;
+  // }
+
+  Future<bool> goNextOrSubmit({required String leadId}) async {
+    print("=== NEXT/SUMIT CLICKED ===");
+    print("Current step: ${currentStep.value}, Total steps: ${steps.length}");
+    print("Form keys count: ${formKeys.length}");
+
     final idx = currentStep.value;
-    final isInteriorStep = idx == 5; // Interior Electronics Step
-    final isReview = idx == steps.length - 1;
+    final isTestDriveStep = idx == 6; // ✅ ONLY Test Drive is step index 6
 
-    if (isReview) return false;
+    // For ALL steps EXCEPT Test Drive, just validate and go next
+    if (!isTestDriveStep) {
+      final fk = formKeys[idx];
+      final ok = fk.currentState?.validate() ?? true;
+      if (!ok) {
+        ToastWidget.show(
+          context: Get.context!,
+          title: "Missing",
+          subtitle: "Please complete required fields",
+          type: ToastType.error,
+        );
+        return false;
+      }
 
-    final fk = formKeys[idx];
-    final ok = fk.currentState?.validate() ?? true;
-    if (!ok) {
-      ToastWidget.show(
-        context: Get.context!,
-        title: "Missing",
-        subtitle: "Please complete required fields",
-        type: ToastType.error,
-      );
+      // Go to next step
+      if (idx < steps.length - 1) {
+        currentStep.value++;
+        touch();
+      }
       return false;
     }
 
-    // ✅ MODIFICATION: When user reaches Interior step and clicks "Next", submit immediately
-    if (isInteriorStep) {
-      // Show loading state
+    if (isTestDriveStep) {
       submitLoading.value = true;
 
       try {
-        // Submit the data
-        final submitted = await submit();
-
+        final submitted = await submit(leadId: leadId);
         if (submitted) {
-          // On successful submit, go to Review step
-          currentStep.value = steps.length - 1; // Review step
-          ToastWidget.show(
-            context: Get.context!,
-            title: "Submitted Successfully",
-            subtitle: "Inspection data has been submitted. Please review.",
-            type: ToastType.success,
-          );
-          touch();
+          Get.delete<CarInspectionStepperController>();
+          Get.offAll(DashboardScreen());
           return true;
         }
         return false;
@@ -2512,25 +2761,10 @@ class CarInspectionStepperController extends GetxController {
       }
     }
 
-    // Normal flow for other steps (not Interior)
-    if (idx < steps.length - 2) {
-      currentStep.value++;
-      touch();
-      return false;
-    }
-
-    // For TestDrive step (step 6) - proceed normally to Docs
-    final submitted = await submit();
-    if (submitted) {
-      currentStep.value++;
-      touch();
-      return true;
-    }
-
     return false;
   }
 
-  Future<bool> submit() async {
+  Future<bool> submit({required String leadId}) async {
     try {
       submitLoading.value = true;
 
@@ -2539,6 +2773,12 @@ class CarInspectionStepperController extends GetxController {
       printCompleteJson();
 
       final payload = _buildSubmitPayload();
+      updateTelecallingInspected(
+        telecallingId: leadId,
+        inspectionDateTimeLocal: DateTime.now(),
+        remarks: "This car is Inspected",
+      );
+
       debugPrint("✅ SUBMIT PAYLOAD KEYS: ${payload.keys.length}");
 
       final submitted = await _submitToApi(payload);
@@ -2561,7 +2801,7 @@ class CarInspectionStepperController extends GetxController {
       ToastWidget.show(
         context: Get.context!,
         title: "Submitted",
-        subtitle: "Inspection saved successfully. Local data cleared.",
+        subtitle: "Inspection saved successfully.",
         type: ToastType.success,
       );
 
@@ -2656,7 +2896,7 @@ class CarInspectionStepperController extends GetxController {
     try {
       final url = Uri.parse('https://api.attestr.com/api/v2/public/checkx/rc');
 
-      final body = {"reg": reg};
+      // final body = {"reg": reg};
 
       const basicAuthToken =
           "Basic T1gwSU5zYU10U09MQmFwR0RjLjJmMzkyMjJmZWM3ODgwZjczZjVjYTBhNGZlN2E2OTM4OmIwYmM2MzZiNWU2NTJiNjU2OGIyNGZlOTE5Y2Q3MThkMjgwMWMyYmJkMzY2ZjQxZg==";
@@ -2669,7 +2909,7 @@ class CarInspectionStepperController extends GetxController {
       final res = await http.post(
         url,
         headers: headers,
-        body: jsonEncode(body),
+        // body: jsonEncode(body),
       );
 
       // 🔴 HANDLE API ERRORS HERE
@@ -2686,7 +2926,7 @@ class CarInspectionStepperController extends GetxController {
         ToastWidget.show(
           context: Get.context!,
           title: "Error",
-          subtitle: apiMessage,
+          subtitle: "Server Error in Attesterapi",
           type: ToastType.error,
         );
 
@@ -3699,6 +3939,7 @@ class CarInspectionStepperController extends GetxController {
 
   String? getLocalVideo(String fieldKey) => localPickedVideos[fieldKey];
 
+  // Update setLocalVideo method
   Future<void> setLocalVideo(String fieldKey, String? videoPath) async {
     localPickedVideos[fieldKey] = videoPath;
 
@@ -3715,6 +3956,47 @@ class CarInspectionStepperController extends GetxController {
     }
 
     touch();
+
+    // ✅ NEW: Auto-upload video immediately after selection
+    if (videoPath != null &&
+        videoPath.isNotEmpty &&
+        !videoPath.startsWith('http://') &&
+        !videoPath.startsWith('https://')) {
+      // Wait for UI to update
+      await Future.delayed(const Duration(milliseconds: 500));
+      await uploadVideoForField(fieldKey);
+    }
+  }
+
+  // Add removeVideo method
+  Future<void> removeVideo(String fieldKey) async {
+    try {
+      final currentVideo = getLocalVideo(fieldKey);
+      final uploadedUrl = getString(fieldKey, def: "");
+
+      // Delete from Cloudinary if uploaded
+      if (uploadedUrl.isNotEmpty && uploadedUrl != "N/A") {
+        final deleted = await deleteMediaFromCloudinary(
+          mediaUrl: uploadedUrl,
+          fieldKey: fieldKey,
+        );
+      }
+
+      // Clear local and uploaded data
+      localPickedVideos.remove(fieldKey);
+      setString(fieldKey, "", silent: true, force: true);
+
+      ToastWidget.show(
+        context: Get.context!,
+        title: "Removed",
+        subtitle: "Video removed successfully",
+        type: ToastType.success,
+      );
+
+      touch();
+    } catch (e) {
+      _snackErr("Error removing video: $e");
+    }
   }
 
   bool isVideoUploaded(String fieldKey) {
