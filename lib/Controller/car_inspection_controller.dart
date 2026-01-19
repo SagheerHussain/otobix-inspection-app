@@ -36,8 +36,6 @@ class CarInspectionStepperController extends GetxController {
     {"title": "Engine", "icon": Icons.build_circle_outlined},
     {"title": "Interior", "icon": Icons.airline_seat_recline_normal},
     {"title": "TestDrive", "icon": Icons.drive_eta},
-    {"title": "Final", "icon": Icons.checklist_rounded},
-    {"title": "Review", "icon": Icons.preview_outlined},
   ];
 
   late final List<GlobalKey<FormState>> formKeys;
@@ -109,9 +107,6 @@ class CarInspectionStepperController extends GetxController {
     if (!silent) touch();
   }
 
-  // =====================================================
-  // API ENDPOINTS
-  // =====================================================
   static const String uploadCarImagesUrl =
       "https://otobix-app-backend-development.onrender.com/api/inspection/car/upload-car-images-to-cloudinary";
 
@@ -133,9 +128,6 @@ class CarInspectionStepperController extends GetxController {
   bool _isRestoring = false;
   bool _isAutoSaving = false;
 
-  // =====================================================
-  // ✅ APPOINTMENT-SPECIFIC STORAGE
-  // =====================================================
   final RxMap<String, List<String>> _localImagesCache =
       <String, List<String>>{}.obs;
   final RxMap<String, String?> _localVideosCache = <String, String?>{}.obs;
@@ -2460,7 +2452,7 @@ class CarInspectionStepperController extends GetxController {
 
   Future<bool> goNextOrSubmit() async {
     final idx = currentStep.value;
-    final isInteriorStep = idx == 5; // Interior Electronics Step
+    final isInteriorStep = idx == 6; // Interior Electronics Step
     final isReview = idx == steps.length - 1;
 
     if (isReview) return false;
@@ -3439,6 +3431,7 @@ class CarInspectionStepperController extends GetxController {
       final phoneNumber = await SharedPrefsHelper.getString(
         SharedPrefsHelper.phoneNumberKey,
       );
+
       isLoading.value = true;
 
       final token = await _getBearerToken();
@@ -3452,25 +3445,43 @@ class CarInspectionStepperController extends GetxController {
         return;
       }
 
+      // ✅ 1) Build payload
+      final payload = {"inspectionEngineerNumber": phoneNumber};
+
+      // ✅ 2) Print payload (normal)
+      print("📤 REQUEST PAYLOAD: $payload");
+
+      // ✅ 3) Print payload (pretty JSON)
+      final prettyPayload = const JsonEncoder.withIndent('  ').convert(payload);
+      print("📤 REQUEST PAYLOAD JSON:\n$prettyPayload");
+
       final response = await http.post(
         Uri.parse(apiUrl),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
         },
-        body: jsonEncode({"inspectionEngineerNumber": phoneNumber}),
+        body: jsonEncode(payload),
       );
+
+      // ✅ Response log
+      print("✅ STATUS: ${response.statusCode}");
+      print("📥 RAW RESPONSE BODY:\n${response.body}");
 
       if (response.statusCode == 200) {
         final decoded = jsonDecode(response.body);
-        print(decoded);
+
+        // ✅ Print decoded response (pretty)
+        final prettyResponse = const JsonEncoder.withIndent(
+          '  ',
+        ).convert(decoded);
+        print("📥 DECODED RESPONSE JSON:\n$prettyResponse");
 
         if (decoded is! Map<String, dynamic>) {
           throw Exception("Unexpected response shape: expected Map");
         }
 
         final rawList = decoded["data"];
-
         if (rawList is! List) {
           throw Exception("Unexpected data shape: expected List in 'data'");
         }

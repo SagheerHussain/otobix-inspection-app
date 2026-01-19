@@ -83,6 +83,8 @@ class LoginController extends GetxController {
         final userId = user['id'];
         final approvalStatus = user['approvalStatus'];
         final entityType = (user['entityType'] ?? "").toString();
+        final phonenumber = (user['phoneNumber']).toString();
+        print(phonenumber);
 
         // ✅ username from API (example: "arshadnasir")
         final apiUserName = (user['userName'] ?? "").toString();
@@ -102,6 +104,10 @@ class LoginController extends GetxController {
         await SharedPrefsHelper.saveString(
           SharedPrefsHelper.userKey,
           jsonEncode(user),
+        );
+        await SharedPrefsHelper.saveString(
+          SharedPrefsHelper.phoneNumberKey,
+          phonenumber,
         );
 
         await SharedPrefsHelper.saveString(SharedPrefsHelper.userIdKey, userId);
