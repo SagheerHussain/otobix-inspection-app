@@ -3833,8 +3833,9 @@ class EngineMechanicalStep extends StatelessWidget {
                   context: context,
                   c: c,
                   fieldKey: "engineVideo",
-                  label: 'Engine Video', // Removed *
+                  label: 'Engine Video',
                   requiredVideo: false,
+                  compressBeforeUpload: true,
                   enabled: true,
                 ),
 
@@ -3844,6 +3845,7 @@ class EngineMechanicalStep extends StatelessWidget {
                   fieldKey: "exhaustSmokeVideo",
                   label: 'Exhaust Smoke Video', // Removed *
                   requiredVideo: false,
+                  compressBeforeUpload: true,
                   enabled: true,
                 ),
               ],
@@ -3855,9 +3857,6 @@ class EngineMechanicalStep extends StatelessWidget {
   }
 }
 
-// =====================================================
-// ✅ STEP 5: Interior & Electronics
-// =====================================================
 class InteriorElectronicsStep extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final CarInspectionStepperController c;

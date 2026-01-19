@@ -9,6 +9,9 @@ import 'package:flutter_native_video_trimmer/flutter_native_video_trimmer.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:photo_view/photo_view_gallery.dart';
+import 'package:video_player/video_player.dart';
+import 'package:chewie/chewie.dart';
+import 'package:video_compress/video_compress.dart'; // ✅ ADDED: Video compression package
 
 const List<String> yesNo = ["Yes", "No"];
 const List<String> availableNA = ["Available", "Not Available"];
@@ -104,9 +107,107 @@ Future<String?> _trimFirst15Seconds(String inputPath) async {
   }
 }
 
-// =====================================================
-// ✅ ADDED: Full Screen Image Viewer Widget
-// =====================================================
+Future<String?> _compressVideo(String inputPath) async {
+  try {
+    debugPrint("🎬 ===========================================");
+    debugPrint("🎬 STARTING VIDEO COMPRESSION");
+    debugPrint("🎬 Input path: $inputPath");
+
+    // Check if input file exists
+    final originalFile = File(inputPath);
+    if (!await originalFile.exists()) {
+      debugPrint("❌ Original video file does not exist");
+      return null;
+    }
+
+    // Get original file size
+    final originalSize = await originalFile.length();
+    final originalSizeMB = (originalSize / (1024 * 1024)).toStringAsFixed(2);
+    debugPrint(
+      "📊 Original video size: $originalSizeMB MB ($originalSize bytes)",
+    );
+
+    // ✅ FIXED: New way to initialize video_compress
+    debugPrint("🔄 Initializing video_compress...");
+
+    // Get media info first to check video details
+    final mediaInfo = await VideoCompress.getMediaInfo(inputPath);
+    debugPrint("📹 Video info: ${mediaInfo.toJson()}");
+
+    // Compress video - initialize happens automatically
+    debugPrint("🎬 Starting compression process...");
+    debugPrint("⚙️ Compression settings:");
+    debugPrint("  - Quality: MediumQuality");
+    debugPrint("  - Delete origin: false");
+
+    // ✅ FIXED: Use correct compressVideo method
+    final response = await VideoCompress.compressVideo(
+      inputPath,
+      quality: VideoQuality.MediumQuality,
+      deleteOrigin: false, // Keep original file
+    );
+
+    if (response == null) {
+      debugPrint("❌ Video compression returned null");
+      return null;
+    }
+
+    if (response.file == null) {
+      debugPrint("❌ Compressed file is null");
+      return null;
+    }
+
+    debugPrint("✅ Video compression completed");
+    debugPrint("📁 Compressed file path: ${response.file!.path}");
+
+    // Check compressed file exists
+    final compressedFile = File(response.file!.path);
+    if (!await compressedFile.exists()) {
+      debugPrint("❌ Compressed video file does not exist");
+      return null;
+    }
+
+    // Get compressed file size
+    final compressedSize = await compressedFile.length();
+    final compressedSizeMB = (compressedSize / (1024 * 1024)).toStringAsFixed(
+      2,
+    );
+    debugPrint(
+      "📊 Compressed video size: $compressedSizeMB MB ($compressedSize bytes)",
+    );
+
+    // Calculate compression ratio
+    final sizeReduction = ((originalSize - compressedSize) / originalSize * 100)
+        .toStringAsFixed(1);
+    final compressionRatio = (originalSize / compressedSize).toStringAsFixed(2);
+
+    debugPrint("📈 Compression Results:");
+    debugPrint("  - Original: $originalSizeMB MB");
+    debugPrint("  - Compressed: $compressedSizeMB MB");
+    debugPrint("  - Size reduction: $sizeReduction%");
+    debugPrint("  - Compression ratio: 1:$compressionRatio");
+
+    // Check if compression actually reduced size
+    if (compressedSize >= originalSize) {
+      debugPrint("⚠️ Compressed file is same or larger than original!");
+      debugPrint("⚠️ Returning original file instead");
+      return inputPath;
+    }
+
+    debugPrint("✅ Compression successful!");
+    debugPrint("🎬 ===========================================");
+
+    return response.file!.path;
+  } catch (e, stackTrace) {
+    debugPrint("❌ VIDEO COMPRESSION ERROR");
+    debugPrint("❌ Error type: ${e.runtimeType}");
+    debugPrint("❌ Error message: $e");
+    debugPrint("❌ Stack trace: $stackTrace");
+    debugPrint("🎬 ===========================================");
+    return null;
+  }
+}
+
 class FullScreenImageViewer extends StatelessWidget {
   final List<String> imagePaths;
   final int initialIndex;
@@ -151,6 +252,133 @@ class FullScreenImageViewer extends StatelessWidget {
         ),
         backgroundDecoration: const BoxDecoration(color: Colors.black),
         pageController: PageController(initialPage: initialIndex),
+      ),
+    );
+  }
+}
+
+// =====================================================
+// ✅ ADDED: Full Screen Video Player Widget
+// =====================================================
+class FullScreenVideoPlayer extends StatefulWidget {
+  final String videoPath;
+
+  const FullScreenVideoPlayer({super.key, required this.videoPath});
+
+  @override
+  State<FullScreenVideoPlayer> createState() => _FullScreenVideoPlayerState();
+}
+
+class _FullScreenVideoPlayerState extends State<FullScreenVideoPlayer> {
+  late VideoPlayerController _videoController;
+  ChewieController? _chewieController;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeVideo();
+  }
+
+  Future<void> _initializeVideo() async {
+    try {
+      // Check if video exists locally
+      final file = File(widget.videoPath);
+      final exists = await file.exists();
+
+      if (!exists && !widget.videoPath.startsWith('http')) {
+        if (mounted) {
+          ToastWidget.show(
+            context: context,
+            title: "Video Not Found",
+            subtitle: "The video file does not exist locally",
+            type: ToastType.error,
+          );
+          Navigator.pop(context);
+        }
+        return;
+      }
+
+      // Initialize video controller
+      if (widget.videoPath.startsWith('http')) {
+        _videoController = VideoPlayerController.network(widget.videoPath);
+      } else {
+        _videoController = VideoPlayerController.file(File(widget.videoPath));
+      }
+
+      await _videoController.initialize();
+
+      // Initialize Chewie controller for better controls
+      _chewieController = ChewieController(
+        videoPlayerController: _videoController,
+        autoPlay: true,
+        looping: false,
+        allowFullScreen: false, // We're already in full screen
+        allowMuting: true,
+        showControls: true,
+        materialProgressColors: ChewieProgressColors(
+          playedColor: kPrimary,
+          handleColor: kPrimary,
+          backgroundColor: Colors.grey.shade300,
+          bufferedColor: Colors.grey.shade200,
+        ),
+        placeholder: Container(
+          color: Colors.black,
+          child: const Center(
+            child: CircularProgressIndicator(color: kPrimary),
+          ),
+        ),
+        autoInitialize: true,
+      );
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint("❌ Video initialization error: $e");
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ToastWidget.show(
+          context: context,
+          title: "Playback Error",
+          subtitle: "Could not play the video",
+          type: ToastType.error,
+        );
+        Navigator.pop(context);
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _videoController.dispose();
+    _chewieController?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        automaticallyImplyLeading: true,
+        elevation: 0,
+      ),
+      body: SafeArea(
+        child: Center(
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator(color: kPrimary))
+              : _chewieController != null &&
+                    _chewieController!.videoPlayerController.value.isInitialized
+              ? Chewie(controller: _chewieController!)
+              : const Center(child: CircularProgressIndicator(color: kPrimary)),
+        ),
       ),
     );
   }
@@ -1531,7 +1759,6 @@ Widget buildImagePicker({
               ],
             ),
           ),
-          // ✅ REMOVED: Upload button completely
           Text(
             '${imagePaths.length}/$maxImages',
             style: TextStyle(
@@ -1599,6 +1826,9 @@ Widget buildImagePicker({
                 imagePath.startsWith('https://') ||
                 uploadedUrls.contains(imagePath);
 
+            // ✅ ADDED: Check if image is loading (local storage se)
+            final isLoading = !isUploaded && !imagePath.startsWith('http');
+
             return GestureDetector(
               onTap: () {
                 Navigator.of(context!).push(
@@ -1622,15 +1852,31 @@ Widget buildImagePicker({
                             ? Colors.red
                             : Colors.grey.shade300,
                       ),
-                      image: DecorationImage(
-                        image: isUploaded && imagePath.startsWith('http')
-                            ? NetworkImage(imagePath) as ImageProvider
-                            : FileImage(File(imagePath)),
-                        fit: BoxFit.cover,
-                      ),
+                      image: isLoading
+                          ? null // Don't show image while loading
+                          : DecorationImage(
+                              image: isUploaded && imagePath.startsWith('http')
+                                  ? NetworkImage(imagePath) as ImageProvider
+                                  : FileImage(File(imagePath)),
+                              fit: BoxFit.cover,
+                            ),
+                      color: isLoading ? Colors.grey.shade100 : null,
                     ),
+                    child: isLoading
+                        ? const Center(
+                            child: SizedBox(
+                              width: 20,
+                              height: 20,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: kPrimary,
+                              ),
+                            ),
+                          )
+                        : null,
                   ),
-                  if (enabled)
+
+                  if (!isLoading && enabled)
                     Positioned(
                       top: 6,
                       right: 14,
@@ -1652,41 +1898,43 @@ Widget buildImagePicker({
                         ),
                       ),
                     ),
+
                   // ✅ Upload status indicator
-                  Positioned(
-                    bottom: 6,
-                    left: 6,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.7),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          if (c.isFieldUploading(fieldKey))
-                            const SizedBox(
-                              width: 10,
-                              height: 10,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 1,
-                                color: Colors.white,
+                  if (!isLoading)
+                    Positioned(
+                      bottom: 6,
+                      left: 6,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (c.isFieldUploading(fieldKey))
+                              const SizedBox(
+                                width: 10,
+                                height: 10,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 1,
+                                  color: Colors.white,
+                                ),
+                              )
+                            else if (isUploaded)
+                              const Icon(
+                                Icons.cloud_done,
+                                size: 10,
+                                color: Colors.green,
                               ),
-                            )
-                          else if (isUploaded)
-                            const Icon(
-                              Icons.cloud_done,
-                              size: 10,
-                              color: Colors.green,
-                            ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
-                  ),
                 ],
               ),
             );
@@ -1698,67 +1946,128 @@ Widget buildImagePicker({
   );
 }
 
+// =====================================================
+// ✅ MODIFIED: VideoThumbnailTile - Added loading indicator
+// =====================================================
 class VideoThumbnailTile extends StatelessWidget {
   final String videoPath;
   final bool enabled;
   final VoidCallback onRemove;
+  final bool isUploaded;
+  final bool isLoading; // ✅ ADDED: Loading state
 
   const VideoThumbnailTile({
     required this.videoPath,
     required this.enabled,
     required this.onRemove,
+    this.isUploaded = false,
+    this.isLoading = false, // ✅ ADDED: Default false
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      children: [
-        Container(
-          width: double.infinity,
-          height: 180,
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.grey.shade300),
-            color: Colors.black.withOpacity(0.05),
-          ),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.videocam_rounded,
-                size: 50,
-                color: kPrimary.withOpacity(0.7),
-              ),
-              const SizedBox(height: 10),
-              Text(
-                'Video Selected',
-                style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: kPrimary.withOpacity(0.8),
+    return GestureDetector(
+      onTap: isLoading
+          ? null // Disable tap while loading
+          : () {
+              // Open video in full screen dialog
+              showDialog(
+                context: context,
+                barrierColor: Colors.black87,
+                builder: (context) => Dialog(
+                  backgroundColor: Colors.transparent,
+                  insetPadding: const EdgeInsets.all(20),
+                  child: FullScreenVideoPlayer(videoPath: videoPath),
                 ),
-              ),
-              const SizedBox(height: 5),
-            ],
+              );
+            },
+      child: Stack(
+        children: [
+          Container(
+            width: double.infinity,
+            height: 180,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.grey.shade300),
+              color: isLoading
+                  ? Colors.grey.shade100
+                  : Colors.black.withOpacity(0.05),
+            ),
+            child: isLoading
+                ? const Center(
+                    child: SizedBox(
+                      width: 30,
+                      height: 30,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 3,
+                        color: kPrimary,
+                      ),
+                    ),
+                  )
+                : Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Play button overlay
+                      Container(
+                        width: 60,
+                        height: 60,
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.6),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow_rounded,
+                          size: 40,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Click to Play Video',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w700,
+                          color: kPrimary.withOpacity(0.8),
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      if (videoPath.startsWith('http'))
+                        Text(
+                          'Cloud Video',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.green.shade600,
+                          ),
+                        )
+                      else
+                        Text(
+                          'Local Video',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.orange.shade600,
+                          ),
+                        ),
+                    ],
+                  ),
           ),
-        ),
-        if (enabled)
-          Positioned(
-            top: 10,
-            right: 10,
-            child: GestureDetector(
-              onTap: onRemove,
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: Colors.red,
-                  shape: BoxShape.circle,
+          if (!isLoading && enabled)
+            Positioned(
+              top: 10,
+              right: 10,
+              child: GestureDetector(
+                onTap: onRemove,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.red,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, size: 16, color: Colors.white),
                 ),
-                child: const Icon(Icons.close, size: 16, color: Colors.white),
               ),
             ),
-          ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -1840,30 +2149,77 @@ class _AddVideoTile extends StatelessWidget {
   }
 }
 
+// ✅ UPDATED: buildVideoPicker with automatic compression on widget load
 Widget buildVideoPicker({
   required CarInspectionStepperController c,
   required String fieldKey,
   required BuildContext context,
   required String label,
   bool enabled = true,
+  bool compressBeforeUpload = true,
 }) {
   return StatefulBuilder(
     builder: (context, setState) {
       void refresh() => setState(() {});
 
+      // ✅ AUTO-COMPRESSION WHEN WIDGET LOADS
       WidgetsBinding.instance.addPostFrameCallback((_) async {
+        debugPrint("🔄 Loading video for field: $fieldKey");
+
         final localVideo = await c.loadLocalVideoFromStorage(fieldKey);
-        if (localVideo != null &&
-            localVideo.isNotEmpty &&
-            c.getLocalVideo(fieldKey) != localVideo) {
-          c.localPickedVideos[fieldKey] = localVideo;
-          refresh();
+        if (localVideo != null && localVideo.isNotEmpty) {
+          if (c.getLocalVideo(fieldKey) != localVideo) {
+            debugPrint("📥 Video loaded from storage: $localVideo");
+            c.localPickedVideos[fieldKey] = localVideo;
+            refresh();
+          }
+
+          // ✅ AUTOMATIC COMPRESSION - yeh har baar video load hone par chalega
+          if (!localVideo.startsWith('http')) {
+            debugPrint("🎬 Checking if video needs compression...");
+
+            // Skip if already compressed
+            if (!localVideo.contains('compressed_') &&
+                !localVideo.contains('_compressed')) {
+              debugPrint("⚡ Auto-compressing video...");
+              final compressedPath = await _compressVideo(localVideo);
+
+              if (compressedPath != null && compressedPath != localVideo) {
+                debugPrint("✅ Video compressed! Updating in controller...");
+                debugPrint("   Original: $localVideo");
+                debugPrint("   Compressed: $compressedPath");
+
+                // Update controller with compressed video
+                c.setLocalVideo(fieldKey, compressedPath);
+
+                // Show toast notification
+                ToastWidget.show(
+                  context: context,
+                  title: "Video Optimized",
+                  subtitle: "Size reduced for faster upload",
+                  type: ToastType.success,
+                );
+
+                refresh();
+              }
+            } else {
+              debugPrint("📦 Video already compressed, skipping");
+            }
+          }
         }
       });
 
       return Obx(() {
         final videoPath = c.getLocalVideo(fieldKey);
         final hasVideo = videoPath != null && videoPath.isNotEmpty;
+        final isUploaded = hasVideo ? c.isVideoUploaded(fieldKey) : false;
+        final uploadedUrl = hasVideo ? c.getText(fieldKey) : '';
+
+        final isLoadingVideo =
+            hasVideo &&
+            !videoPath!.startsWith('http') &&
+            !isUploaded &&
+            !c.isFieldUploading(fieldKey);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -1876,13 +2232,9 @@ Widget buildVideoPicker({
                     style: const TextStyle(fontWeight: FontWeight.w900),
                   ),
                 ),
-
                 Obx(() {
                   final loading = c.isFieldUploading(fieldKey);
-
-                  final rawUploaded = c.isVideoUploaded(fieldKey);
-                  final uploaded = hasVideo && rawUploaded;
-
+                  final uploaded = hasVideo && isUploaded;
                   final canUpload =
                       enabled && hasVideo && !loading && !uploaded;
 
@@ -1898,9 +2250,53 @@ Widget buildVideoPicker({
                     onTap: canUpload
                         ? () async {
                             try {
+                              debugPrint("🔼 UPLOAD BUTTON CLICKED");
+                              debugPrint("🔼 Field: $fieldKey");
+                              debugPrint("🔼 Video path: $videoPath");
+                              debugPrint(
+                                "🔼 Compress before upload: $compressBeforeUpload",
+                              );
+
+                              String videoToUpload = videoPath!;
+
+                              if (compressBeforeUpload &&
+                                  !videoPath.startsWith('http')) {
+                                debugPrint(
+                                  "🎬 Additional compression before upload...",
+                                );
+
+                                // Show compression toast
+                                ToastWidget.show(
+                                  context: context,
+                                  title: "Final Compression",
+                                  subtitle: "Preparing for upload...",
+                                  type: ToastType.info,
+                                );
+
+                                final compressedPath = await _compressVideo(
+                                  videoPath,
+                                );
+
+                                if (compressedPath != null &&
+                                    compressedPath != videoPath) {
+                                  debugPrint("✅ Final compression successful");
+                                  videoToUpload = compressedPath;
+
+                                  // Update controller
+                                  c.setLocalVideo(fieldKey, compressedPath);
+
+                                  await Future.delayed(
+                                    const Duration(milliseconds: 500),
+                                  );
+                                }
+                              }
+
+                              debugPrint("☁️ Uploading video: $videoToUpload");
                               await c.uploadVideoForField(fieldKey);
+
                               refresh();
                             } catch (e) {
+                              debugPrint("❌ Upload error: $e");
                               ToastWidget.show(
                                 context: context,
                                 title: "Upload Failed",
@@ -1959,8 +2355,12 @@ Widget buildVideoPicker({
 
             if (hasVideo)
               VideoThumbnailTile(
-                videoPath: videoPath!,
+                videoPath: uploadedUrl.isNotEmpty && isUploaded
+                    ? uploadedUrl
+                    : videoPath!,
                 enabled: enabled,
+                isUploaded: isUploaded,
+                isLoading: isLoadingVideo,
                 onRemove: () {
                   c.setLocalVideo(fieldKey, null);
                   refresh();
@@ -1977,6 +2377,7 @@ Widget buildVideoPicker({
   );
 }
 
+// ✅ UPDATED: buildValidatedVideoPicker with auto compression
 Widget buildValidatedVideoPicker({
   required BuildContext context,
   required CarInspectionStepperController c,
@@ -1984,6 +2385,7 @@ Widget buildValidatedVideoPicker({
   required String label,
   bool requiredVideo = true,
   bool enabled = true,
+  bool compressBeforeUpload = true,
 }) {
   return FormField<String>(
     key: ValueKey('video-$fieldKey'),
@@ -1995,6 +2397,15 @@ Widget buildValidatedVideoPicker({
       return null;
     },
     builder: (state) {
+      // ✅ Add auto-compression check when form builds
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        final videoPath = c.getLocalVideo(fieldKey);
+        if (videoPath != null && !videoPath.startsWith('http')) {
+          debugPrint("🔄 Form validation checking video: $fieldKey");
+          await _compressVideo(videoPath);
+        }
+      });
+
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -2004,6 +2415,7 @@ Widget buildValidatedVideoPicker({
             label: label,
             enabled: enabled,
             context: context,
+            compressBeforeUpload: compressBeforeUpload,
           ),
           if (state.hasError)
             Padding(

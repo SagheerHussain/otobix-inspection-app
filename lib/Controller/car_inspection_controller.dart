@@ -693,7 +693,6 @@ class CarInspectionStepperController extends GetxController {
         }
       }
 
-      // Remove from local memory
       final updatedImages = List<String>.from(currentImages)
         ..removeWhere((path) => path == imagePath);
 
@@ -713,9 +712,7 @@ class CarInspectionStepperController extends GetxController {
         await saveLocalImagesToStorage(fieldKey, updatedImages);
       }
 
-      // Show success message
-
-      touch(); // Update UI
+      touch();
     } catch (e) {
       debugPrint("❌ Error removing image: $e");
 
@@ -2635,99 +2632,21 @@ class CarInspectionStepperController extends GetxController {
     }
   }
 
-  // Future<bool> goNextOrSubmit() async {
-  //   final idx = currentStep.value;
-  //   final isInteriorStep = idx == 7; // Interior Electronics Step
-  //   final isReview = idx == steps.length - 1;
-
-  //   // if (isReview) return false;
-
-  //   // final fk = formKeys[idx];
-  //   // final ok = fk.currentState?.validate() ?? true;
-  //   // if (!ok) {
-  //   //   ToastWidget.show(
-  //   //     context: Get.context!,
-  //   //     title: "Missing",
-  //   //     subtitle: "Please complete required fields",
-  //   //     type: ToastType.error,
-  //   //   );
-  //   //   return false;
-  //   // }
-
-  //   // ✅ MODIFICATION: When user reaches Interior step and clicks "Next", submit immediately
-  //   if (isInteriorStep) {
-  //     // Show loading state
-  //     submitLoading.value = true;
-
-  //     try {
-  //       // Submit the data
-  //       final submitted = await submit();
-
-  //       if (submitted) {
-  //         // On successful submit, go to Review step
-  //         currentStep.value = steps.length - 1; // Review step
-  //         ToastWidget.show(
-  //           context: Get.context!,
-  //           title: "Submitted Successfully",
-  //           subtitle: "Inspection data has been submitted. Please review.",
-  //           type: ToastType.success,
-  //         );
-  //         touch();
-  //         return true;
-  //       }
-  //       return false;
-  //     } catch (e) {
-  //       ToastWidget.show(
-  //         context: Get.context!,
-  //         title: "Submission Failed",
-  //         subtitle: e.toString(),
-  //         type: ToastType.error,
-  //       );
-  //       return false;
-  //     } finally {
-  //       submitLoading.value = false;
-  //     }
-  //   }
-
-  //   // Normal flow for other steps (not Interior)
-  //   if (idx < steps.length - 2) {
-  //     currentStep.value++;
-  //     touch();
-  //     return false;
-  //   }
-
-  //   // For TestDrive step (step 6) - proceed normally to Docs
-  //   final submitted = await submit();
-  //   if (submitted) {
-  //     currentStep.value++;
-  //     touch();
-  //     return true;
-  //   }
-
-  //   return false;
-  // }
-
   Future<bool> goNextOrSubmit({required String leadId}) async {
-    print("=== NEXT/SUMIT CLICKED ===");
-    print("Current step: ${currentStep.value}, Total steps: ${steps.length}");
-    print("Form keys count: ${formKeys.length}");
-
     final idx = currentStep.value;
-    final isTestDriveStep = idx == 6; // ✅ ONLY Test Drive is step index 6
-
-    // For ALL steps EXCEPT Test Drive, just validate and go next
+    final isTestDriveStep = idx == 6;
     if (!isTestDriveStep) {
-      final fk = formKeys[idx];
-      final ok = fk.currentState?.validate() ?? true;
-      if (!ok) {
-        ToastWidget.show(
-          context: Get.context!,
-          title: "Missing",
-          subtitle: "Please complete required fields",
-          type: ToastType.error,
-        );
-        return false;
-      }
+      // final fk = formKeys[idx];
+      // final ok = fk.currentState?.validate() ?? true;
+      // if (!ok) {
+      //   ToastWidget.show(
+      //     context: Get.context!,
+      //     title: "Missing",
+      //     subtitle: "Please complete required fields",
+      //     type: ToastType.error,
+      //   );
+      //   return false;
+      // }
 
       // Go to next step
       if (idx < steps.length - 1) {
