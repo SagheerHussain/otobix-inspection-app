@@ -1752,9 +1752,6 @@ class VideoThumbnailTile extends StatelessWidget {
   }
 }
 
-// =====================================================
-// Add Video Tile ✅ (UPDATED: no onTap param, trims first 15s)
-// =====================================================
 class _AddVideoTile extends StatelessWidget {
   final CarInspectionStepperController c;
   final String fieldKey;
@@ -2026,9 +2023,6 @@ Widget buildValidatedVideoPicker({
   );
 }
 
-// =====================================================
-// UPDATED buildValidatedMultiImagePicker with Toast Notifications
-// =====================================================
 Widget buildValidatedMultiImagePicker({
   required CarInspectionStepperController c,
   required String fieldKey,

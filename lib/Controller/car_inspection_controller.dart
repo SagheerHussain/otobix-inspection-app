@@ -2708,7 +2708,7 @@ class CarInspectionStepperController extends GetxController {
         result = decodedAny;
       }
 
-      _applyPerfiosRcResultToData(result);
+      // _applyPerfiosRcResultToData(result);
       _ensureMirrors(silent: true);
 
       await _saveApiDataToStorage();

@@ -883,7 +883,6 @@ class ScheduleCardExact extends StatelessWidget {
   }
 
   Future<void> _launchMaps(BuildContext context) async {
-    // ✅ FIX: Use only existing fields - inspectionAddress
     final address = _safe(item.inspectionAddress, "");
     final city = _safe(item.city, "");
     String location = "";
