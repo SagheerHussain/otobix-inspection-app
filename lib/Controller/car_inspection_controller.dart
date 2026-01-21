@@ -28,6 +28,10 @@ class CarInspectionStepperController extends GetxController {
 
   final RxBool rcFetchLoading = false.obs;
   final RxBool submitLoading = false.obs;
+  final RxMap<String, String?> pendingPickedVideos = <String, String?>{}.obs;
+
+  final RxMap<String, Map<String, bool>> imageUploadingLocal =
+      <String, Map<String, bool>>{}.obs;
 
   final List<Map<String, dynamic>> steps = const [
     {"title": "Docs", "icon": Icons.description_outlined},
@@ -663,59 +667,211 @@ class CarInspectionStepperController extends GetxController {
     }
   }
 
-  // ✅ NEW: Remove image method
+  String? _extractImagePublicIdFromUrl(String imageUrl) {
+    try {
+      debugPrint("🔍 Extracting IMAGE publicId from: $imageUrl");
+
+      final uri = Uri.parse(imageUrl);
+      String path = uri
+          .path; // e.g. /dwunzqigc/image/upload/f_auto,q_auto/v1/folder/file.jpg
+
+      final uploadIndex = path.indexOf('/upload/');
+      if (uploadIndex == -1) return null;
+
+      // everything after /upload/
+      String afterUpload = path.substring(uploadIndex + 8); // remove "/upload/"
+
+      // split segments
+      final segments = afterUpload
+          .split('/')
+          .where((s) => s.trim().isNotEmpty)
+          .toList();
+      if (segments.isEmpty) return null;
+
+      int i = 0;
+
+      // 1) skip transformations segments until we hit version or folder
+      // transformations usually contain commas or underscores like f_auto,q_auto or c_fill,w_300
+      while (i < segments.length) {
+        final seg = segments[i];
+        final isVersion = RegExp(r'^v\d+$').hasMatch(seg) || seg == 'v1';
+        if (isVersion) break;
+
+        final looksLikeTransform =
+            seg.contains(',') ||
+            seg.contains('_') ||
+            seg.contains(':') ||
+            seg.startsWith('f_') ||
+            seg.startsWith('c_');
+
+        // if it looks like transform, skip it
+        if (looksLikeTransform) {
+          i++;
+          continue;
+        }
+
+        // if not transform and not version, stop (it’s already folder/publicId start)
+        break;
+      }
+
+      // 2) remove version if present
+      if (i < segments.length) {
+        final seg = segments[i];
+        final isVersion = RegExp(r'^v\d+$').hasMatch(seg) || seg == 'v1';
+        if (isVersion) i++;
+      }
+
+      if (i >= segments.length) return null;
+
+      // 3) join remaining as publicId + remove extension
+      String publicId = segments.sublist(i).join('/');
+
+      // remove extension
+      publicId = publicId.replaceAll(
+        RegExp(r'\.(jpg|jpeg|png|webp|gif)$', caseSensitive: false),
+        '',
+      );
+
+      // decode url encoding
+      publicId = Uri.decodeComponent(publicId);
+
+      debugPrint("✅ Extracted IMAGE publicId: $publicId");
+      return publicId;
+    } catch (e) {
+      debugPrint("❌ Error extracting image publicId: $e");
+      return null;
+    }
+  }
+
+  Future<bool> deleteImageFromCloudinary({required String publicId}) async {
+    try {
+      final hasInternet = await _checkInternetConnection();
+      if (!hasInternet) return false;
+
+      final token = await _getBearerToken();
+      if (token.isEmpty) {
+        _snackErr("Token missing (prefs key: token)");
+        return false;
+      }
+
+      if (publicId.trim().isEmpty) {
+        _snackErr("Missing publicId for image delete");
+        return false;
+      }
+
+      debugPrint("🗑️ Deleting IMAGE from Cloudinary (publicId): $publicId");
+
+      final response = await http.delete(
+        Uri.parse(
+          "https://otobix-app-backend-development.onrender.com/api/inspection/car/delete-image-from-cloudinary",
+        ),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({"publicId": publicId.trim()}),
+      );
+
+      debugPrint(
+        "🗑️ Delete response: ${response.statusCode} - ${response.body}",
+      );
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map && decoded["success"] == true) {
+          debugPrint("✅ Image deleted from Cloudinary successfully");
+          return true;
+        }
+      }
+
+      debugPrint("❌ Failed to delete image: ${response.statusCode}");
+      return false;
+    } catch (e) {
+      debugPrint("❌ Delete image error: $e");
+      return false;
+    }
+  }
+
   Future<void> removeImage(String fieldKey, String imagePath) async {
     try {
       debugPrint("🗑️ Removing image: $imagePath from field: $fieldKey");
 
-      // Get current images for this field
-      final currentImages = getLocalImages(fieldKey);
+      final currentImages = List<String>.from(getLocalImages(fieldKey));
       if (!currentImages.contains(imagePath)) {
         debugPrint("⚠️ Image not found in current list");
         return;
       }
 
-      // Check if it's a URL (already uploaded to Cloudinary)
-      final isUploadedUrl =
+      // ✅ Find index of the image being removed
+      final removeIndex = currentImages.indexOf(imagePath);
+
+      // ✅ Uploaded URLs list for this field
+      final uploadedUrls = List<String>.from(getList(fieldKey));
+
+      // ✅ Decide which URL to delete from cloud
+      // If imagePath itself is URL -> delete that
+      // Else -> try delete URL at same index (mapping local->uploaded)
+      String? urlToDelete;
+
+      final isUrl =
           imagePath.startsWith('http://') || imagePath.startsWith('https://');
 
-      // If it's a Cloudinary URL, delete from Cloudinary
-      if (isUploadedUrl) {
-        final deleted = await deleteMediaFromCloudinary(
-          mediaUrl: imagePath,
-          fieldKey: fieldKey,
-        );
-
-        if (!deleted) {
-          debugPrint("❌ Failed to delete from Cloudinary");
-        } else {
-          debugPrint("✅ Deleted from Cloudinary");
+      if (isUrl) {
+        urlToDelete = imagePath;
+      } else {
+        // local file removed, try match by index
+        if (removeIndex >= 0 && removeIndex < uploadedUrls.length) {
+          urlToDelete = uploadedUrls[removeIndex];
         }
       }
 
-      final updatedImages = List<String>.from(currentImages)
-        ..removeWhere((path) => path == imagePath);
+      // ✅ Delete from Cloudinary if we have a URL
+      if (urlToDelete != null &&
+          urlToDelete.trim().isNotEmpty &&
+          (urlToDelete.startsWith('http://') ||
+              urlToDelete.startsWith('https://'))) {
+        final publicId = _extractImagePublicIdFromUrl(urlToDelete);
 
-      localPickedImages[fieldKey] = updatedImages;
+        if (publicId == null || publicId.trim().isEmpty) {
+          debugPrint("❌ Could not extract publicId from URL: $urlToDelete");
+        } else {
+          debugPrint("🗑️ Deleting IMAGE from Cloudinary...");
+          debugPrint("   URL: $urlToDelete");
+          debugPrint("   Public ID: $publicId");
 
-      // Also remove from uploaded URLs list if it exists there
-      final uploadedUrls = getList(fieldKey);
-      if (uploadedUrls.contains(imagePath)) {
-        final updatedUrls = List<String>.from(uploadedUrls)
-          ..removeWhere((url) => url == imagePath);
-        setList(fieldKey, updatedUrls, silent: true, force: true);
+          final deleted = await deleteImageFromCloudinary(
+            publicId: publicId.trim(),
+          );
+
+          if (deleted) {
+            debugPrint("✅ Deleted image from Cloudinary");
+          } else {
+            debugPrint("❌ Failed to delete image from Cloudinary");
+          }
+        }
+      } else {
+        debugPrint("ℹ️ No uploaded URL found to delete (local only).");
       }
 
-      // ✅ Save updated list to persistent storage
+      // ✅ Remove local path from local list
+      currentImages.removeAt(removeIndex);
+      localPickedImages[fieldKey] = currentImages;
+
+      // ✅ Also remove uploaded URL at same index (to keep lists aligned)
+      if (removeIndex >= 0 && removeIndex < uploadedUrls.length) {
+        uploadedUrls.removeAt(removeIndex);
+        setList(fieldKey, uploadedUrls, silent: true, force: true);
+      }
+
+      // ✅ Save updated local list
       final appt = getString("appointmentId", def: "").trim();
       if (appt.isNotEmpty && appt != "N/A") {
-        await saveLocalImagesToStorage(fieldKey, updatedImages);
+        await saveLocalImagesToStorage(fieldKey, currentImages);
       }
 
       touch();
     } catch (e) {
       debugPrint("❌ Error removing image: $e");
-
       ToastWidget.show(
         context: Get.context!,
         title: "Error",
@@ -1482,12 +1638,9 @@ class CarInspectionStepperController extends GetxController {
   // =====================================================
   // ✅ UPDATED: Auto-upload when images are selected
   // =====================================================
-
   Future<void> setLocalImages(String fieldKey, List<String> paths) async {
-    // First save to local storage
+    // ✅ Save local list
     localPickedImages[fieldKey] = paths;
-
-    // ✅ Save to local storage with appointment ID
     await saveLocalImagesToStorage(fieldKey, paths);
 
     final appt = getString("appointmentId", def: "").trim();
@@ -1495,47 +1648,73 @@ class CarInspectionStepperController extends GetxController {
       await _autoSaveField(fieldKey, const []);
     }
 
+    // ✅ mark all NEW local paths as uploading
+    imageUploadingLocal[fieldKey] ??= {};
+    for (final p in paths) {
+      if (!p.startsWith('http')) {
+        imageUploadingLocal[fieldKey]![p] = true;
+      }
+    }
+
     setList(fieldKey, const [], silent: true, force: true);
     touch();
 
-    // ✅ NEW: Auto-upload images immediately after selection
-    if (paths.isNotEmpty) {
-      final List<String> newImages = [];
+    // ✅ upload only local paths
+    final newImages = paths
+        .where((p) => !p.startsWith('http://') && !p.startsWith('https://'))
+        .toList();
 
-      // Check which images are new (not already uploaded)
-      final currentUploadedUrls = getList(fieldKey);
-      for (final path in paths) {
-        // If it's a local path (not URL), it needs upload
-        if (!path.startsWith('http://') && !path.startsWith('https://')) {
-          newImages.add(path);
-        }
+    if (newImages.isEmpty) return;
+
+    try {
+      await Future.delayed(const Duration(milliseconds: 200));
+
+      final uploadedUrls = await _uploadImagesToCloudinary(
+        appointmentId: appt,
+        localPaths: newImages,
+        fieldKey: fieldKey,
+      );
+
+      if (uploadedUrls.isNotEmpty) {
+        final existingUrls = getList(fieldKey);
+        final allUrls = [...existingUrls, ...uploadedUrls];
+        setList(fieldKey, allUrls, silent: true, force: true);
       }
 
-      // Upload only new images
-      if (newImages.isNotEmpty) {
-        // Wait a bit for UI to update
-        await Future.delayed(const Duration(milliseconds: 300));
-
-        // Upload the images
-        final uploadedUrls = await _uploadImagesToCloudinary(
-          appointmentId: appt,
-          localPaths: newImages,
-        );
-
-        if (uploadedUrls.isNotEmpty) {
-          // Combine existing uploaded URLs with new ones
-          final existingUrls = getList(fieldKey);
-          final allUrls = [...existingUrls, ...uploadedUrls];
-          setList(fieldKey, allUrls, silent: true, force: true);
-
-          ToastWidget.show(
-            context: Get.context!,
-            title: "Uploaded",
-            subtitle: "Images uploaded successfully",
-            type: ToastType.success,
-          );
-        }
+      // ✅ stop loaders for uploaded local paths
+      for (final p in newImages) {
+        imageUploadingLocal[fieldKey]![p] = false;
       }
+
+      // ✅ IMPORTANT: local images should now be replaced by uploaded URLs
+      final merged = <String>[];
+      merged.addAll(paths.where((p) => p.startsWith('http')));
+      merged.addAll(getList(fieldKey));
+      localPickedImages[fieldKey] = merged;
+
+      await saveLocalImagesToStorage(fieldKey, merged);
+
+      touch();
+
+      ToastWidget.show(
+        context: Get.context!,
+        title: "Uploaded",
+        subtitle: "Images uploaded successfully",
+        type: ToastType.success,
+      );
+    } catch (e) {
+      // ✅ stop loader on failure but keep local so user can retry/remove
+      for (final p in newImages) {
+        imageUploadingLocal[fieldKey]![p] = false;
+      }
+      touch();
+
+      ToastWidget.show(
+        context: Get.context!,
+        title: "Upload Failed",
+        subtitle: e.toString(),
+        type: ToastType.error,
+      );
     }
   }
 
@@ -1579,6 +1758,7 @@ class CarInspectionStepperController extends GetxController {
       final urls = await _uploadImagesToCloudinary(
         appointmentId: appt,
         localPaths: pathsToUpload,
+        fieldKey: fieldKey,
       );
 
       debugPrint("✅ UPLOAD SUCCESS: $fieldKey | ${urls.length} URLs");
@@ -1659,9 +1839,11 @@ class CarInspectionStepperController extends GetxController {
   Future<List<String>> _uploadImagesToCloudinary({
     required String appointmentId,
     required List<String> localPaths,
+    required String fieldKey, // ✅ NEW param
   }) async {
     final hasInternet = await _checkInternetConnection();
     if (!hasInternet) return <String>[];
+
     final uri = Uri.parse(uploadCarImagesUrl);
     final req = http.MultipartRequest('POST', uri);
 
@@ -1685,19 +1867,28 @@ class CarInspectionStepperController extends GetxController {
     if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
       throw Exception("HTTP ${streamed.statusCode}: $body");
     }
-    print("HTTP error in image ${streamed.statusCode}: $body");
+
     final decoded = jsonDecode(body);
-    if (decoded is! Map<String, dynamic>) {
-      throw Exception("Invalid response");
-    }
+    if (decoded is! Map<String, dynamic>) throw Exception("Invalid response");
 
     final ok = decoded["success"] == true;
-    if (!ok) {
-      throw Exception(decoded["message"]?.toString() ?? "Upload failed");
-    }
+    if (!ok) throw Exception(decoded["message"]?.toString() ?? "Upload failed");
 
     final urlsRaw = decoded["cloudinaryUrls"];
     if (urlsRaw is! List) throw Exception("cloudinaryUrls missing");
+
+    // ✅ optional: if backend also returns publicIds in same order
+    final publicIdsRaw = decoded["cloudinaryPublicIds"];
+
+    // ✅ store mapping localPath -> publicId (for accurate delete)
+    if (publicIdsRaw is List && publicIdsRaw.length == localPaths.length) {
+      // if you already have some map store, use it; else just ignore
+      // example:
+      // imagePublicIdsByField[fieldKey] ??= {};
+      // for (int i = 0; i < localPaths.length; i++) {
+      //   imagePublicIdsByField[fieldKey]![localPaths[i]] = publicIdsRaw[i].toString();
+      // }
+    }
 
     return urlsRaw
         .map((e) => e.toString())
@@ -2636,17 +2827,17 @@ class CarInspectionStepperController extends GetxController {
     final idx = currentStep.value;
     final isTestDriveStep = idx == 6;
     if (!isTestDriveStep) {
-      final fk = formKeys[idx];
-      final ok = fk.currentState?.validate() ?? true;
-      if (!ok) {
-        ToastWidget.show(
-          context: Get.context!,
-          title: "Missing",
-          subtitle: "Please complete required fields",
-          type: ToastType.error,
-        );
-        return false;
-      }
+      // final fk = formKeys[idx];
+      // final ok = fk.currentState?.validate() ?? true;
+      // if (!ok) {
+      //   ToastWidget.show(
+      //     context: Get.context!,
+      //     title: "Missing",
+      //     subtitle: "Please complete required fields",
+      //     type: ToastType.error,
+      //   );
+      //   return false;
+      // }
 
       // Go to next step
       if (idx < steps.length - 1) {
@@ -2692,15 +2883,10 @@ class CarInspectionStepperController extends GetxController {
       printCompleteJson();
 
       final payload = _buildSubmitPayload();
-      updateTelecallingInspected(
-        telecallingId: leadId,
-        inspectionDateTimeLocal: DateTime.now(),
-        remarks: "This car is Inspected",
-      );
 
       debugPrint("✅ SUBMIT PAYLOAD KEYS: ${payload.keys.length}");
 
-      final submitted = await _submitToApi(payload);
+      final submitted = await _submitToApi(payload, leadId);
       if (!submitted) {
         ToastWidget.show(
           context: Get.context!,
@@ -2738,7 +2924,7 @@ class CarInspectionStepperController extends GetxController {
     }
   }
 
-  Future<bool> _submitToApi(Map<String, dynamic> payload) async {
+  Future<bool> _submitToApi(Map<String, dynamic> payload, String leadId) async {
     try {
       final hasInternet = await _checkInternetConnection();
       if (!hasInternet) return false;
@@ -2763,6 +2949,12 @@ class CarInspectionStepperController extends GetxController {
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         debugPrint("✅ API SUBMIT SUCCESS");
+        updateTelecallingInspected(
+          telecallingId: leadId,
+          inspectionDateTimeLocal: DateTime.now(),
+          remarks: "This car is Inspected",
+        );
+
         return true;
       } else {
         final error = _readErrorMessage(response);
@@ -3857,12 +4049,10 @@ class CarInspectionStepperController extends GetxController {
   final RxMap<String, String?> localPickedVideos = <String, String?>{}.obs;
 
   String? getLocalVideo(String fieldKey) => localPickedVideos[fieldKey];
-
-  // Update setLocalVideo method
   Future<void> setLocalVideo(String fieldKey, String? videoPath) async {
     localPickedVideos[fieldKey] = videoPath;
 
-    // ✅ Save to local storage with appointment ID
+    // ✅ Save local path to storage
     await saveLocalVideoToStorage(fieldKey, videoPath);
 
     final appt = getString("appointmentId", def: "").trim();
@@ -3876,44 +4066,109 @@ class CarInspectionStepperController extends GetxController {
 
     touch();
 
-    // ✅ NEW: Auto-upload video immediately after selection
+    // ✅ AUTOMATIC UPLOAD: Jab video select karo, automatically upload karo
     if (videoPath != null &&
         videoPath.isNotEmpty &&
         !videoPath.startsWith('http://') &&
         !videoPath.startsWith('https://')) {
       // Wait for UI to update
-      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Auto-upload the video to cloudinary
       await uploadVideoForField(fieldKey);
     }
   }
 
-  // Add removeVideo method
   Future<void> removeVideo(String fieldKey) async {
     try {
-      final currentVideo = getLocalVideo(fieldKey);
-      final uploadedUrl = getString(fieldKey, def: "");
+      debugPrint("🗑️ Removing video from field: $fieldKey");
 
-      // Delete from Cloudinary if uploaded
-      if (uploadedUrl.isNotEmpty && uploadedUrl != "N/A") {
-        final deleted = await deleteMediaFromCloudinary(
-          mediaUrl: uploadedUrl,
-          fieldKey: fieldKey,
+      final uploadedUrl = getString(fieldKey, def: "").trim();
+      String storedPublicId = getString(
+        "${fieldKey}__publicId",
+        def: "",
+      ).trim();
+
+      // ✅ If publicId accidentally stored as URL, ignore it
+      if (storedPublicId.startsWith("http://") ||
+          storedPublicId.startsWith("https://")) {
+        debugPrint("⚠️ publicId looks like URL, ignoring...");
+        storedPublicId = "";
+      }
+
+      // ✅ sanitize publicId (decode + remove .mp4)
+      String cleanPublicId = storedPublicId.trim();
+      if (cleanPublicId.isNotEmpty) {
+        try {
+          cleanPublicId = Uri.decodeFull(cleanPublicId);
+        } catch (_) {}
+
+        if (cleanPublicId.toLowerCase().endsWith(".mp4")) {
+          cleanPublicId = cleanPublicId.substring(0, cleanPublicId.length - 4);
+        }
+      }
+
+      // ✅ If there's a publicId, we MUST delete from cloud first
+      if (cleanPublicId.isNotEmpty) {
+        debugPrint("🗑️ Deleting video from Cloudinary via publicId:");
+        debugPrint("   url: $uploadedUrl");
+        debugPrint("   publicId(raw): $storedPublicId");
+        debugPrint("   publicId(clean): $cleanPublicId");
+
+        final deleted = await deleteVideoFromCloudinary(
+          publicId: cleanPublicId,
+        );
+
+        if (!deleted) {
+          debugPrint("❌ Cloudinary delete failed. NOT clearing local data.");
+
+          // ✅ show error toast/snack and EXIT (no local removal)
+          _snackErr("Cloud delete failed. Please try again.");
+          return;
+        }
+
+        debugPrint("✅ Deleted from Cloudinary successfully");
+        // ✅ Only after successful cloud delete -> clear locally
+      } else {
+        // ✅ No publicId means it's not uploaded yet (local only) => allow local delete
+        debugPrint(
+          "ℹ️ No publicId found => local-only video. Removing locally.",
         );
       }
 
-      // Clear local and uploaded data
+      // ✅ Clear local picked + uploaded url + publicId
       localPickedVideos.remove(fieldKey);
       setString(fieldKey, "", silent: true, force: true);
+      setString("${fieldKey}__publicId", "", silent: true, force: true);
 
-      ToastWidget.show(
-        context: Get.context!,
-        title: "Removed",
-        subtitle: "Video removed successfully",
-        type: ToastType.success,
-      );
+      // ✅ also clear from local storage (appointment specific)
+      final appt = getString("appointmentId", def: "").trim();
+      if (appt.isNotEmpty && appt.toUpperCase() != "N/A") {
+        await saveLocalVideoToStorage(fieldKey, null);
+
+        await _saveFieldToStorage(
+          appointmentId: appt,
+          fieldKey: "${fieldKey}_local_video",
+          value: "",
+        );
+        await _saveFieldToStorage(
+          appointmentId: appt,
+          fieldKey: "${fieldKey}__publicId",
+          value: "",
+        );
+      }
+
+      if (Get.context != null) {
+        ToastWidget.show(
+          context: Get.context!,
+          title: "Removed",
+          subtitle: "Video removed successfully",
+          type: ToastType.success,
+        );
+      }
 
       touch();
     } catch (e) {
+      debugPrint("❌ Error removing video: $e");
       _snackErr("Error removing video: $e");
     }
   }
@@ -3924,6 +4179,59 @@ class CarInspectionStepperController extends GetxController {
     if (v.isEmpty || v == "N/A") return false;
 
     return v.startsWith("http://") || v.startsWith("https://");
+  }
+
+  Future<bool> deleteVideoFromCloudinary({required String publicId}) async {
+    try {
+      final token = await _getBearerToken();
+      if (token.isEmpty) {
+        _snackErr("Token missing");
+        return false;
+      }
+
+      String pid = publicId.trim();
+      if (pid.isEmpty) {
+        _snackErr("Missing publicId");
+        return false;
+      }
+
+      // ✅ decode + remove .mp4 just in case
+      try {
+        pid = Uri.decodeFull(pid);
+      } catch (_) {}
+
+      if (pid.toLowerCase().endsWith(".mp4")) {
+        pid = pid.substring(0, pid.length - 4);
+      }
+
+      final uri = Uri.parse(
+        "https://otobix-app-backend-development.onrender.com/api/inspection/car/delete-video-from-cloudinary",
+      );
+
+      final response = await http.delete(
+        uri,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({"publicId": pid}),
+      );
+
+      debugPrint("🗑️ Delete API status: ${response.statusCode}");
+      debugPrint("🗑️ Delete API body: ${response.body}");
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map && decoded["success"] == true) {
+          return true;
+        }
+      }
+
+      return false;
+    } catch (e) {
+      debugPrint("❌ Delete video error: $e");
+      return false;
+    }
   }
 
   Future<Duration?> getVideoDuration(String videoPath) async {
@@ -3939,129 +4247,191 @@ class CarInspectionStepperController extends GetxController {
     }
   }
 
+  // ✅ NEW: processing state (pick/trim/compress time)
+  // importing getx already in your controller file
+  final RxSet<String> processingFields = <String>{}.obs;
+
+  bool isFieldProcessing(String fieldKey) =>
+      processingFields.contains(fieldKey);
+
+  void setFieldProcessing(String fieldKey, bool value) {
+    if (value) {
+      processingFields.add(fieldKey);
+    } else {
+      processingFields.remove(fieldKey);
+    }
+    touch();
+  }
+
   Future<String?> uploadVideoForField(String fieldKey) async {
+    // ✅ helper: stop processing in any early return
+    void stopProcessing() {
+      if (isFieldProcessing(fieldKey)) {
+        setFieldProcessing(fieldKey, false);
+      }
+    }
+
     final appt = getString("appointmentId", def: "").trim();
     if (appt.isEmpty || appt.toUpperCase() == "N/A") {
       _snackErr("Appointment ID is missing. Please apply a lead first.");
+      stopProcessing();
       return null;
     }
 
     final localPath = getLocalVideo(fieldKey);
     if (localPath == null || localPath.isEmpty) {
       _snackErr("Please select a video for $fieldKey first");
+      stopProcessing();
       return null;
     }
 
-    final duration = await getVideoDuration(localPath);
-    if (duration != null && duration.inSeconds > 60) {
-      _snackErr(
-        "Video duration (${duration.inSeconds}s) exceeds 60 second limit. "
-        "Please select a shorter video.",
-      );
-      return null;
+    // ✅ Skip if already uploaded
+    final existingUrl = getString(fieldKey, def: "").trim();
+    if (existingUrl.isNotEmpty &&
+        (existingUrl.startsWith("http://") ||
+            existingUrl.startsWith("https://"))) {
+      // already uploaded => stop loader
+      stopProcessing();
+      return existingUrl;
     }
 
-    if (isFieldUploading(fieldKey)) return null;
+    if (isFieldUploading(fieldKey)) {
+      // upload already in progress => keep loader on
+      return null;
+    }
 
     try {
       uploadingFields.add(fieldKey);
       touch();
 
-      debugPrint("⬆️ VIDEO UPLOAD START: $fieldKey | appt: $appt");
+      debugPrint("⬆️ AUTO-UPLOAD STARTED: $fieldKey | appt: $appt");
 
-      final videoUrl = await _uploadVideoToCloudinary(
+      final result = await uploadVideoToCloudinary(
         appointmentId: appt,
-        localVideoPath: localPath,
-        fieldKey: fieldKey,
+        videoPath: localPath,
       );
 
-      if (videoUrl != null && videoUrl.isNotEmpty) {
-        debugPrint("✅ VIDEO UPLOAD SUCCESS: $fieldKey | URL: $videoUrl");
+      // ✅ FIX: backend returns optimizedUrl/originalUrl (not "url")
+      final optimizedUrl = (result?["optimizedUrl"] ?? "").toString().trim();
+      final originalUrl = (result?["originalUrl"] ?? "").toString().trim();
+      final fallbackUrl = (result?["url"] ?? "")
+          .toString()
+          .trim(); // compatibility
+      final videoUrl = optimizedUrl.isNotEmpty
+          ? optimizedUrl
+          : (originalUrl.isNotEmpty ? originalUrl : fallbackUrl);
 
-        setString(fieldKey, videoUrl, silent: true, force: true);
+      final publicId = (result?["publicId"] ?? "").toString().trim();
 
-        await _autoSaveField(fieldKey, videoUrl);
-
-        ToastWidget.show(
-          context: Get.context!,
-          title: "Uploaded",
-          subtitle: "Video uploaded successfully",
-          type: ToastType.success,
-        );
-
-        touch();
-        return videoUrl;
-      } else {
+      if (videoUrl.isEmpty) {
         _snackErr("Video upload failed: No URL returned");
         return null;
       }
+
+      // ✅ Save URL + publicId
+      setString(fieldKey, videoUrl, silent: true, force: true);
+
+      if (publicId.isNotEmpty) {
+        setString("${fieldKey}__publicId", publicId, silent: true, force: true);
+      }
+
+      await _autoSaveField(fieldKey, videoUrl);
+      if (publicId.isNotEmpty) {
+        await _autoSaveField("${fieldKey}__publicId", publicId);
+      }
+
+      // ✅ Success toast
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (Get.context != null) {
+          ToastWidget.show(
+            context: Get.context!,
+            title: "Video Uploaded",
+            subtitle: "Video uploaded successfully",
+            type: ToastType.success,
+          );
+        }
+      });
+
+      debugPrint("✅ AUTO-UPLOAD COMPLETE:");
+      debugPrint("   fieldKey: $fieldKey");
+      debugPrint("   url: $videoUrl");
+      debugPrint("   publicId: $publicId");
+
+      touch();
+      return videoUrl;
     } catch (e) {
       _snackErr("Video upload failed: $e");
-      debugPrint("❌ VIDEO UPLOAD FAILED: $fieldKey | $e");
+      debugPrint("❌ AUTO-UPLOAD FAILED: $fieldKey | $e");
       return null;
     } finally {
       uploadingFields.remove(fieldKey);
+
+      // ✅ IMPORTANT: stop processing loader ONLY when upload is done (success/fail)
+      processingFields.remove(fieldKey);
+
       touch();
     }
   }
 
-  Future<String?> _uploadVideoToCloudinary({
+  Future<Map<String, dynamic>?> uploadVideoToCloudinary({
     required String appointmentId,
-    required String localVideoPath,
-    required String fieldKey,
+    required String videoPath,
   }) async {
     try {
-      final hasInternet = await _checkInternetConnection();
-      if (!hasInternet) return null;
-      final uri = Uri.parse(uploadCarVideoUrl);
-      final req = http.MultipartRequest('POST', uri);
-
-      req.fields['appointmentId'] = appointmentId;
-      req.fields['fieldKey'] = fieldKey;
-
       final token = await _getBearerToken();
       if (token.isEmpty) {
-        throw Exception("Token missing (prefs key: token)");
-      }
-      req.headers['Authorization'] = "Bearer $token";
-
-      final videoFile = File(localVideoPath);
-      if (!videoFile.existsSync()) {
-        throw Exception("Video file not found: $localVideoPath");
+        _snackErr("Token missing");
+        return null;
       }
 
-      req.files.add(await http.MultipartFile.fromPath('video', localVideoPath));
+      final uri = Uri.parse(uploadCarVideoUrl);
+      final request = http.MultipartRequest('POST', uri);
 
-      final streamed = await req.send();
-      final body = await streamed.stream.bytesToString();
+      request.headers['Authorization'] = 'Bearer $token';
+      request.fields['appointmentId'] = appointmentId;
 
-      if (streamed.statusCode < 200 || streamed.statusCode >= 300) {
-        throw Exception("HTTP ${streamed.statusCode}: $body");
+      final videoFile = File(videoPath);
+      if (!await videoFile.exists()) {
+        _snackErr("Video file not found");
+        return null;
       }
 
-      final decoded = jsonDecode(body);
-      if (decoded is! Map<String, dynamic>) {
-        throw Exception("Invalid response");
+      final multipartFile = await http.MultipartFile.fromPath(
+        'video',
+        videoPath,
+      );
+      request.files.add(multipartFile);
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+
+        if (decoded is Map<String, dynamic> && decoded['success'] == true) {
+          final original = decoded['originalUrl']?.toString() ?? '';
+          final optimized = decoded['optimizedUrl']?.toString() ?? '';
+
+          return {
+            'publicId': decoded['publicId']?.toString() ?? '',
+            'originalUrl': original,
+            'optimizedUrl': optimized,
+
+            // ✅ compatibility key
+            'url': optimized.isNotEmpty ? optimized : original,
+
+            'success': true,
+          };
+        }
       }
 
-      final ok = decoded["success"] == true;
-      if (!ok) {
-        throw Exception(decoded["message"]?.toString() ?? "Upload failed");
-      }
-
-      final videoUrl = (decoded["optimizedUrl"] ?? decoded["originalUrl"] ?? "")
-          .toString();
-
-      if (videoUrl.isEmpty) {
-        throw Exception(
-          "No video URL returned (expected optimizedUrl/originalUrl)",
-        );
-      }
-
-      return videoUrl;
+      debugPrint(
+        "❌ Video upload failed ${response.statusCode}: ${response.body}",
+      );
+      return null;
     } catch (e) {
-      debugPrint("❌ VIDEO UPLOAD ERROR: $e");
-      rethrow;
+      debugPrint("❌ Video upload error: $e");
+      return null;
     }
   }
 

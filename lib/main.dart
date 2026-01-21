@@ -5,6 +5,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 
 import 'package:otobix_inspection_app/Screens/dashboard_screen.dart';
 import 'package:otobix_inspection_app/Screens/login_screen.dart';
+import 'package:otobix_inspection_app/Services/notification_Service.dart';
 import 'package:otobix_inspection_app/Services/socket_service.dart';
 import 'package:otobix_inspection_app/constants/app_colors.dart';
 import 'package:otobix_inspection_app/constants/app_urls.dart';
@@ -57,17 +58,19 @@ class MyApp extends StatelessWidget {
       child: home,
     );
   }
-}
+} 
 
 Future<Widget> init() async {
   Get.config(enableLog: false);
+
+  await NotificationService.instance.init();
 
   await SharedPrefsHelper.init();
 
   final userId = await SharedPrefsHelper.getString(SharedPrefsHelper.userIdKey);
 
   if (userId != null && userId.isNotEmpty) {
-    // await NotificationService.instance.login(userId);
+    await NotificationService.instance.login(userId);
   }
 
   // Initialize socket globally

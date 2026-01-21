@@ -1,0 +1,68 @@
+# .github/workflows/build_android.yml
+
+name: Deploy Android App to Play Store
+
+on:
+  push:
+    branches:
+      - main
+      # - development
+
+jobs:
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      # Checkout code
+      - uses: actions/checkout@v4
+
+      # Setup Flutter
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.35.2" # change to your version
+
+      # Install dependencies
+      - run: flutter pub get
+
+      # Decode keystore from secret
+      - name: Decode Keystore
+        run: |
+          echo "${{ secrets.KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+          cat > android/key.properties <<EOL
+          storePassword=${{ secrets.KEYSTORE_PASSWORD }}
+          keyPassword=${{ secrets.KEY_PASSWORD }}
+          keyAlias=${{ secrets.KEY_ALIAS }}
+          storeFile=upload-keystore.jks
+          EOL
+
+      # Build signed App Bundle
+      - run: flutter build appbundle --release
+
+ # Upload AAB artifact so deploy job can use it
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
+  deploy-android:
+    name: Deploy Android App to Play Store
+    needs: build-android
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+ # Download the .aab from build job
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-aab
+          path: build/app/outputs/bundle/release/
+
+      # Deploy to Play Store
+      - uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_STORE_SERVICE_ACCOUNT }}
+          packageName: com.otobix.inspectionapp
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal   # can be internal, alpha, beta, production
+          # status: completed
+          status: draft  # ← CHANGE THIS TO 'completed' WHEN RELEASING THE APP TO PRODUCTION

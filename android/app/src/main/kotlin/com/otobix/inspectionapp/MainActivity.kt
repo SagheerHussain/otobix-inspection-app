@@ -1,4 +1,4 @@
-package com.otobix.inspection_app
+package com.otobix.inspectionapp
 
 import io.flutter.embedding.android.FlutterActivity
 

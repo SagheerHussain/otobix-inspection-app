@@ -1,0 +1,12 @@
+# fastlane/Appfile
+app_identifier "com.otobix.inspectionapp"  
+apple_id "parekhamit@hotmail.com"                
+
+# Optional but helpful if you’re in multiple teams:
+team_id "734JT7MU9R"
+# itc_team_id "123456789"
+
+
+
+# For more information about the Appfile, see:
+#     https://docs.fastlane.tools/advanced/#appfile

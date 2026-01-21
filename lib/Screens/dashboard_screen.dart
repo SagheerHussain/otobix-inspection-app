@@ -192,7 +192,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Center(
                     child: _EmptyStatePro(
-                      title: "No Data yet",
+                      title: "No Leads Assigned",
                       onPrimary: () => controller.getInspectionList(),
                     ),
                   ),

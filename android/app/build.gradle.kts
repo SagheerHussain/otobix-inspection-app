@@ -1,3 +1,8 @@
+// Added by Ahsan
+import java.util.Properties
+import java.io.FileInputStream
+//////////
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -5,8 +10,16 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Added by Ahsan
+val keystoreProperties = Properties()
+val keystorePropertiesFile = rootProject.file("key.properties")
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+}
+///////////
+
 android {
-    namespace = "com.otobix.inspection_app"
+    namespace = "com.otobix.inspectionapp"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,16 +33,30 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.otobix.inspection_app"
+        applicationId = "com.otobix.inspectionapp"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    // Added by Ahsan
+    signingConfigs {
+        create("release") {
+            keyAlias = keystoreProperties["keyAlias"] as String
+            keyPassword = keystoreProperties["keyPassword"] as String
+            storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+            storePassword = keystoreProperties["storePassword"] as String
+        }
+    }
+    //////////
+
     buildTypes {
         release {
+            // Added by Ahsan
             signingConfig = signingConfigs.getByName("debug")
+            ////////////
+            signingConfig = signingConfigs.getByName("release")
         }
     }
 }

@@ -4100,7 +4100,7 @@ class InteriorElectronicsStep extends StatelessWidget {
                   context: context,
                   c: c,
                   keyName: "thirdRowSeats",
-                  label: "Third Row Seats Condition",
+                  label: "Third Row Seats",
                   hint: "Third Row Seats",
                   icon: Icons.event_seat_outlined,
                   items: okIssue,
