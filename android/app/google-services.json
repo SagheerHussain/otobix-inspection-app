@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "845981097587",
+    "project_id": "otobix-auction-app-final",
+    "storage_bucket": "otobix-auction-app-final.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:845981097587:android:cc20217a520b5848b49406",
+        "android_client_info": {
+          "package_name": "com.otobix.auctionapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOCTtoWbgDuXaVZFyrTBXlN1_oTj8x6DE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:845981097587:android:0a0191fe210b4b08b49406",
+        "android_client_info": {
+          "package_name": "com.otobix.customerapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOCTtoWbgDuXaVZFyrTBXlN1_oTj8x6DE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:845981097587:android:3d0be95962d2d8b0b49406",
+        "android_client_info": {
+          "package_name": "com.otobix.inspectionapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOCTtoWbgDuXaVZFyrTBXlN1_oTj8x6DE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
