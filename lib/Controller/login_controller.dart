@@ -1,7 +1,10 @@
 import 'dart:convert';
+
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'package:otobix_inspection_app/Screens/dashboard_screen.dart';
 import 'package:otobix_inspection_app/Services/api_services.dart';
 import 'package:otobix_inspection_app/Services/notification_Service.dart';
@@ -27,7 +30,6 @@ class LoginController extends GetxController {
   Future<bool> _checkInternetConnection() async {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
-
       final isConnected = connectivityResult != ConnectivityResult.none;
 
       if (!isConnected) {
@@ -41,11 +43,24 @@ class LoginController extends GetxController {
         }
         return false;
       }
-
       return true;
     } catch (e) {
       debugPrint("❌ Internet check error: $e");
       return false;
+    }
+  }
+
+  // ✅ DEBUG: FCM token check (same as OneSignal issue diagnose)
+  Future<void> _debugFcmToken({String from = ""}) async {
+    try {
+      final settings =
+          await FirebaseMessaging.instance.getNotificationSettings();
+      debugPrint("📩 FCM[$from] permission = ${settings.authorizationStatus}");
+
+      final fcmToken = await FirebaseMessaging.instance.getToken();
+      debugPrint("📩 FCM[$from] token = $fcmToken");
+    } catch (e) {
+      debugPrint("❌ FCM[$from] getToken error: $e");
     }
   }
 
@@ -55,8 +70,9 @@ class LoginController extends GetxController {
     try {
       final hasInternet = await _checkInternetConnection();
       if (!hasInternet) return;
-      String dealerName = userNameController.text.trim();
-      String contactNumber = phoneNumberController.text.trim();
+
+      final String dealerName = userNameController.text.trim();
+      final String contactNumber = phoneNumberController.text.trim();
 
       final requestBody = {
         "userName": dealerName,
@@ -84,9 +100,10 @@ class LoginController extends GetxController {
         final approvalStatus = user['approvalStatus'];
         final entityType = (user['entityType'] ?? "").toString();
         final phonenumber = (user['phoneNumber']).toString();
+
         print(phonenumber);
 
-        // ✅ username from API (example: "arshadnasir")
+        // ✅ username from API
         final apiUserName = (user['userName'] ?? "").toString();
 
         print(token);
@@ -95,7 +112,28 @@ class LoginController extends GetxController {
         print(userId);
         print(approvalStatus);
         print(entityType);
+        print("userid $userId");
         print("API userName: $apiUserName");
+
+        // ✅ DEBUG: check FCM token BEFORE OneSignal login (to verify FIS/FCM is working)
+        await _debugFcmToken(from: "before_onesignal_login");
+
+        // ✅ Ensure OneSignal init first (safe even if already inited)
+        // await NotificationService.instance.init();
+        // await NotificationService.instance.debugPrintState(
+        //   from: "login_before_onesignal_login",
+        // );
+
+        // ✅ OneSignal login (external_id attach)
+        await NotificationService.instance.login(userId);
+        // await NotificationService.instance.debugPrintState(
+          // from: "login_after_onesignal_login",
+        // );
+
+        // ✅ DEBUG: check FCM token AFTER OneSignal login
+        await _debugFcmToken(from: "after_onesignal_login");
+
+        print("Notification service initialized");
 
         if (approvalStatus == AppConstants.roles.userStatusApproved) {
           await SharedPrefsHelper.saveString(SharedPrefsHelper.tokenKey, token);
@@ -105,16 +143,22 @@ class LoginController extends GetxController {
           SharedPrefsHelper.userKey,
           jsonEncode(user),
         );
+
         await SharedPrefsHelper.saveString(
           SharedPrefsHelper.phoneNumberKey,
           phonenumber,
         );
 
-        await SharedPrefsHelper.saveString(SharedPrefsHelper.userIdKey, userId);
+        await SharedPrefsHelper.saveString(
+          SharedPrefsHelper.userIdKey,
+          userId,
+        );
+
         await SharedPrefsHelper.saveString(
           SharedPrefsHelper.userTypeKey,
           userType,
         );
+
         await SharedPrefsHelper.saveString(
           SharedPrefsHelper.entityTypeKey,
           entityType,
@@ -124,10 +168,12 @@ class LoginController extends GetxController {
           SharedPrefsHelper.userNameKey,
           apiUserName,
         );
+
         print("Saved username: $apiUserName");
+
         if (approvalStatus == AppConstants.roles.userStatusPending) {
-          final String? trimmedEntityType = (user['entityType'] as String?)
-              ?.trim();
+          final String? trimmedEntityType =
+              (user['entityType'] as String?)?.trim();
 
           ToastWidget.show(
             context: Get.context!,
@@ -135,12 +181,11 @@ class LoginController extends GetxController {
             type: ToastType.error,
           );
 
-          final entityDocuments = await _fetchEntityDocuments(
-            trimmedEntityType,
-          );
+          final entityDocuments = await _fetchEntityDocuments(trimmedEntityType);
           debugPrint("Pending documents: $entityDocuments");
         } else if (approvalStatus == AppConstants.roles.userStatusApproved) {
-          Get.to(DashboardScreen());
+          // ✅ navigate (aap ne pehle comment kiya hua tha)
+          // Get.to(DashboardScreen());
         } else {
           ToastWidget.show(
             context: Get.context!,

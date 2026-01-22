@@ -50,18 +50,18 @@ class AppConstants {
   static const _localConfiguration = _EnvConfig(
     deploymentEnvironmentName: 'local',
     renderBaseUrl: 'http://192.168.100.99:4000/api/',
-    oneSignalAppId: 'a6697fe1-be34-420f-9aa7-1fa369e1b07c',
+    oneSignalAppId: '00fc519e-1881-4ec2-b806-f1a094cdbb74',
   );
   static const _devConfiguration = _EnvConfig(
     deploymentEnvironmentName: 'dev',
     renderBaseUrl: 'https://otobix-app-backend-development.onrender.com/api/',
-    oneSignalAppId: 'a6697fe1-be34-420f-9aa7-1fa369e1b07c',
+    oneSignalAppId: '00fc519e-1881-4ec2-b806-f1a094cdbb74',
   );
   static const _prodConfiguration = _EnvConfig(
     deploymentEnvironmentName: 'prod',
     // renderBaseUrl: 'https://otobix-app-backend-rq8m.onrender.com/api/',
     renderBaseUrl: 'https://ob-dealerapp-kong.onrender.com/api/',
-    oneSignalAppId: 'a6697fe1-be34-420f-9aa7-1fa369e1b07c',
+    oneSignalAppId: '00fc519e-1881-4ec2-b806-f1a094cdbb74',
   );
   static _EnvConfig get env =>
       deploymentEnvironment == DeploymentEnvironment.prod

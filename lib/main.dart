@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -11,29 +13,61 @@ import 'package:otobix_inspection_app/constants/app_colors.dart';
 import 'package:otobix_inspection_app/constants/app_urls.dart';
 import 'package:otobix_inspection_app/helpers/sharedpreference_helper.dart';
 
-void main() async {
+
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final Widget start = await init();
+
+  // ✅ Firebase init (important when firebase_messaging is in deps)
+  // await Firebase.initializeApp(
+  //   options: DefaultFirebaseOptions.currentPlatform,
+    
+  // );
+
+  Get.config(enableLog: false);
+
+
+  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
+  await SharedPrefsHelper.init();
+
+  final token = await SharedPrefsHelper.getString(SharedPrefsHelper.tokenKey);
+  final userId = await SharedPrefsHelper.getString(SharedPrefsHelper.userIdKey);
+
+
+  final bool isLoggedIn = (token != null && token.isNotEmpty);
+  final Widget start = isLoggedIn ? DashboardScreen() : LoginPage();
+
+  
+  SocketService.instance.initSocket(AppUrls.socketBaseUrl);
+
+
+  // ✅ Init OneSignal
+  await NotificationService.instance.init();
+    await NotificationService.instance.login(userId ?? '');
+
+  // ✅ Link external user id only if logged-in
+  if (isLoggedIn && userId != null && userId.isNotEmpty) {
+    await NotificationService.instance.login(userId);
+  } else {
+    debugPrint("🔔 OneSignal[main] skipped login (not logged in)");
+  }
+
+
+
   runApp(MyApp(home: start));
+
 }
 
 class MyApp extends StatelessWidget {
   final Widget home;
-
   const MyApp({super.key, required this.home});
 
   @override
   Widget build(BuildContext context) {
     return ScreenUtilInit(
-      // ✅ apne UI design ke base par set karo
-      // Agar apka Figma/Design 390x844 hai to ye perfect hai
       designSize: const Size(390, 844),
-
       minTextAdapt: true,
-
-      // ✅ split screen support (tabs etc.)
       splitScreenMode: true,
-
       builder: (context, child) {
         return GetMaterialApp(
           navigatorKey: Get.key,
@@ -53,38 +87,7 @@ class MyApp extends StatelessWidget {
           home: child,
         );
       },
-
-      // ✅ yahan apka start widget pass hoga (login/dashboard)
       child: home,
     );
   }
-} 
-
-Future<Widget> init() async {
-  Get.config(enableLog: false);
-
-  await NotificationService.instance.init();
-
-  await SharedPrefsHelper.init();
-
-  final userId = await SharedPrefsHelper.getString(SharedPrefsHelper.userIdKey);
-
-  if (userId != null && userId.isNotEmpty) {
-    await NotificationService.instance.login(userId);
-  }
-
-  // Initialize socket globally
-  SocketService.instance.initSocket(AppUrls.socketBaseUrl);
-
-  await SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
-
-  final token = await SharedPrefsHelper.getString(SharedPrefsHelper.tokenKey);
-
-  Widget start = LoginPage();
-
-  if (token != null && token.isNotEmpty) {
-    start = DashboardScreen();
-  }
-
-  return start;
 }
