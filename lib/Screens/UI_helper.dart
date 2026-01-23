@@ -563,10 +563,6 @@ InputDecoration _fieldDecoration({
     ),
   );
 }
-
-// =====================================================
-// ✅ Modern TextField (same as your code)
-// =====================================================
 class _ModernTextField extends StatefulWidget {
   final String label;
   final String hint;
@@ -598,48 +594,171 @@ class _ModernTextField extends StatefulWidget {
 }
 
 class _ModernTextFieldState extends State<_ModernTextField> {
-  late TextEditingController _controller;
+  // ✅ Cache to prevent controller/focus recreating on rebuild
+  static final Map<String, TextEditingController> _controllerCache = {};
+  static final Map<String, FocusNode> _focusCache = {};
+  static final Map<String, int> _refCount = {};
+  static final Map<String, int> _disposeToken = {};
+
+  late final String _cacheKey;
+
+  late final TextEditingController _controller;
+  late final FocusNode _focusNode;
+
+  // ✅ Guard: keyboard open then immediate close -> auto refocus
+  DateTime? _lastTapAt;
+  bool _userInitiatedFocus = false;
+
+  String _makeKey() {
+    // keep stable key; no changes needed where you use it
+    return '${widget.label}__${widget.hint}__${widget.icon.codePoint}';
+  }
+
+  void _safeRefocusIfNeeded() {
+    if (!mounted) return;
+    if (!widget.enabled || widget.readOnly) return;
+
+    final t = _lastTapAt;
+    if (t == null) return;
+
+    final ms = DateTime.now().difference(t).inMilliseconds;
+
+    // ✅ if focus dropped right after tap, force it back
+    if (!_focusNode.hasFocus && ms <= 600) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (!widget.enabled || widget.readOnly) return;
+        if (!_focusNode.hasFocus) _focusNode.requestFocus();
+      });
+    }
+  }
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: widget.initialValue ?? '');
+
+    _cacheKey = _makeKey();
+    _refCount[_cacheKey] = (_refCount[_cacheKey] ?? 0) + 1;
+
+    // ✅ controller reuse/create
+    final existingC = _controllerCache[_cacheKey];
+    if (existingC != null) {
+      _controller = existingC;
+
+      // if controller is empty but we got initialValue, set it once
+      final incoming = widget.initialValue ?? '';
+      if (_controller.text.isEmpty && incoming.isNotEmpty) {
+        _controller.text = incoming;
+        _controller.selection = TextSelection.collapsed(offset: incoming.length);
+      }
+    } else {
+      _controller = TextEditingController(text: widget.initialValue ?? '');
+      _controllerCache[_cacheKey] = _controller;
+    }
+
+    // ✅ focus reuse/create
+    _focusNode = _focusCache[_cacheKey] ?? FocusNode();
+    _focusCache[_cacheKey] = _focusNode;
+
+    // ✅ Listener: if external code unfocuses right after tap, refocus
+    _focusNode.addListener(() {
+      if (!_focusNode.hasFocus && _userInitiatedFocus) {
+        _safeRefocusIfNeeded();
+      }
+      if (_focusNode.hasFocus) {
+        _userInitiatedFocus = true;
+      }
+    });
   }
 
   @override
   void didUpdateWidget(_ModernTextField oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (widget.initialValue != oldWidget.initialValue &&
-        widget.initialValue != _controller.text) {
-      _controller.text = widget.initialValue ?? '';
+
+    final newText = widget.initialValue ?? '';
+    final oldText = _controller.text;
+
+    // ✅ KEY FIX: focused ho to text forcefully sync mat karo (warna focus/keyboard drop hota hai)
+    if (_focusNode.hasFocus) return;
+
+    if (newText != oldWidget.initialValue && newText != oldText) {
+      _controller.value = _controller.value.copyWith(
+        text: newText,
+        selection: TextSelection.collapsed(offset: newText.length),
+        composing: TextRange.empty,
+      );
     }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    // ✅ reference count based disposal (safe in lists/stepper rebuilds)
+    _refCount[_cacheKey] = (_refCount[_cacheKey] ?? 1) - 1;
+
+    final token = (_disposeToken[_cacheKey] ?? 0) + 1;
+    _disposeToken[_cacheKey] = token;
+
+    Future.delayed(const Duration(milliseconds: 700), () {
+      if (_disposeToken[_cacheKey] != token) return;
+
+      final count = _refCount[_cacheKey] ?? 0;
+      if (count <= 0) {
+        final c = _controllerCache.remove(_cacheKey);
+        final f = _focusCache.remove(_cacheKey);
+        _refCount.remove(_cacheKey);
+        _disposeToken.remove(_cacheKey);
+
+        c?.dispose();
+        f?.dispose();
+      }
+    });
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 14),
       child: TextFormField(
         controller: _controller,
+        focusNode: _focusNode,
         keyboardType: widget.keyboardType,
         readOnly: widget.readOnly,
         enabled: widget.enabled,
+        autofocus: false,
+
+        // ✅ makes bottom fields scroll above keyboard instead of losing focus
+        scrollPadding: EdgeInsets.only(bottom: bottomInset + 160),
+
+        // ✅ Strong: register tap time and ensure focus stays
+        onTap: () {
+          if (!widget.enabled || widget.readOnly) return;
+          _lastTapAt = DateTime.now();
+          _userInitiatedFocus = true;
+
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            if (!_focusNode.hasFocus) _focusNode.requestFocus();
+          });
+        },
+
+        // ✅ Flutter 3.3+ - keep safe (won't dismiss keyboard on outside)
+        onTapOutside: (_) {},
+
         onChanged: (v) {
           if (!widget.enabled || widget.readOnly) return;
           widget.onChanged(v);
         },
+
         validator: (v) {
           if (!widget.requiredField) return null;
-          if (v == null || v.trim().isEmpty)
-            return 'Please enter ${widget.label}';
+          if (v == null || v.trim().isEmpty) return 'Please enter ${widget.label}';
           return null;
         },
+
         cursorColor: AppColor.fieldIcon,
         decoration: _fieldDecoration(
           label: widget.label,

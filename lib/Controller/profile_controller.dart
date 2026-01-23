@@ -1,14 +1,20 @@
 import 'dart:convert';
+
 import 'package:get/get.dart';
 import 'package:http/http.dart' as http;
+import 'package:otobix_inspection_app/Controller/login_controller.dart';
+import 'package:otobix_inspection_app/Screens/login_screen.dart';
+import 'package:otobix_inspection_app/Services/notification_Service.dart';
 import 'package:otobix_inspection_app/helpers/sharedpreference_helper.dart';
 import 'package:otobix_inspection_app/models/profile_model.dart';
+import 'package:otobix_inspection_app/widgets/toast_widget.dart';
 
 class ProfileController extends GetxController {
   final String profileUrl =
       "https://otobix-app-backend-development.onrender.com/api/user/user-profile";
 
   final isLoading = false.obs;
+  final logoutloading = false.obs;
   final error = ''.obs;
   final profile = Rxn<ProfileModel>();
 
@@ -18,7 +24,6 @@ class ProfileController extends GetxController {
     fetchProfile();
   }
 
-  // ✅ Simple: token get + clean in one place
   Future<String> _getToken() async {
     final raw = await SharedPrefsHelper.getString(SharedPrefsHelper.tokenKey);
     if (raw == null) return "";
@@ -38,6 +43,85 @@ class ProfileController extends GetxController {
     return t;
   }
 
+  Future<String> _getUserId() async {
+    final id = await SharedPrefsHelper.getString(SharedPrefsHelper.userIdKey);
+    return id ?? "";
+  }
+
+  Future<void> logout() async {
+    try {
+      logoutloading.value = true;
+
+      final token = await _getToken(); // ✅ await
+      final userId = await _getUserId();
+
+      print("Token: $token");
+      print("User ID: $userId");
+
+      if (token.isEmpty || userId.isEmpty) {
+        ToastWidget.show(
+          context: Get.context!,
+          title: "Logout Error",
+          subtitle: "Session expired. Please login again.",
+          type: ToastType.error,
+        );
+        return;
+      }
+
+      final url =
+          "https://otobix-app-backend-development.onrender.com/api/user/logout/$userId";
+
+      final res = await http.post(
+        Uri.parse(url),
+        headers: {
+          "Authorization": "Bearer $token",
+          "Accept": "application/json",
+        },
+      );
+
+      print("LOGOUT STATUS => ${res.statusCode}");
+      print("LOGOUT BODY => ${res.body}");
+
+      if (res.statusCode == 200) {
+        // ✅ OneSignal logout (recommended)
+        await NotificationService.instance.logout();
+
+        // ✅ Clear all saved session/user info
+        await SharedPrefsHelper.remove(SharedPrefsHelper.tokenKey);
+        await SharedPrefsHelper.remove(SharedPrefsHelper.userIdKey);
+        await SharedPrefsHelper.remove(SharedPrefsHelper.userKey);
+        await SharedPrefsHelper.remove(SharedPrefsHelper.phoneNumberKey);
+        await SharedPrefsHelper.remove(SharedPrefsHelper.userTypeKey);
+        await SharedPrefsHelper.remove(SharedPrefsHelper.entityTypeKey);
+        await SharedPrefsHelper.remove(SharedPrefsHelper.userNameKey);
+
+        // ✅ MOST IMPORTANT: remove LoginController so next time fresh controller is created
+        if (Get.isRegistered<LoginController>()) {
+          final lc = Get.find<LoginController>();
+          lc.clearFields();
+          Get.delete<LoginController>(force: true);
+        }
+
+        // ✅ Optional: remove ProfileController too
+        Get.delete<ProfileController>(force: true);
+
+        // ✅ Go to login
+        Get.offAll(() => LoginPage());
+      } else {
+        ToastWidget.show(
+          context: Get.context!,
+          title: "Logout Failed",
+          subtitle: "Unable to logout. Please try again.",
+          type: ToastType.error,
+        );
+      }
+    } catch (e) {
+      print("LOGOUT ERROR => $e");
+    } finally {
+      logoutloading.value = false;
+    }
+  }
+
   Future<void> fetchProfile() async {
     try {
       isLoading.value = true;
@@ -55,7 +139,7 @@ class ProfileController extends GetxController {
         Uri.parse(profileUrl),
         headers: {
           "Accept": "application/json",
-          "Authorization": "Bearer $token", // ✅ token used here
+          "Authorization": "Bearer $token",
         },
       );
 
@@ -92,13 +176,17 @@ class ProfileController extends GetxController {
   // helpers
   String get displayName =>
       profile.value?.name.isNotEmpty == true ? profile.value!.name : "—";
+
   String get displayEmail =>
       profile.value?.email.isNotEmpty == true ? profile.value!.email : "—";
+
   String get displayPhone => profile.value?.phoneNumber.isNotEmpty == true
       ? profile.value!.phoneNumber
       : "—";
+
   String get displayRole =>
       profile.value?.role.isNotEmpty == true ? profile.value!.role : "—";
+
   String get displayLocation => profile.value?.location.isNotEmpty == true
       ? profile.value!.location
       : "—";

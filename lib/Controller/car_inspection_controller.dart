@@ -26,6 +26,17 @@ class CarInspectionStepperController extends GetxController {
   final RxInt uiTick = 0.obs;
   void touch() => uiTick.value++;
 
+
+// ✅ add near your _tcs map
+final Map<String, FocusNode> _fns = {};
+
+FocusNode fn(String key) {
+  if (_fns.containsKey(key)) return _fns[key]!;
+  final node = FocusNode();
+  _fns[key] = node;
+  return node;
+}
+
   final RxBool rcFetchLoading = false.obs;
   final RxBool submitLoading = false.obs;
   final RxMap<String, String?> pendingPickedVideos = <String, String?>{}.obs;
@@ -2071,15 +2082,24 @@ class CarInspectionStepperController extends GetxController {
     }
   }
 
-  @override
-  void onClose() {
-    dashboardSearchCtrl.dispose();
-    for (final c in _tcs.values) {
-      c.dispose();
-    }
-    _tcs.clear();
-    super.onClose();
+@override
+void onClose() {
+  dashboardSearchCtrl.dispose();
+
+  for (final c in _tcs.values) {
+    c.dispose();
   }
+  _tcs.clear();
+
+  // ✅ dispose focus nodes
+  for (final f in _fns.values) {
+    f.dispose();
+  }
+  _fns.clear();
+
+  super.onClose();
+}
+
 
   void _seedDefaults() {
     setString("appointmentId", "N/A", silent: true);

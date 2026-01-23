@@ -8,84 +8,78 @@ class NotificationService {
 
   bool _inited = false;
 
-Future<void> init() async {
-  if (_inited) return;
+  // ✅ Store last external id locally for debug
+  String? _lastExternalId;
 
-  OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
-
-  OneSignal.initialize(AppConstants.oneSignalAppId);
-
-  OneSignal.User.pushSubscription.addObserver((state) {
-    debugPrint("🔔 pushSubscription:"
-        " optedIn=${state.current.optedIn}"
-        " token=${state.current.token}"
-        " id=${state.current.id}");
-  });
-
-  final granted = await OneSignal.Notifications.requestPermission(true);
-  debugPrint("🔔 OneSignal permission granted = $granted");
-
-  if (granted) {
-    OneSignal.User.pushSubscription.optIn();
-  }
-
-  // Re-check after a short delay (FCM token can arrive a moment later)
-  Future.delayed(const Duration(seconds: 3), () {
-    final t = OneSignal.User.pushSubscription.token;
-    final id = OneSignal.User.pushSubscription.id;
-    debugPrint("🔁 After 3s: token=$t id=$id");
-  });
-
-  _inited = true;
-}
-
-  /// 1) Init OneSignal with your App ID and ask for permission
-  Future<void> init1() async {
+  Future<void> init() async {
     if (_inited) return;
 
-    OneSignal.initialize(AppConstants.oneSignalAppId); // start SDK
-    await OneSignal.Notifications.requestPermission(true); // show OS prompt
+    OneSignal.Debug.setLogLevel(OSLogLevel.verbose);
 
-    // When a notification arrives in foreground: just show it
+    OneSignal.initialize(AppConstants.oneSignalAppId);
+
+    final granted = await OneSignal.Notifications.requestPermission(true);
+    debugPrint("🔔 OneSignal permission granted = $granted");
+
+    OneSignal.User.pushSubscription.optIn();
+
     OneSignal.Notifications.addForegroundWillDisplayListener((event) {
-      // Only call this if you want to stop the default auto-display:
       event.preventDefault();
-
-      // v5: display the SAME notification object
       event.notification.display();
     });
 
-    // When the user taps a notification
     OneSignal.Notifications.addClickListener((event) {
-      // Navigate to specific screen when notification is clicked
-      final Map<String, dynamic> data = Map<String, dynamic>.from(
+      final data = Map<String, dynamic>.from(
         event.notification.additionalData ?? {},
       );
-
-      // If your splash does async work, deferring avoids navigator race conditions:
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        debugPrint('Notification Tapped: ${data.toString()}');
-        // NotificationRouter.go(data);
+        debugPrint('🔔 Notification Tapped: ${data.toString()}');
       });
+    });
+
+    OneSignal.User.pushSubscription.addObserver((state) {
+      debugPrint("🔔 PushSubscription changed:");
+      debugPrint("   optIn=${state.current.optedIn}");
+      debugPrint("   id=${state.current.id}");
+      debugPrint("   token=${state.current.token}");
     });
 
     _inited = true;
   }
 
-  /// 2) Link this device to YOUR user id (so server can target them)
   Future<void> login(String mongoUserId) async {
-    final externalUserId = AppConstants.externalIdForNotifications(
-      mongoUserId,
-    ); // "dev:<id>" or "prod:<id>"
+    if (mongoUserId.trim().isEmpty) {
+      debugPrint("🔔 OneSignal.login skipped (empty userId)");
+      return;
+    }
+
+    final externalUserId = AppConstants.externalIdForNotifications(mongoUserId);
+    _lastExternalId = externalUserId; // ✅ save for debug
+
     await OneSignal.login(externalUserId);
-    await OneSignal.User.addTagWithKey(
-      "env",
-      AppConstants.envName,
-    ); // "dev"|"prod"
+    await OneSignal.User.addTagWithKey("env", AppConstants.envName);
+
+    debugPrint("🔔 OneSignal logged in as externalId=$externalUserId");
   }
 
-  /// 3) unlink the device from the current user (call on sign-out)
   Future<void> logout() async {
+    _lastExternalId = null;
     await OneSignal.logout();
+  }
+
+  Future<void> debugPrintState({String from = ""}) async {
+    try {
+      final permission = OneSignal.Notifications.permission;
+      final sub = OneSignal.User.pushSubscription;
+
+      debugPrint("🔎 OneSignalState[$from]");
+      debugPrint("   permission=$permission");
+      debugPrint("   optedIn=${sub.optedIn}");
+      debugPrint("   subId=${sub.id}");
+      debugPrint("   token=${sub.token}");
+      debugPrint("   externalId=$_lastExternalId"); // ✅ fixed
+    } catch (e) {
+      debugPrint("❌ OneSignal debugPrintState error: $e");
+    }
   }
 }

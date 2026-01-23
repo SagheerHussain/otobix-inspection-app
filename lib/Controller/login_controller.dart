@@ -27,6 +27,15 @@ class LoginController extends GetxController {
   final phoneNumberController = TextEditingController();
   final passwordController = TextEditingController();
 
+  // ✅ IMPORTANT: dispose controllers when LoginController removed from memory
+  @override
+  void onClose() {
+    userNameController.dispose();
+    phoneNumberController.dispose();
+    passwordController.dispose();
+    super.onClose();
+  }
+
   Future<bool> _checkInternetConnection() async {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
@@ -115,20 +124,11 @@ class LoginController extends GetxController {
         print("userid $userId");
         print("API userName: $apiUserName");
 
-        // ✅ DEBUG: check FCM token BEFORE OneSignal login (to verify FIS/FCM is working)
+        // ✅ DEBUG: check FCM token BEFORE OneSignal login
         await _debugFcmToken(from: "before_onesignal_login");
-
-        // ✅ Ensure OneSignal init first (safe even if already inited)
-        // await NotificationService.instance.init();
-        // await NotificationService.instance.debugPrintState(
-        //   from: "login_before_onesignal_login",
-        // );
 
         // ✅ OneSignal login (external_id attach)
         await NotificationService.instance.login(userId);
-        // await NotificationService.instance.debugPrintState(
-          // from: "login_after_onesignal_login",
-        // );
 
         // ✅ DEBUG: check FCM token AFTER OneSignal login
         await _debugFcmToken(from: "after_onesignal_login");
@@ -171,6 +171,8 @@ class LoginController extends GetxController {
 
         print("Saved username: $apiUserName");
 
+        Get.offAll(() => DashboardScreen());
+
         if (approvalStatus == AppConstants.roles.userStatusPending) {
           final String? trimmedEntityType =
               (user['entityType'] as String?)?.trim();
@@ -184,8 +186,7 @@ class LoginController extends GetxController {
           final entityDocuments = await _fetchEntityDocuments(trimmedEntityType);
           debugPrint("Pending documents: $entityDocuments");
         } else if (approvalStatus == AppConstants.roles.userStatusApproved) {
-          // ✅ navigate (aap ne pehle comment kiya hua tha)
-          // Get.to(DashboardScreen());
+          // approved
         } else {
           ToastWidget.show(
             context: Get.context!,
