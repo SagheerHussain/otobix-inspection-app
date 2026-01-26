@@ -54,6 +54,12 @@ String normalizeInspectionStatus(String? raw) {
   if (s == 're scheduled') s = 're-scheduled';
   if (s == 'cancelled') s = 'canceled';
 
+  // ✅ UPDATE THIS
+  if (s == 're-inspection') return 're-inspection'; // Exact match
+  if (s.contains('re-inspection')) return 're-inspection';
+  if (s.contains('reinspection')) return 're-inspection';
+  if (s.contains('re inspection')) return 're-inspection';
+
   if (s.contains('cancel')) return 'canceled';
   if (s.contains('inspect')) return 'inspected';
   if (s.contains('running')) return 'running';
@@ -71,6 +77,7 @@ String prettyStatusLabelFromRaw(String? raw) {
   if (n == 're-scheduled') return 'Re-Scheduled';
   if (n == 'running') return 'Running';
   if (n == 'inspected') return 'Inspected';
+  if (n == 're-inspection') return 'Re-Inspection'; // ✅ ADD THIS
   return (raw ?? '').trim().isEmpty ? 'Scheduled' : raw!.trim();
 }
 
@@ -124,13 +131,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return "Good Night!";
   }
 
-  static const _uiToController = <int>[1, 0, 2, 3, 4];
+  static const _uiToController = <int>[1, 0, 2, 3, 4, 5];
   static const _uiLabels = <String>[
     "Scheduled",
     "Canceled",
     "Re-Scheduled",
     "Running",
     "Inspected",
+    "Re-Inspection",
   ];
 
   int _controllerToUi(int ctrlIdx) {
@@ -149,6 +157,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     if (ctrlIdx == 2) return 're-scheduled';
     if (ctrlIdx == 3) return 'running';
     if (ctrlIdx == 4) return 'inspected';
+    if (ctrlIdx == 5) return 're-inspection'; // ✅ ADD THIS
     return 'scheduled';
   }
 
@@ -230,7 +239,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }
 
       final bool hideCardActions = ctrlIdx == 0 || ctrlIdx == 4;
-
       return RefreshIndicator(
         color: AppColors.green,
         onRefresh: () async => controller.getInspectionList(),
@@ -519,6 +527,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 isActive: selectedCtrlIndex == 4,
                                 onTap: () {
                                   const uiIndex = 4;
+                                  final ctrlIndex = _uiToController[uiIndex];
+                                  controller.setDashboardTab(ctrlIndex);
+                                  _pageController.animateToPage(
+                                    uiIndex,
+                                    duration: const Duration(milliseconds: 300),
+                                    curve: Curves.easeInOut,
+                                  );
+                                },
+                              ),
+                              navItem(
+                                path: "assets/images/reinspect.png",
+                                text: "Re-Inspect",
+                                isActive: selectedCtrlIndex == 5,
+                                onTap: () {
+                                  const uiIndex = 5;
                                   final ctrlIndex = _uiToController[uiIndex];
                                   controller.setDashboardTab(ctrlIndex);
                                   _pageController.animateToPage(
@@ -953,19 +976,6 @@ class ScheduleCardExact extends StatelessWidget {
     await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
-  void _showNotApprovedToast() {
-    Get.showSnackbar(
-      GetSnackBar(
-        message: "Not approved by admin yet",
-        duration: const Duration(seconds: 2),
-        backgroundColor: Colors.red,
-        snackPosition: SnackPosition.BOTTOM,
-        margin: const EdgeInsets.all(12),
-        borderRadius: 10,
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
@@ -1238,9 +1248,33 @@ class ScheduleCardExact extends StatelessWidget {
                           );
                           return;
                         }
-                        Get.to(() => CarInspectionStepperScreen(lead: item));
 
-                        // ✅ Existing date time (same item ka)
+                        // ✅ Pehle navigation karo
+                        Get.to(() => CarInspectionStepperScreen(lead: item));
+                    
+                        // ✅ Check if it's Re-Inspection AND on Re-Inspection tab
+                        final status = normalizeInspectionStatus(
+                          item.inspectionStatus,
+                        );
+                        final currentTab = controller.dashboardTabIndex.value;
+                        final isOnReInspectionTab =
+                            currentTab ==
+                            5; // ✅ Re-Inspection tab ka index 5 hai
+
+                        // ✅ Agar Re-Inspection item hai AUR Re-Inspection tab par hai
+                        if (status == 're-inspection' && isOnReInspectionTab) {
+                          // ✅ Re-Inspection tab par hai - status update NAHI karna
+                          debugPrint(
+                            "✅ Re-Inspection tab par hai, status update nahi karna",
+                          );
+                       if (item.appointmentId != null) {
+  controller.fetchAndStoreCarDetails(item.appointmentId!);
+  controller.isreinspectionapp.value = true;
+}
+
+                          return; // ✅ API call nahi karni
+                        }
+
                         final DateTime dt =
                             _parseIsoToLocal(item.inspectionDateTime) ??
                             DateTime.tryParse(
@@ -1253,14 +1287,25 @@ class ScheduleCardExact extends StatelessWidget {
                             ? item.remarks!.trim()
                             : (item.additionalNotes ?? "").trim();
 
-                        // ✅ Call your new Running API (await recommended)
-                        await controller.updateTelecallingRunning(
-                          telecallingId: telecallingId,
-                          inspectionDateTimeLocal: dt,
-                          remarks: r,
-                        );
+                        // ✅ Agar Re-Inspection hai aur Scheduled/Running tab par hai
+                        if (status == 're-inspection') {
+                          // ✅ Re-Inspection ke liye special remarks
+                          final String specialRemarks =
+                              "Starting Re-Inspection";
 
-                        // ✅ Navigate
+                          await controller.updateTelecallingRunning(
+                            telecallingId: telecallingId,
+                            inspectionDateTimeLocal: dt,
+                            remarks: r.isNotEmpty ? r : specialRemarks,
+                          );
+                        } else {
+                          // ✅ Normal items ke liye original logic
+                          await controller.updateTelecallingRunning(
+                            telecallingId: telecallingId,
+                            inspectionDateTimeLocal: dt,
+                            remarks: r,
+                          );
+                        }
                       },
                     ),
                   ],
@@ -1287,6 +1332,8 @@ class _StatusChipExact extends StatelessWidget {
     if (s.contains('running')) return const Color(0xFFEDE9FE);
     if (s.contains('inspect')) return const Color(0xFFE0F2FE);
     if (s.contains('sched')) return const Color(0xFFE9FBF2);
+    if (s.contains('re-inspection'))
+      return const Color(0xFFFFF3E8); // ✅ ADD THIS (orange)
     return const Color(0xFFF1F5F9);
   }
 
@@ -1297,6 +1344,8 @@ class _StatusChipExact extends StatelessWidget {
     if (s.contains('running')) return const Color(0xFFC4B5FD);
     if (s.contains('inspect')) return const Color(0xFF93C5FD);
     if (s.contains('sched')) return const Color(0xFFBBF7D0);
+    if (s.contains('re-inspection'))
+      return const Color(0xFFFDBA74); // ✅ ADD THIS
     return const Color(0xFFE2E8F0);
   }
 
@@ -1307,6 +1356,9 @@ class _StatusChipExact extends StatelessWidget {
     if (s.contains('running')) return const Color(0xFF6D28D9);
     if (s.contains('inspect')) return const Color(0xFF1D4ED8);
     if (s.contains('sched')) return const Color(0xFF16A34A);
+    if (s.contains('re-inspection'))
+      return const Color(0xFFC2410C); // ✅ ADD THIS
+
     return const Color(0xFF334155);
   }
 
@@ -1454,8 +1506,6 @@ class _UpdateStatusButton extends StatelessWidget {
   final LeadsData item;
   const _UpdateStatusButton({required this.item});
 
-  static const _options = <String>["Reschedule", "Cancel"];
-
   String _fmtDate(DateTime d) {
     const months = [
       "Jan",
@@ -1487,10 +1537,34 @@ class _UpdateStatusButton extends StatelessWidget {
     side: const BorderSide(color: Color(0xFFF1F5F9)),
   );
 
+  // ✅ UPDATED: Agar Re-Inspection tab par hai to sirf Reschedule aur Cancel options
+  List<String> get _options {
+    final status = normalizeInspectionStatus(item.inspectionStatus);
+    final controller = Get.find<CarInspectionStepperController>();
+    final currentTab = controller.dashboardTabIndex.value;
+
+    // ✅ Agar Re-Inspection item hai AUR Re-Inspection tab par hai
+    if (status == 're-inspection' && currentTab == 5) {
+      // ✅ Re-Inspection tab par hai - "Start Inspection" option NAHI dikhana
+      return <String>["Reschedule", "Cancel"];
+    }
+    // ✅ Agar Re-Inspection item hai AUR Re-Inspection tab par NAHI hai
+    else if (status == 're-inspection' && currentTab != 5) {
+      // ✅ Dusre tab par hai - "Start Inspection" option dikhana
+      return <String>["Start Inspection", "Reschedule", "Cancel"];
+    }
+    // ✅ Normal items ke liye
+    else {
+      return <String>["Reschedule", "Cancel"];
+    }
+  }
+
   PopupMenuItem<String> _styledItem(String text, {required bool isLast}) {
     final isDanger = text.toLowerCase() == "cancel";
+    final isStartInspection = text == "Start Inspection";
+
     return PopupMenuItem<String>(
-      value: text, // ✅ IMPORTANT (onSelected works)
+      value: text,
       padding: EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -1500,13 +1574,23 @@ class _UpdateStatusButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
             child: Row(
               children: [
+                if (isStartInspection)
+                  const Icon(
+                    Icons.play_arrow_rounded,
+                    size: 18,
+                    color: Color(0xFF16A34A),
+                  ),
+                if (isStartInspection) const SizedBox(width: 8),
+
                 Expanded(
                   child: Text(
                     text,
                     style: TextStyle(
                       fontWeight: FontWeight.w900,
                       fontSize: 14,
-                      color: isDanger
+                      color: isStartInspection
+                          ? const Color(0xFF16A34A)
+                          : isDanger
                           ? const Color(0xFFEF4444)
                           : const Color(0xFF0F172A),
                     ),
@@ -1989,7 +2073,43 @@ class _UpdateStatusButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopupMenuButton<String>(
       onSelected: (v) async {
-        if (v == "Reschedule") {
+        final status = normalizeInspectionStatus(item.inspectionStatus);
+        final controller = Get.find<CarInspectionStepperController>();
+        final currentTab = controller.dashboardTabIndex.value;
+
+        if (v == "Start Inspection" &&
+            status == 're-inspection' &&
+            currentTab != 5) {
+          // ✅ Re-Inspection start karne ka logic - sirf tab 5 par NAHI hai
+          final telecallingId = (item.id ?? "").trim();
+          if (telecallingId.isEmpty) {
+            Get.showSnackbar(
+              GetSnackBar(
+                message: "Lead id missing",
+                duration: const Duration(seconds: 2),
+                backgroundColor: Colors.red,
+                snackPosition: SnackPosition.BOTTOM,
+                margin: const EdgeInsets.all(12),
+                borderRadius: 10,
+              ),
+            );
+            return;
+          }
+
+          // ✅ Navigate to inspection screen
+          Get.to(() => CarInspectionStepperScreen(lead: item));
+
+          // ✅ Update status to "Running" only if NOT on Re-Inspection tab
+          final ctrl = Get.find<CarInspectionStepperController>();
+          final dt = DateTime.now();
+          final r = "Starting Re-Inspection";
+
+          await ctrl.updateTelecallingRunning(
+            telecallingId: telecallingId,
+            inspectionDateTimeLocal: dt,
+            remarks: r,
+          );
+        } else if (v == "Reschedule") {
           await _openRescheduleDialog();
         } else if (v == "Cancel") {
           await _openCancelDialog();
@@ -1999,10 +2119,13 @@ class _UpdateStatusButton extends StatelessWidget {
       elevation: 18,
       color: Colors.white,
       shape: _menuShape,
-      itemBuilder: (context) => [
-        _styledItem("Reschedule", isLast: false),
-        _styledItem("Cancel", isLast: true),
-      ],
+      itemBuilder: (context) {
+        final items = _options;
+        return [
+          for (int i = 0; i < items.length; i++)
+            _styledItem(items[i], isLast: i == items.length - 1),
+        ];
+      },
       child: Container(
         height: 52,
         padding: const EdgeInsets.symmetric(horizontal: 14),

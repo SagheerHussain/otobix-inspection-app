@@ -26,16 +26,15 @@ class CarInspectionStepperController extends GetxController {
   final RxInt uiTick = 0.obs;
   void touch() => uiTick.value++;
 
+  // ✅ add near your _tcs map
+  final Map<String, FocusNode> _fns = {};
 
-// ✅ add near your _tcs map
-final Map<String, FocusNode> _fns = {};
-
-FocusNode fn(String key) {
-  if (_fns.containsKey(key)) return _fns[key]!;
-  final node = FocusNode();
-  _fns[key] = node;
-  return node;
-}
+  FocusNode fn(String key) {
+    if (_fns.containsKey(key)) return _fns[key]!;
+    final node = FocusNode();
+    _fns[key] = node;
+    return node;
+  }
 
   final RxBool rcFetchLoading = false.obs;
   final RxBool submitLoading = false.obs;
@@ -139,6 +138,9 @@ FocusNode fn(String key) {
 
   static const String getDropdownsUrl =
       "https://otobix-app-backend-development.onrender.com/api/inspection/dropdowns/get-all-dropdowns-list";
+
+  static const String updateInspectionUrl =
+      "https://otobix-app-backend-development.onrender.com/api/car/update";
 
   final RxMap<String, List<String>> localPickedImages =
       <String, List<String>>{}.obs;
@@ -632,21 +634,21 @@ FocusNode fn(String key) {
     }
   }
 
-  void _setValueByType(String fieldKey, dynamic value) {
-    if (value is String) {
-      setString(fieldKey, value, silent: true, force: true);
-    } else if (value is int) {
-      setInt(fieldKey, value, silent: true, force: true);
-    } else if (value is bool) {
-      data[fieldKey] = value;
-    } else if (value is double) {
-      data[fieldKey] = value;
-    } else if (value is List<String>) {
-      setList(fieldKey, value, silent: true, force: true);
-    } else if (value is DateTime) {
-      setDate(fieldKey, value, silent: true, force: true);
-    }
-  }
+  // void _setValueByType(String fieldKey, dynamic value) {
+  //   if (value is String) {
+  //     setString(fieldKey, value, silent: true, force: true);
+  //   } else if (value is int) {
+  //     setInt(fieldKey, value, silent: true, force: true);
+  //   } else if (value is bool) {
+  //     data[fieldKey] = value;
+  //   } else if (value is double) {
+  //     data[fieldKey] = value;
+  //   } else if (value is List<String>) {
+  //     setList(fieldKey, value, silent: true, force: true);
+  //   } else if (value is DateTime) {
+  //     setDate(fieldKey, value, silent: true, force: true);
+  //   }
+  // }
 
   // =====================================================
   // ✅ UPDATED: IMAGES LOCAL STORAGE METHODS
@@ -1797,9 +1799,6 @@ FocusNode fn(String key) {
       touch();
     }
   }
-  // =====================================================
-  // ✅ NEW: Delete media from Cloudinary
-  // =====================================================
 
   Future<bool> deleteMediaFromCloudinary({
     required String mediaUrl,
@@ -1913,6 +1912,7 @@ FocusNode fn(String key) {
     "Canceled",
     "Re-Scheduled",
     "Running",
+    "Re-Inspection",
     "Inspected",
   ];
 
@@ -1922,6 +1922,7 @@ FocusNode fn(String key) {
     "re-scheduled",
     "running",
     "inspected",
+    "re-inspection",
   ];
 
   late final TextEditingController dashboardSearchCtrl;
@@ -1952,12 +1953,19 @@ FocusNode fn(String key) {
     if (s == 're scheduled') s = 're-scheduled';
     if (s == 're_scheduled') s = 're-scheduled';
     if (s == 'cancelled') s = 'canceled';
+
+    // ✅ ADD THIS
+    if (s.contains('re-inspection')) return 're-inspection';
+    if (s.contains('reinspection')) return 're-inspection';
+    if (s.contains('re inspection')) return 're-inspection';
+
     if (s.contains('cancel')) return 'canceled';
     if (s.contains('inspect')) return 'inspected';
     if (s.contains('running')) return 'running';
     if (s.contains('re') && s.contains('sched')) return 're-scheduled';
     if (s.contains('resched')) return 're-scheduled';
     if (s.contains('sched')) return 'scheduled';
+
     return s;
   }
 
@@ -2082,24 +2090,22 @@ FocusNode fn(String key) {
     }
   }
 
-@override
-void onClose() {
-  dashboardSearchCtrl.dispose();
+  @override
+  void onClose() {
+    dashboardSearchCtrl.dispose();
 
-  for (final c in _tcs.values) {
-    c.dispose();
+    for (final c in _tcs.values) {
+      c.dispose();
+    }
+    _tcs.clear();
+
+    for (final f in _fns.values) {
+      f.dispose();
+    }
+    _fns.clear();
+
+    super.onClose();
   }
-  _tcs.clear();
-
-  // ✅ dispose focus nodes
-  for (final f in _fns.values) {
-    f.dispose();
-  }
-  _fns.clear();
-
-  super.onClose();
-}
-
 
   void _seedDefaults() {
     setString("appointmentId", "N/A", silent: true);
@@ -2843,23 +2849,13 @@ void onClose() {
     }
   }
 
+  final isreinspectionapp = false.obs;
+
   Future<bool> goNextOrSubmit({required String leadId}) async {
     final idx = currentStep.value;
     final isTestDriveStep = idx == 6;
-    if (!isTestDriveStep) {
-      final fk = formKeys[idx];
-      final ok = fk.currentState?.validate() ?? true;
-      if (!ok) {
-        ToastWidget.show(
-          context: Get.context!,
-          title: "Missing",
-          subtitle: "Please complete required fields",
-          type: ToastType.error,
-        );
-        return false;
-      }
 
-      // Go to next step
+    if (!isTestDriveStep) {
       if (idx < steps.length - 1) {
         currentStep.value++;
         touch();
@@ -2867,38 +2863,63 @@ void onClose() {
       return false;
     }
 
-    if (isTestDriveStep) {
-      submitLoading.value = true;
+    // FINAL STEP
+    submitLoading.value = true;
 
-      try {
-        final submitted = await submit(leadId: leadId);
-        if (submitted) {
-          Get.delete<CarInspectionStepperController>();
-          Get.offAll(DashboardScreen());
-          return true;
+    try {
+      final bool result;
+
+      if (isreinspectionapp.value == true) {
+        final String carId = getString("carId", def: "").trim();
+
+        if (carId.isEmpty) {
+          ToastWidget.show(
+            context: Get.context!,
+            title: "Error",
+            subtitle: "Car ID not found. Please fetch car details first.",
+            type: ToastType.error,
+          );
+          return false;
         }
-        return false;
-      } catch (e) {
-        ToastWidget.show(
-          context: Get.context!,
-          title: "Submission Failed",
-          subtitle: e.toString(),
-          type: ToastType.error,
-        );
-        return false;
-      } finally {
-        submitLoading.value = false;
-      }
-    }
 
-    return false;
+        result = await UpdateinpectApi(leadId: leadId, carID: carId);
+        isreinspectionapp.value = false;
+      } else {
+        // 🆕 NORMAL → SUBMIT API
+        result = await submit(leadId: leadId);
+      }
+
+      if (result) {
+        Get.delete<CarInspectionStepperController>();
+        Get.offAll(DashboardScreen());
+        return true;
+      }
+
+      return false;
+    } catch (e) {
+      ToastWidget.show(
+        context: Get.context!,
+        title: "Operation Failed",
+        subtitle: e.toString(),
+        type: ToastType.error,
+      );
+      return false;
+    } finally {
+      submitLoading.value = false;
+    }
   }
 
+  // =====================================================
+  // ✅ UPDATED: SUBMIT METHOD WITH CONDITIONAL MIXING
+  // =====================================================
   Future<bool> submit({required String leadId}) async {
     try {
       submitLoading.value = true;
 
       _ensureMirrors(silent: true);
+
+      // ✅ CONDITIONS: MIX IMAGES BEFORE BUILDING PAYLOAD
+      _mixImagesAccordingToConditions();
 
       printCompleteJson();
 
@@ -2944,6 +2965,183 @@ void onClose() {
     }
   }
 
+  Future<bool> UpdateinpectApi({
+    required String leadId,
+    required String carID,
+  }) async {
+    try {
+      submitLoading.value = true;
+
+      _ensureMirrors(silent: true);
+
+      // ✅ CONDITIONS: MIX IMAGES BEFORE BUILDING PAYLOAD
+      _mixImagesAccordingToConditions();
+
+      printCompleteJson();
+
+      final payload = _buildSubmitPayload();
+
+      debugPrint("✅ SUBMIT PAYLOAD KEYS: ${payload.keys.length}");
+
+      final submitted = await updateInspection(payload, leadId, carID);
+      if (!submitted) {
+        ToastWidget.show(
+          context: Get.context!,
+          title: "Submit Failed",
+          subtitle: "Failed to submit data to server",
+          type: ToastType.error,
+        );
+        return false;
+      }
+
+      final appt = getString("appointmentId", def: "").trim();
+      if (appt.isNotEmpty && appt != "N/A") {
+        await clearAllStorageForAppointment(appt);
+        debugPrint("🧹 Local storage cleared for $appt");
+      }
+
+      ToastWidget.show(
+        context: Get.context!,
+        title: "Submitted",
+        subtitle: "Inspection saved successfully.",
+        type: ToastType.success,
+      );
+
+      return true;
+    } catch (e) {
+      ToastWidget.show(
+        context: Get.context!,
+        title: "Submit Failed",
+        subtitle: e.toString(),
+        type: ToastType.error,
+      );
+      return false;
+    } finally {
+      submitLoading.value = false;
+    }
+  }
+
+  // =====================================================
+  // ✅ NEW: CONDITIONAL IMAGE MIXING METHOD
+  // =====================================================
+  void _mixImagesAccordingToConditions() {
+    try {
+      debugPrint("🔄 Mixing images according to conditions...");
+
+      // ✅ 1. bonnetImages: bonnetClosedImages + bonnetOpenImages + bonnetImages
+      final bonnetClosed = getList("bonnetClosedImages");
+      final bonnetOpen = getList("bonnetOpenImages");
+      final bonnetExisting = getList("bonnetImages");
+
+      final bonnetMixed = <String>[
+        ...bonnetClosed,
+        ...bonnetOpen,
+        ...bonnetExisting,
+      ].where((url) => url.trim().isNotEmpty).toSet().toList();
+
+      setList("bonnetImages", bonnetMixed, silent: true, force: true);
+      debugPrint("✅ bonnetImages mixed: ${bonnetMixed.length} images");
+
+      // ✅ 2. frontBumperImages: frontBumperLhs45DegreeImages + frontBumperRhs45DegreeImages + frontBumperImages
+      final bumperLhs45 = getList("frontBumperLhs45DegreeImages");
+      final bumperRhs45 = getList("frontBumperRhs45DegreeImages");
+      final bumperExisting = getList("frontBumperImages");
+
+      final bumperMixed = <String>[
+        ...bumperLhs45,
+        ...bumperRhs45,
+        ...bumperExisting,
+      ].where((url) => url.trim().isNotEmpty).toSet().toList();
+
+      setList("frontBumperImages", bumperMixed, silent: true, force: true);
+      debugPrint("✅ frontBumperImages mixed: ${bumperMixed.length} images");
+
+      // ✅ 3. lhsQuarterPanelImages: lhsQuarterPanelWithRearDoorOpenImages + lhsQuarterPanelImages
+      final lhsQuarterWithDoor = getList(
+        "lhsQuarterPanelWithRearDoorOpenImages",
+      );
+      final lhsQuarterExisting = getList("lhsQuarterPanelImages");
+
+      final lhsQuarterMixed = <String>[
+        ...lhsQuarterWithDoor,
+        ...lhsQuarterExisting,
+      ].where((url) => url.trim().isNotEmpty).toSet().toList();
+
+      setList(
+        "lhsQuarterPanelImages",
+        lhsQuarterMixed,
+        silent: true,
+        force: true,
+      );
+      debugPrint(
+        "✅ lhsQuarterPanelImages mixed: ${lhsQuarterMixed.length} images",
+      );
+
+      // ✅ 4. rearBumperImages: rearBumperLhs45DegreeImages + rearBumperRhs45DegreeImages + rearBumperImages
+      final rearBumperLhs45 = getList("rearBumperLhs45DegreeImages");
+      final rearBumperRhs45 = getList("rearBumperRhs45DegreeImages");
+      final rearBumperExisting = getList("rearBumperImages");
+
+      final rearBumperMixed = <String>[
+        ...rearBumperLhs45,
+        ...rearBumperRhs45,
+        ...rearBumperExisting,
+      ].where((url) => url.trim().isNotEmpty).toSet().toList();
+
+      setList("rearBumperImages", rearBumperMixed, silent: true, force: true);
+      debugPrint("✅ rearBumperImages mixed: ${rearBumperMixed.length} images");
+
+      // ✅ 5. apronLhsRhs: lhsApronImages + rhsApronImages
+      // Note: apronLhsRhs might not exist, check if we should create it
+      final lhsApron = getList("lhsApronImages");
+      final rhsApron = getList("rhsApronImages");
+
+      final apronMixed = <String>[
+        ...lhsApron,
+        ...rhsApron,
+      ].where((url) => url.trim().isNotEmpty).toSet().toList();
+
+      // Store in a key that will be used in payload
+      data["apronLhsRhsImages"] = apronMixed;
+      debugPrint("✅ apronLhsRhs mixed: ${apronMixed.length} images");
+
+      // ✅ 6. steeringMountedAudioControl: steeringMountedMediaControls + steeringMountedSystemControls
+      final mediaControls = getString(
+        "steeringMountedMediaControls",
+        def: "",
+      ).trim();
+      final systemControls = getString(
+        "steeringMountedSystemControls",
+        def: "",
+      ).trim();
+
+      // Combine values, remove duplicates and "N/A"
+      final controlsList = <String>[];
+      if (mediaControls.isNotEmpty && mediaControls != "N/A") {
+        controlsList.add(mediaControls);
+      }
+      if (systemControls.isNotEmpty && systemControls != "N/A") {
+        controlsList.add(systemControls);
+      }
+
+      final steeringMountedValue = controlsList.isNotEmpty
+          ? controlsList.join(", ")
+          : "N/A";
+
+      setString(
+        "steeringMountedAudioControl",
+        steeringMountedValue,
+        silent: true,
+        force: true,
+      );
+      debugPrint("✅ steeringMountedAudioControl mixed: $steeringMountedValue");
+
+      debugPrint("✅ All image mixing completed successfully");
+    } catch (e) {
+      debugPrint("❌ Error mixing images: $e");
+    }
+  }
+
   Future<bool> _submitToApi(Map<String, dynamic> payload, String leadId) async {
     try {
       final hasInternet = await _checkInternetConnection();
@@ -2964,6 +3162,56 @@ void onClose() {
         },
         body: jsonEncode(payload),
       );
+      print(response.body);
+      debugPrint("📡 API RESPONSE: ${response.statusCode} - ${response.body}");
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        debugPrint("✅ API SUBMIT SUCCESS");
+        updateTelecallingInspected(
+          telecallingId: leadId,
+          inspectionDateTimeLocal: DateTime.now(),
+          remarks: "This car is Inspected",
+        );
+
+        return true;
+      } else {
+        final error = _readErrorMessage(response);
+        _snackErr("API Error: $error");
+        return false;
+      }
+    } catch (e) {
+      debugPrint("❌ API SUBMIT ERROR: $e");
+      _snackErr("Submit failed: $e");
+      return false;
+    }
+  }
+
+  Future<bool> updateInspection(
+    Map<String, dynamic> payload,
+    String leadId,
+    String carID,
+  ) async {
+    try {
+      payload['carId'] = carID;
+      final hasInternet = await _checkInternetConnection();
+      if (!hasInternet) return false;
+      final token = await _getBearerToken();
+      if (token.isEmpty) {
+        _snackErr("Token missing (prefs key: token)");
+        return false;
+      }
+
+      debugPrint("📤 SUBMITTING DATA TO API: ${payload.keys.length} keys");
+
+      final response = await http.put(
+        Uri.parse(updateInspectionUrl),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode(payload),
+      );
+
       print(response.body);
       debugPrint("📡 API RESPONSE: ${response.statusCode} - ${response.body}");
 
@@ -4549,5 +4797,447 @@ void onClose() {
     localPickedVideos.remove(fieldKey);
     setString(fieldKey, "", silent: true, force: true);
     touch();
+  }
+
+  // =====================================================
+  // ✅ UPDATED: CAR DETAILS FETCH API FUNCTION WITH carId EXTRACTION
+  // =====================================================
+  Future<void> fetchAndStoreCarDetails(String appointmentId) async {
+    try {
+      final hasInternet = await _checkInternetConnection();
+      if (!hasInternet) return;
+
+      rcFetchLoading.value = true;
+
+      final token = await _getBearerToken();
+      if (token.isEmpty) {
+        _snackErr("Token missing (prefs key: token)");
+        return;
+      }
+
+      debugPrint("🔄 Fetching car details for appointment: $appointmentId");
+
+      // API URL with appointmentId query parameter
+      final url = Uri.parse(
+        "https://otobix-app-backend-development.onrender.com/api/car/details/sdaf?appointmentId=$appointmentId",
+      );
+
+      final response = await http.get(
+        url,
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+      );
+
+      debugPrint("📡 API Response Status: ${response.statusCode}");
+      debugPrint("📡 API Response Body: ${response.body}");
+
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final decoded = jsonDecode(response.body);
+
+        if (decoded is Map<String, dynamic> && decoded["success"] == true) {
+          final carDetails = decoded["carDetails"] as Map<String, dynamic>;
+
+          // ✅ EXTRACT CAR ID FROM RESPONSE
+          final String? carId =
+              decoded["carId"]?.toString() ??
+              carDetails["carId"]?.toString() ??
+              carDetails["_id"]?.toString();
+
+          if (carId != null && carId.isNotEmpty) {
+            // ✅ STORE CAR ID IN LOCAL STORAGE
+            await _saveFieldToStorage(
+              appointmentId: appointmentId,
+              fieldKey: "carId",
+              value: carId,
+            );
+
+            // ✅ ALSO STORE IN DATA MAP
+            setString("carId", carId, silent: true, force: true);
+
+            debugPrint("✅ Extracted and saved carId: $carId");
+          } else {
+            debugPrint("⚠️ No carId found in API response");
+          }
+
+          // ✅ Store all car details in local storage
+          await _storeCarDetailsToLocal(appointmentId, carDetails);
+
+          // ✅ Load the data into current form
+          await _applyCarDetailsToForm(appointmentId, carDetails);
+
+          ToastWidget.show(
+            context: Get.context!,
+            title: "Success",
+            subtitle: "Car details fetched and stored successfully",
+            type: ToastType.success,
+          );
+        } else {
+          _snackErr(
+            "Failed to fetch car details: ${decoded["message"] ?? "Unknown error"}",
+          );
+        }
+      } else {
+        final error = _readErrorMessage(response);
+        _snackErr("API Error: $error");
+      }
+    } catch (e) {
+      debugPrint("❌ Error fetching car details: $e");
+      _snackErr("Fetch failed: $e");
+    } finally {
+      rcFetchLoading.value = false;
+    }
+  }
+
+  Future<void> _storeCarDetailsToLocal(
+    String appointmentId,
+    Map<String, dynamic> carDetails,
+  ) async {
+    try {
+      debugPrint(
+        "💾 Storing car details to local for appointment: $appointmentId",
+      );
+
+      // Set current appointment ID first
+      _currentAppointmentId = appointmentId;
+      await _saveFieldToStorage(
+        appointmentId: appointmentId,
+        fieldKey: "appointmentId",
+        value: appointmentId,
+      );
+
+      // ✅ NEW: Separate lists for image and video fields
+      final List<String> imageFields = [];
+      final List<String> videoFields = [];
+
+      // Store all fields from carDetails
+      for (final entry in carDetails.entries) {
+        final key = entry.key;
+        final value = entry.value;
+
+        if (value != null) {
+          // ✅ Check if this is an image field
+          if (_isImageField(key)) {
+            imageFields.add(key);
+          }
+
+          // ✅ Check if this is a video field
+          if (_isVideoField(key)) {
+            videoFields.add(key);
+          }
+
+          await _saveFieldToStorage(
+            appointmentId: appointmentId,
+            fieldKey: key,
+            value: value,
+          );
+          debugPrint(
+            "  💾 Stored: $key = ${value.toString().length > 50 ? '${value.toString().substring(0, 50)}...' : value}",
+          );
+        }
+      }
+
+      // ✅ NEW: Also store images and videos in localPickedImages/localPickedVideos
+      await _storeImagesAndVideosToLocalMaps(
+        appointmentId,
+        carDetails,
+        imageFields,
+        videoFields,
+      );
+
+      debugPrint("✅ All car details stored to local storage");
+      debugPrint("📸 Image fields found: ${imageFields.length}");
+      debugPrint("🎬 Video fields found: ${videoFields.length}");
+    } catch (e) {
+      debugPrint("❌ Error storing car details: $e");
+    }
+  }
+
+  // =====================================================
+  // ✅ NEW: HELPER TO CHECK IF FIELD IS IMAGE FIELD
+  // =====================================================
+  bool _isImageField(String fieldKey) {
+    final lowerKey = fieldKey.toLowerCase();
+    return lowerKey.contains('image') ||
+        lowerKey.endsWith('images') ||
+        lowerKey.contains('photo') ||
+        lowerKey.contains('picture') ||
+        lowerKey.contains('rcTokenImages') ||
+        lowerKey.contains('insuranceImages') ||
+        lowerKey.contains('frontMainImages') ||
+        lowerKey.contains('bonnetImages') ||
+        lowerKey.contains('engineBayImages') ||
+        // Add all your image field patterns here
+        allImageFieldKeys.contains(fieldKey);
+  }
+
+  // =====================================================
+  // ✅ NEW: HELPER TO CHECK IF FIELD IS VIDEO FIELD
+  // =====================================================
+  bool _isVideoField(String fieldKey) {
+    final lowerKey = fieldKey.toLowerCase();
+    return lowerKey.contains('video') ||
+        lowerKey.endsWith('video') ||
+        lowerKey.contains('engineVideo') ||
+        lowerKey.contains('exhaustSmokeVideo') ||
+        lowerKey.contains('engineSound');
+  }
+
+  // =====================================================
+  // ✅ NEW: STORE IMAGES AND VIDEOS TO LOCAL MAPS
+  // =====================================================
+  Future<void> _storeImagesAndVideosToLocalMaps(
+    String appointmentId,
+    Map<String, dynamic> carDetails,
+    List<String> imageFields,
+    List<String> videoFields,
+  ) async {
+    try {
+      debugPrint("🔄 Storing images and videos to local maps...");
+
+      // ✅ 1. Store images to localPickedImages
+      for (final imageField in imageFields) {
+        final value = carDetails[imageField];
+        if (value != null) {
+          List<String> imageUrls = [];
+
+          if (value is List) {
+            // Convert List<dynamic> to List<String>
+            imageUrls = value.map((item) => item.toString()).toList();
+          } else if (value is String) {
+            // Single URL
+            imageUrls = [value];
+          }
+
+          // Filter out empty URLs
+          imageUrls = imageUrls.where((url) => url.trim().isNotEmpty).toList();
+
+          if (imageUrls.isNotEmpty) {
+            // Store in localPickedImages
+            localPickedImages[imageField] = imageUrls;
+
+            // Also save to storage cache
+            final cacheKey = "${appointmentId}_$imageField";
+            _localImagesCache[cacheKey] = imageUrls;
+
+            debugPrint(
+              "  📸 Stored to localPickedImages: $imageField = ${imageUrls.length} images",
+            );
+          }
+        }
+      }
+
+      // ✅ 2. Store videos to localPickedVideos
+      for (final videoField in videoFields) {
+        final value = carDetails[videoField];
+        if (value != null) {
+          String? videoUrl;
+
+          if (value is List && value.isNotEmpty) {
+            // Take first video from list
+            videoUrl = value.first.toString();
+          } else if (value is String) {
+            videoUrl = value;
+          }
+
+          if (videoUrl != null && videoUrl.trim().isNotEmpty) {
+            // Store in localPickedVideos
+            localPickedVideos[videoField] = videoUrl;
+
+            // Also save to storage cache
+            final cacheKey = "${appointmentId}_$videoField";
+            _localVideosCache[cacheKey] = videoUrl;
+
+            debugPrint(
+              "  🎬 Stored to localPickedVideos: $videoField = $videoUrl",
+            );
+          }
+        }
+      }
+
+      debugPrint("✅ Images and videos stored to local maps successfully");
+    } catch (e) {
+      debugPrint("❌ Error storing images/videos to local maps: $e");
+    }
+  }
+
+  Future<void> _applyCarDetailsToForm(
+    String appointmentId,
+    Map<String, dynamic> carDetails,
+  ) async {
+    try {
+      debugPrint(
+        "🔄 Applying car details to form for appointment: $appointmentId",
+      );
+
+      // Clear current data first
+      _seedDefaults();
+
+      // Set appointment ID
+      setString("appointmentId", appointmentId, silent: true, force: true);
+      _currentAppointmentId = appointmentId;
+
+      // ✅ NEW: Clear local maps first
+      localPickedImages.clear();
+      localPickedVideos.clear();
+
+      // ✅ NEW: Identify image and video fields
+      final List<String> imageFields = [];
+      final List<String> videoFields = [];
+
+      carDetails.forEach((key, value) {
+        if (value != null) {
+          if (_isImageField(key)) {
+            imageFields.add(key);
+          }
+          if (_isVideoField(key)) {
+            videoFields.add(key);
+          }
+        }
+      });
+
+      // Apply all fields from carDetails to data map
+      carDetails.forEach((key, value) {
+        if (value != null) {
+          _setValueByType(key, value);
+        }
+      });
+
+      // ✅ NEW: Load images and videos from carDetails into local maps
+      await _loadImagesAndVideosFromCarDetails(
+        carDetails,
+        imageFields,
+        videoFields,
+      );
+
+      // Load local images and videos from storage (backup)
+      await _restoreLocalImagesAndVideos(appointmentId);
+
+      // Update text controllers
+      for (final key in _tcs.keys) {
+        _pushToController(key);
+      }
+
+      _ensureMirrors(silent: true);
+      touch();
+
+      debugPrint("✅ Car details applied to form successfully");
+      debugPrint("📸 Images loaded: ${localPickedImages.length} fields");
+      debugPrint("🎬 Videos loaded: ${localPickedVideos.length} fields");
+    } catch (e) {
+      debugPrint("❌ Error applying car details to form: $e");
+    }
+  }
+
+  // =====================================================
+  // ✅ NEW: LOAD IMAGES AND VIDEOS FROM CAR DETAILS
+  // =====================================================
+  Future<void> _loadImagesAndVideosFromCarDetails(
+    Map<String, dynamic> carDetails,
+    List<String> imageFields,
+    List<String> videoFields,
+  ) async {
+    try {
+      debugPrint("🔄 Loading images and videos from car details...");
+
+      // ✅ 1. Load images
+      for (final imageField in imageFields) {
+        final value = carDetails[imageField];
+        if (value != null) {
+          List<String> imageUrls = [];
+
+          if (value is List) {
+            imageUrls = value.map((item) => item.toString()).toList();
+          } else if (value is String) {
+            imageUrls = [value];
+          }
+
+          // Filter out empty URLs and "N/A"
+          imageUrls = imageUrls
+              .where(
+                (url) =>
+                    url.trim().isNotEmpty &&
+                    url.trim().toUpperCase() != "N/A" &&
+                    !url.trim().toLowerCase().contains('null'),
+              )
+              .toList();
+
+          if (imageUrls.isNotEmpty) {
+            localPickedImages[imageField] = imageUrls;
+            debugPrint("  📸 Loaded: $imageField = ${imageUrls.length} images");
+
+            // Also set in data map as list
+            setList(imageField, imageUrls, silent: true, force: true);
+          }
+        }
+      }
+
+      // ✅ 2. Load videos
+      for (final videoField in videoFields) {
+        final value = carDetails[videoField];
+        if (value != null) {
+          String? videoUrl;
+
+          if (value is List && value.isNotEmpty) {
+            videoUrl = value.first.toString();
+          } else if (value is String) {
+            videoUrl = value;
+          }
+
+          if (videoUrl != null &&
+              videoUrl.trim().isNotEmpty &&
+              videoUrl.trim().toUpperCase() != "N/A" &&
+              !videoUrl.trim().toLowerCase().contains('null')) {
+            localPickedVideos[videoField] = videoUrl;
+            debugPrint("  🎬 Loaded: $videoField = $videoUrl");
+
+            // Also set in data map as string
+            setString(videoField, videoUrl, silent: true, force: true);
+          }
+        }
+      }
+
+      debugPrint("✅ Images and videos loaded from car details");
+    } catch (e) {
+      debugPrint("❌ Error loading images/videos from car details: $e");
+    }
+  }
+
+  void _setValueByType(String fieldKey, dynamic value) {
+    try {
+      if (value == null) return;
+
+      if (value is String) {
+        setString(fieldKey, value, silent: true, force: true);
+      } else if (value is int) {
+        setInt(fieldKey, value, silent: true, force: true);
+      } else if (value is bool) {
+        data[fieldKey] = value;
+      } else if (value is double) {
+        data[fieldKey] = value;
+      } else if (value is List) {
+        // Handle lists (could be List<dynamic>, List<String>, List<Map>, etc.)
+        if (value.isNotEmpty && value[0] is String) {
+          // Convert to List<String>
+          final stringList = value.cast<String>().toList();
+          setList(fieldKey, stringList, silent: true, force: true);
+        } else {
+          // Store as is, will be converted to List<String> when needed
+          data[fieldKey] = List.from(value);
+        }
+      } else if (value is Map) {
+        // Convert Map to JSON string for storage
+        final jsonString = jsonEncode(value);
+        setString(fieldKey, jsonString, silent: true, force: true);
+      } else if (value is DateTime) {
+        setDate(fieldKey, value, silent: true, force: true);
+      } else {
+        // Fallback: convert to string
+        setString(fieldKey, value.toString(), silent: true, force: true);
+      }
+    } catch (e) {
+      debugPrint("❌ Error setting value for $fieldKey: $e");
+    }
   }
 }

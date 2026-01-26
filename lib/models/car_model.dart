@@ -9,8 +9,7 @@ class CarModel {
   // ============================================================================
 
   final String emailAddress; // renamed to ieName - MANDATORY (AUTO FETCH)
-  final String
-  city; // renamed to inspectionCity - SINGLE SELECT - MANDATORY ENTRY
+  final String city; // renamed to inspectionCity - SINGLE SELECT - MANDATORY ENTRY
   final String registrationType; // removed - DELETED
   final String
   rcBookAvailability; // changed to rcBookAvailabilityDropdownList - MULTIPLE - MANDATORY ENTRY

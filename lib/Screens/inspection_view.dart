@@ -1728,12 +1728,17 @@ class KeyboardDismissOnScroll extends StatelessWidget {
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
-                                Text(
-                                  isTestDriveStep ? 'Submit' : 'Next',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
+                             Text(
+  !isTestDriveStep
+      ? 'Next'
+      : controller.isreinspectionapp.value
+          ? 'Update'
+          : 'Submit',
+  style: const TextStyle(
+    fontWeight: FontWeight.w900,
+  ),
+),
+
                                 const SizedBox(width: 8),
                                 Icon(
                                   isTestDriveStep
@@ -3881,6 +3886,120 @@ class KeyboardDismissOnScroll extends StatelessWidget {
                     Icons.airline_seat_recline_normal,
                   ),
                   const SizedBox(height: 14),
+   buildValidatedMultiImagePicker(
+                    c: c,
+                    fieldKey: "reverseCameraImages",
+                    label: 'Reverse Camera Images',
+                    minRequired: MandatoryImagesConfig.getMinRequired(
+                      "reverseCameraImages",
+                    ),
+                    maxImages: MandatoryImagesConfig.getMaxImages(
+                      "reverseCameraImages",
+                    ),
+                    context: context,
+                  ),
+                  buildValidatedMultiImagePicker(
+                    c: c,
+                    fieldKey: "additionalInteriorImages",
+                    label: 'Additional Interior Images',
+                    minRequired: MandatoryImagesConfig.getMinRequired(
+                      "additionalInteriorImages",
+                    ),
+                    maxImages: MandatoryImagesConfig.getMaxImages(
+                      "additionalInteriorImages",
+                    ),
+                    context: context,
+                  ),
+                   buildValidatedMultiImagePicker(
+                    c: c,
+                    fieldKey: "sunroofImages",
+                    label: 'Sunroof Images',
+                    minRequired: MandatoryImagesConfig.getMinRequired(
+                      "sunroofImages",
+                    ),
+                    maxImages: MandatoryImagesConfig.getMaxImages(
+                      "sunroofImages",
+                    ),
+                    context: context,
+                  ),
+
+                  buildValidatedMultiImagePicker(
+                    c: c,
+                    fieldKey: "dashboardImages",
+                    label: 'Dashboard Images',
+                    minRequired: MandatoryImagesConfig.getMinRequired(
+                      "dashboardImages",
+                    ),
+                    maxImages: MandatoryImagesConfig.getMaxImages(
+                      "dashboardImages",
+                    ),
+                    context: context,
+                  ),
+                  buildValidatedMultiImagePicker(
+                    c: c,
+                    fieldKey: "meterConsoleWithEngineOnImages",
+                    label: 'Meter Console (Engine On) Images',
+                    minRequired: MandatoryImagesConfig.getMinRequired(
+                      "meterConsoleWithEngineOnImages",
+                    ),
+                    maxImages: MandatoryImagesConfig.getMaxImages(
+                      "meterConsoleWithEngineOnImages",
+                    ),
+                    context: context,
+                  ),
+                  Obx(() {
+                    final isMandatory =
+                        MandatoryImagesConfig.shouldShowConditionalField(
+                          c,
+                          "airbagImages",
+                        );
+
+                    return buildValidatedMultiImagePicker(
+                      c: c,
+                      fieldKey: "airbagImages",
+                      label: 'Airbag Images${isMandatory ? '' : ' (optional)'}',
+                      minRequired: isMandatory
+                          ? MandatoryImagesConfig.getMinRequired("airbagImages")
+                          : 0,
+                      maxImages: MandatoryImagesConfig.getMaxImages(
+                        "airbagImages",
+                      ),
+                      context: context,
+                    );
+                  }),
+                  buildValidatedMultiImagePicker(
+                    c: c,
+                    fieldKey: "frontSeatsFromDriverSideImages",
+                    label: 'Front Seats (Driver Side) Images',
+                    minRequired: MandatoryImagesConfig.getMinRequired(
+                      "frontSeatsFromDriverSideImages",
+                    ),
+                    maxImages: MandatoryImagesConfig.getMaxImages(
+                      "frontSeatsFromDriverSideImages",
+                    ),
+                    context: context,
+                  ),
+                  buildValidatedMultiImagePicker(
+                    c: c,
+                    fieldKey: "rearSeatsFromRightSideImages",
+                    label: 'Rear Seats (Right Side) Images',
+                    minRequired: MandatoryImagesConfig.getMinRequired(
+                      "rearSeatsFromRightSideImages",
+                    ),
+                    maxImages: MandatoryImagesConfig.getMaxImages(
+                      "rearSeatsFromRightSideImages",
+                    ),
+                    context: context,
+                  ),
+
+                  buildValidatedMultiImagePicker(
+                    c: c,
+                    fieldKey: "acImages",
+                    label: 'AC Images',
+                    minRequired: MandatoryImagesConfig.getMinRequired("acImages"),
+                    maxImages: MandatoryImagesConfig.getMaxImages("acImages"),
+                    context: context,
+                  ),
 
                   buildModernSingleListDropdownKey(
                     context: context,
@@ -4169,97 +4288,7 @@ class KeyboardDismissOnScroll extends StatelessWidget {
                     icon: Icons.wb_sunny_outlined,
                     items: yesNo,
                   ),
-                  buildValidatedMultiImagePicker(
-                    c: c,
-                    fieldKey: "sunroofImages",
-                    label: 'Sunroof Images',
-                    minRequired: MandatoryImagesConfig.getMinRequired(
-                      "sunroofImages",
-                    ),
-                    maxImages: MandatoryImagesConfig.getMaxImages(
-                      "sunroofImages",
-                    ),
-                    context: context,
-                  ),
-
-                  buildValidatedMultiImagePicker(
-                    c: c,
-                    fieldKey: "dashboardImages",
-                    label: 'Dashboard Images',
-                    minRequired: MandatoryImagesConfig.getMinRequired(
-                      "dashboardImages",
-                    ),
-                    maxImages: MandatoryImagesConfig.getMaxImages(
-                      "dashboardImages",
-                    ),
-                    context: context,
-                  ),
-                  buildValidatedMultiImagePicker(
-                    c: c,
-                    fieldKey: "meterConsoleWithEngineOnImages",
-                    label: 'Meter Console (Engine On) Images',
-                    minRequired: MandatoryImagesConfig.getMinRequired(
-                      "meterConsoleWithEngineOnImages",
-                    ),
-                    maxImages: MandatoryImagesConfig.getMaxImages(
-                      "meterConsoleWithEngineOnImages",
-                    ),
-                    context: context,
-                  ),
-                  Obx(() {
-                    final isMandatory =
-                        MandatoryImagesConfig.shouldShowConditionalField(
-                          c,
-                          "airbagImages",
-                        );
-
-                    return buildValidatedMultiImagePicker(
-                      c: c,
-                      fieldKey: "airbagImages",
-                      label: 'Airbag Images${isMandatory ? '' : ' (optional)'}',
-                      minRequired: isMandatory
-                          ? MandatoryImagesConfig.getMinRequired("airbagImages")
-                          : 0,
-                      maxImages: MandatoryImagesConfig.getMaxImages(
-                        "airbagImages",
-                      ),
-                      context: context,
-                    );
-                  }),
-                  buildValidatedMultiImagePicker(
-                    c: c,
-                    fieldKey: "frontSeatsFromDriverSideImages",
-                    label: 'Front Seats (Driver Side) Images',
-                    minRequired: MandatoryImagesConfig.getMinRequired(
-                      "frontSeatsFromDriverSideImages",
-                    ),
-                    maxImages: MandatoryImagesConfig.getMaxImages(
-                      "frontSeatsFromDriverSideImages",
-                    ),
-                    context: context,
-                  ),
-                  buildValidatedMultiImagePicker(
-                    c: c,
-                    fieldKey: "rearSeatsFromRightSideImages",
-                    label: 'Rear Seats (Right Side) Images',
-                    minRequired: MandatoryImagesConfig.getMinRequired(
-                      "rearSeatsFromRightSideImages",
-                    ),
-                    maxImages: MandatoryImagesConfig.getMaxImages(
-                      "rearSeatsFromRightSideImages",
-                    ),
-                    context: context,
-                  ),
-
-                  buildValidatedMultiImagePicker(
-                    c: c,
-                    fieldKey: "acImages",
-                    label: 'AC Images',
-                    minRequired: MandatoryImagesConfig.getMinRequired("acImages"),
-                    maxImages: MandatoryImagesConfig.getMaxImages("acImages"),
-                    context: context,
-                  ),
-
+                 
                   buildModernSingleListDropdownKey(
                     context: context,
                     c: c,
@@ -4298,30 +4327,7 @@ class KeyboardDismissOnScroll extends StatelessWidget {
                     onChanged: (v) => c.setString("numberOfAirbags", v),
                   ),
 
-                  buildValidatedMultiImagePicker(
-                    c: c,
-                    fieldKey: "reverseCameraImages",
-                    label: 'Reverse Camera Images',
-                    minRequired: MandatoryImagesConfig.getMinRequired(
-                      "reverseCameraImages",
-                    ),
-                    maxImages: MandatoryImagesConfig.getMaxImages(
-                      "reverseCameraImages",
-                    ),
-                    context: context,
-                  ),
-                  buildValidatedMultiImagePicker(
-                    c: c,
-                    fieldKey: "additionalInteriorImages",
-                    label: 'Additional Interior Images',
-                    minRequired: MandatoryImagesConfig.getMinRequired(
-                      "additionalInteriorImages",
-                    ),
-                    maxImages: MandatoryImagesConfig.getMaxImages(
-                      "additionalInteriorImages",
-                    ),
-                    context: context,
-                  ),
+               
                 ],
               ),
             ),
@@ -4356,7 +4362,18 @@ class KeyboardDismissOnScroll extends StatelessWidget {
                 children: [
                   buildSectionHeader('Mechanical / Test Drive', Icons.drive_eta),
                   const SizedBox(height: 14),
-
+   buildValidatedMultiImagePicker(
+                    c: c,
+                    fieldKey: "odometerReadingAfterTestDriveImages",
+                    label: 'Odometer After Test Drive Images',
+                    minRequired: MandatoryImagesConfig.getMinRequired(
+                      "odometerReadingAfterTestDriveImages",
+                    ),
+                    maxImages: MandatoryImagesConfig.getMaxImages(
+                      "odometerReadingAfterTestDriveImages",
+                    ),
+                    context: context,
+                  ),
                   buildModernSingleListDropdownKey(
                     context: context,
                     c: c,
@@ -4483,18 +4500,7 @@ class KeyboardDismissOnScroll extends StatelessWidget {
                     icon: Icons.alt_route_outlined,
                     items: driveTrainOptions,
                   ),
-                  buildValidatedMultiImagePicker(
-                    c: c,
-                    fieldKey: "odometerReadingAfterTestDriveImages",
-                    label: 'Odometer After Test Drive Images',
-                    minRequired: MandatoryImagesConfig.getMinRequired(
-                      "odometerReadingAfterTestDriveImages",
-                    ),
-                    maxImages: MandatoryImagesConfig.getMaxImages(
-                      "odometerReadingAfterTestDriveImages",
-                    ),
-                    context: context,
-                  ),
+               
                 ],
               ),
             ),
