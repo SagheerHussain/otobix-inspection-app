@@ -53,8 +53,6 @@ String normalizeInspectionStatus(String? raw) {
   if (s == 'rescheduled') s = 're-scheduled';
   if (s == 're scheduled') s = 're-scheduled';
   if (s == 'cancelled') s = 'canceled';
-
-  // ✅ UPDATE THIS
   if (s == 're-inspection') return 're-inspection'; // Exact match
   if (s.contains('re-inspection')) return 're-inspection';
   if (s.contains('reinspection')) return 're-inspection';
@@ -77,7 +75,7 @@ String prettyStatusLabelFromRaw(String? raw) {
   if (n == 're-scheduled') return 'Re-Scheduled';
   if (n == 'running') return 'Running';
   if (n == 'inspected') return 'Inspected';
-  if (n == 're-inspection') return 'Re-Inspection'; // ✅ ADD THIS
+  if (n == 're-inspection') return 'Re-Inspection';
   return (raw ?? '').trim().isEmpty ? 'Scheduled' : raw!.trim();
 }
 
@@ -93,7 +91,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     CarInspectionStepperController(),
   );
 
-  // ✅ PageController for horizontal scrolling between tabs
   late PageController _pageController;
 
   @override
@@ -103,7 +100,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       initialPage: _controllerToUi(controller.dashboardTabIndex.value),
     );
 
-    // ✅ Listen to page changes
     _pageController.addListener(() {
       if (_pageController.page?.round() != null) {
         final pageIndex = _pageController.page!.round();
@@ -168,7 +164,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         .toList();
   }
 
-  // ✅ Helper method to build content for each tab
   Widget _buildTabContent(int ctrlIdx, BuildContext context) {
     final w = MediaQuery.sizeOf(context).width;
     int crossAxisCount = 1;
@@ -1251,7 +1246,7 @@ class ScheduleCardExact extends StatelessWidget {
 
                         // ✅ Pehle navigation karo
                         Get.to(() => CarInspectionStepperScreen(lead: item));
-                    
+
                         // ✅ Check if it's Re-Inspection AND on Re-Inspection tab
                         final status = normalizeInspectionStatus(
                           item.inspectionStatus,
@@ -1267,10 +1262,12 @@ class ScheduleCardExact extends StatelessWidget {
                           debugPrint(
                             "✅ Re-Inspection tab par hai, status update nahi karna",
                           );
-                       if (item.appointmentId != null) {
-  controller.fetchAndStoreCarDetails(item.appointmentId!);
-  controller.isreinspectionapp.value = true;
-}
+                          if (item.appointmentId != null) {
+                            controller.fetchAndStoreCarDetails(
+                              item.appointmentId!,
+                            );
+                            controller.isreinspectionapp.value = true;
+                          }
 
                           return;
                         }
