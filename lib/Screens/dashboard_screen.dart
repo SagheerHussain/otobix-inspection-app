@@ -1272,7 +1272,7 @@ class ScheduleCardExact extends StatelessWidget {
   controller.isreinspectionapp.value = true;
 }
 
-                          return; // ✅ API call nahi karni
+                          return;
                         }
 
                         final DateTime dt =
